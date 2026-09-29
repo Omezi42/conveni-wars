@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CategoryData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/category_data.gd" id="1_cat"]
+
+[resource]
+script = ExtResource("1_cat")
+id = &"dessert"
+display_name = "スイーツ"
+order = 10
+color = Color(0.96, 0.58, 0.76, 1)
+perishable = true

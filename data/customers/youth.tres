@@ -10,8 +10,8 @@ display_name = "若者"
 order = 4
 wants = {
 &"alcohol": 2,
-&"drink": 3,
-&"sweets": 2
+&"cup_noodle": 2,
+&"drink": 3
 }
 price_sensitivity = 0.6
 buy_count = 2

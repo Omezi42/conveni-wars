@@ -32,6 +32,7 @@ const REMAIN_VALUE_TOP := 12.0
 const SCORE_RECT := Rect2(412, 6, 856, 42)
 const VS_RADIUS := 19.0
 const SALES_FONT := 28
+const PROFIT_LABEL := "の利益"
 const TUG_Y := 52.0
 const TUG_HEIGHT := 10.0
 ## 客数の細いバーと、その両端の数
@@ -40,7 +41,7 @@ const VISIT_HEIGHT := 6.0
 const VISIT_LABEL_WIDTH := 110.0
 const VISIT_TRACK := Color(1, 1, 1, 0.5)
 
-var _shown_sales: Array[float] = [0.0, 0.0]
+var _shown_profit: Array[float] = [0.0, 0.0]
 var _bump: Array[float] = [0.0, 0.0]
 
 
@@ -48,10 +49,10 @@ func _process(delta: float) -> void:
 	if match_state == null:
 		return
 	for i in MatchState.STORE_COUNT:
-		var target := float(match_state.stores[i].sales)
-		if target > _shown_sales[i] + 0.5:
+		var target := float(match_state.stores[i].profit())
+		if target > _shown_profit[i] + 0.5:
 			_bump[i] = BUMP_SECONDS
-		_shown_sales[i] = lerpf(_shown_sales[i], target, minf(1.0, delta * ROLL_SPEED))
+		_shown_profit[i] = lerpf(_shown_profit[i], target, minf(1.0, delta * ROLL_SPEED))
 		_bump[i] = maxf(_bump[i] - delta, 0.0)
 	queue_redraw()
 
@@ -122,7 +123,7 @@ func _draw_scoreboard() -> void:
 		var x := SCORE_RECT.position.x + (half + VS_RADIUS * 2.0) * i
 		var plate := Rect2(x, SCORE_RECT.position.y, half, SCORE_RECT.size.y)
 		UiDraw.card(self, plate, UiPalette.STORE_COLORS[i])
-		_draw_sales(plate, i)
+		_draw_profit(plate, i)
 	var center := Vector2(
 		SCORE_RECT.position.x + SCORE_RECT.size.x / 2.0,
 		SCORE_RECT.position.y + SCORE_RECT.size.y / 2.0
@@ -137,10 +138,10 @@ func _draw_scoreboard() -> void:
 	_draw_tug()
 
 
-## 店名は札の端に小さく、売上は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
-func _draw_sales(plate: Rect2, index: int) -> void:
+## 店名は札の端に小さく、利益は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
+func _draw_profit(plate: Rect2, index: int) -> void:
 	var white := UiPalette.INK_ON_DARK
-	var name := UiPalette.STORE_NAMES[index]
+	var name := UiPalette.STORE_NAMES[index] + PROFIT_LABEL
 	var name_base := UiDraw.baseline_in(plate, UiPalette.FONT_SMALL)
 	var inner := plate.grow(-PAD)
 	var name_align := HORIZONTAL_ALIGNMENT_LEFT if index == 0 else HORIZONTAL_ALIGNMENT_RIGHT
@@ -156,7 +157,7 @@ func _draw_sales(plate: Rect2, index: int) -> void:
 	var font_size := SALES_FONT
 	if _bump[index] > 0.0:
 		font_size = int(font_size * lerpf(1.0, BUMP_SCALE, _bump[index] / BUMP_SECONDS))
-	var sales := UiDraw.yen(int(round(_shown_sales[index])))
+	var sales := UiDraw.yen(int(round(_shown_profit[index])))
 	var sales_align := HORIZONTAL_ALIGNMENT_RIGHT if index == 0 else HORIZONTAL_ALIGNMENT_LEFT
 	var sales_base := UiDraw.baseline_in(plate, SALES_FONT)
 	UiDraw.text_outlined(
@@ -171,11 +172,13 @@ func _draw_sales(plate: Rect2, index: int) -> void:
 	)
 
 
-## 売上の綱引き(自店の割合ぶん青、残りを赤)
+## 利益の綱引き(自店の割合ぶん青、残りを赤)。利益は負にもなるため、差を両店の絶対値の和で割って寄せる
 func _draw_tug() -> void:
 	var tug := Rect2(SCORE_RECT.position.x, TUG_Y, SCORE_RECT.size.x, TUG_HEIGHT)
-	var total := _shown_sales[0] + _shown_sales[1]
-	var share := 0.5 if total <= 0.0 else _shown_sales[0] / total
+	var scale := absf(_shown_profit[0]) + absf(_shown_profit[1])
+	var share := 0.5
+	if scale > 0.0:
+		share = clampf(0.5 + (_shown_profit[0] - _shown_profit[1]) / (2.0 * scale), 0.0, 1.0)
 	var radius := int(TUG_HEIGHT / 2.0)
 	UiDraw.panel(self, tug, UiPalette.STORE_COLORS[1], Color.TRANSPARENT, 0, radius)
 	var own := Rect2(tug.position, Vector2(tug.size.x * share, tug.size.y))

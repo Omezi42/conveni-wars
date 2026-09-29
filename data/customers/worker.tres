@@ -10,7 +10,7 @@ display_name = "作業員"
 order = 7
 wants = {
 &"bento": 3,
-&"drink": 3
+&"cup_noodle": 3
 }
 price_sensitivity = 0.3
 buy_count = 2

@@ -106,6 +106,22 @@ func _test_price_modifier_examples() -> void:
 		"sale price raises the student's score"
 	)
 
+	T.stock_slot(m, 1, &"potato_chips", 0)
+	m.set_price_step(1, &"potato_chips", 0)
+	_assert.call(
+		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 3.0),
+		"both on sale in the same category: no difference"
+	)
+	m.stores[0].set_price_step_internal(&"potato_chips", 2, 0.0)
+	_assert.call(
+		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 3.0 * 0.1),
+		"high against the rival's sale price: 1 - 0.9 x 0.4 x 2.5"
+	)
+	_assert.call(
+		T.near(m.stores[1].evaluation(T.customer(&"student")).score, 3.0 * 1.9),
+		"the rival sees the gap from its side"
+	)
+
 
 func _test_price_rounding() -> void:
 	var m := T.new_match()
@@ -134,16 +150,15 @@ func _test_saver_passive_boosts_only_sales() -> void:
 
 func _test_idol_passive_targets_students_and_youth() -> void:
 	var m := T.new_match(&"idol", &"veteran")
-	T.stock_slot(m, 0, &"green_tea", 0)
+	T.stock_slot(m, 0, &"ice_bar", 0)
+	T.stock_slot(m, 0, &"green_tea", 8)
 	_assert.call(
 		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 2.0 * 1.2), "student x1.2"
 	)
 	_assert.call(
 		T.near(m.stores[0].evaluation(T.customer(&"youth")).score, 3.0 * 1.2), "youth x1.2"
 	)
-	_assert.call(
-		T.near(m.stores[0].evaluation(T.customer(&"homemaker")).score, 1.0), "homemaker x1"
-	)
+	_assert.call(T.near(m.stores[0].evaluation(T.customer(&"senior")).score, 1.0), "senior x1")
 
 
 func _test_choose_store_follows_the_square_of_attraction() -> void:

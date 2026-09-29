@@ -39,7 +39,7 @@ func _test_bulk_order_delivers_a_free_lot_per_shelf_product() -> void:
 
 func _test_handshake_pulls_every_customer_that_wants_something() -> void:
 	var m := T.new_match(&"idol", &"veteran")
-	T.stock_slot(m, 0, &"green_tea", 0, 500)
+	T.stock_slot(m, 0, &"ice_bar", 0, 500)
 	T.stock_slot(m, 1, &"potato_chips", 4, 500)
 	T.stock_slot(m, 1, &"karaage_stick", 1, 500)
 	T.open(m)

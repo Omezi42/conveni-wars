@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_prod"]
+
+[resource]
+script = ExtResource("1_prod")
+id = &"cup_ramen"
+display_name = "カップラーメン"
+short_name = "カップ麺"
+category_id = &"cup_noodle"
+list_price = 220
+cost = 130

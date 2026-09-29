@@ -63,12 +63,25 @@ static func price_modifier_in_store(
 	var step := store.price_step(product_id)
 	if store.is_active_running(SkillKinds.Active.TIME_SALE):
 		step = balance.sale_price_step
-	var rate := balance.price_step_rates[step]
+	var rate := balance.price_step_rates[step] - compare_rate(store, product_id, balance)
 	var factor := ManagerSkills.price_effect_factor(store.manager, rate, balance)
-	return price_modifier(customer_type.price_sensitivity, rate, factor)
+	return maxf(price_modifier(customer_type.price_sensitivity, rate, factor), 0.0)
 
 
-## 値段補正 = 1 − 値段への敏感さ × 変化率 × 係数
+## 値段を比べる相手の率(GameDesign.md 5.2節)。相手が同じカテゴリを置いていなければ定価と比べる
+static func compare_rate(
+	store: StoreState, product_id: StringName, balance: BalanceConfig
+) -> float:
+	var category_id := store.category_of(product_id)
+	var rival_rate: Variant = (
+		null if store.rival == null else store.rival.cheapest_rate_in(category_id)
+	)
+	if rival_rate == null:
+		return balance.price_step_rates[balance.default_price_step]
+	return rival_rate
+
+
+## 値段補正 = 1 − 値段への敏感さ × 相手との率の差 × 係数
 static func price_modifier(sensitivity: float, rate: float, factor: float) -> float:
 	return 1.0 - sensitivity * rate * factor
 

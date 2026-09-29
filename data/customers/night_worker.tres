@@ -11,7 +11,7 @@ order = 5
 wants = {
 &"bento": 3,
 &"coffee": 2,
-&"hot_snack": 2
+&"cup_noodle": 2
 }
 price_sensitivity = 0.4
 buy_count = 2

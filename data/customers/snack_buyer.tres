@@ -9,8 +9,8 @@ id = &"snack_buyer"
 display_name = "差し入れ係"
 order = 9
 wants = {
-&"drink": 2,
-&"sweets": 3
+&"dessert": 3,
+&"drink": 2
 }
 price_sensitivity = 0.2
 buy_count = 3

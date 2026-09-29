@@ -9,8 +9,8 @@ id = &"club_student"
 display_name = "部活生"
 order = 8
 wants = {
-&"drink": 3,
-&"hot_snack": 3
+&"hot_snack": 3,
+&"ice": 3
 }
 price_sensitivity = 0.9
 buy_count = 2

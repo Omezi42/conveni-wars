@@ -14,7 +14,7 @@ func run(assert_true: Callable) -> void:
 	_test_band_customers_arrive_in_exact_numbers()
 	_test_same_seed_gives_the_same_match()
 	_test_store_clock()
-	_test_winner_by_sales_then_visitors()
+	_test_winner_by_profit_then_visitors()
 	_test_forecast_shows_the_next_band()
 
 
@@ -53,7 +53,7 @@ func _test_lost_customers_are_counted_only_when_attraction_is_zero() -> void:
 	_assert.call(m.stores[0].lost_total == 1, "store 0 had nothing the student wanted")
 	_assert.call(m.stores[1].lost_total == 0, "store 1 served the student")
 
-	T.stock_slot(m, 0, &"green_tea", 1)
+	T.stock_slot(m, 0, &"ice_bar", 1)
 	var before := m.stores[0].lost_total
 	for i in 50:
 		m._serve_customer(T.customer(&"student"), false)
@@ -110,17 +110,18 @@ func _test_store_clock() -> void:
 	_assert.call(m.clock_minutes() == 12 * 60, "halfway through noon is 12:00")
 
 
-func _test_winner_by_sales_then_visitors() -> void:
+func _test_winner_by_profit_then_visitors() -> void:
 	var m := T.new_match()
-	m.stores[0].sales = 100
+	m.stores[0].sales = 300
+	m.stores[0].spent = 200
 	m.stores[1].sales = 200
-	_assert.call(m._decide_winner() == 1, "more sales wins")
-	m.stores[0].sales = 200
+	_assert.call(m._decide_winner() == 1, "more profit wins even with less sales")
+	m.stores[0].spent = 100
 	m.stores[0].visitor_total = 5
 	m.stores[1].visitor_total = 3
-	_assert.call(m._decide_winner() == 0, "same sales: more visitors wins")
+	_assert.call(m._decide_winner() == 0, "same profit: more visitors wins")
 	m.stores[1].visitor_total = 5
-	_assert.call(m._decide_winner() == MatchResult.DRAW, "same sales and visitors: draw")
+	_assert.call(m._decide_winner() == MatchResult.DRAW, "same profit and visitors: draw")
 
 
 func _test_forecast_shows_the_next_band() -> void:

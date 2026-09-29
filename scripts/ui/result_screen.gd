@@ -1,7 +1,7 @@
 class_name ResultScreen
 extends Control
 ## 結果(GameDesign.md 9.4節・9.5節)。閉店後の夜空の下に、両店の成績をレシートの形で並べ、勝った店に「勝」の判を押す。
-## 売上・来店した客の数・取り逃した客・廃棄した個数・客層ごとの来店数を出す。
+## 利益・売上・仕入れ・来店した客の数・取り逃した客・廃棄した個数・客層ごとの来店数を出す。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -13,7 +13,7 @@ const VERDICT_BURST_ALPHA := 0.22
 ## ベースラインから文字の見た目の中央までの高さ(文字の大きさに対する割合)
 const VERDICT_MID := 0.35
 const LOSE_LIGHTEN := 0.2
-const RECEIPT_SIZE := Vector2(400, 468)
+const RECEIPT_SIZE := Vector2(400, 484)
 const RECEIPT_GAP := 60.0
 const RECEIPT_Y := 128.0
 const RECEIPT_PAPER := Color("#ffffff")
@@ -144,13 +144,13 @@ func _draw_receipt(rect: Rect2, store: StoreState) -> void:
 	var y := rect.position.y + MANAGER_Y + RULE_GAP
 	_dashed(inner_x, y, width)
 	UiDraw.text(
-		self, Vector2(inner_x, y + SALES_LABEL_Y), "売上", UiPalette.FONT_BODY, UiPalette.INK_SOFT
+		self, Vector2(inner_x, y + SALES_LABEL_Y), "利益", UiPalette.FONT_BODY, UiPalette.INK_SOFT
 	)
 	var sales_pos := Vector2(inner_x, y + SALES_Y)
 	UiDraw.text(
 		self,
 		sales_pos,
-		UiDraw.yen(store.sales),
+		UiDraw.yen(store.profit()),
 		UiPalette.FONT_HUGE,
 		UiPalette.INK,
 		HORIZONTAL_ALIGNMENT_RIGHT,
@@ -159,6 +159,8 @@ func _draw_receipt(rect: Rect2, store: StoreState) -> void:
 	y += SALES_Y + RULE_GAP
 	_dashed(inner_x, y, width)
 	y += LINE
+	y = _row(inner_x, width, y, "売上", UiDraw.yen(store.sales))
+	y = _row(inner_x, width, y, "仕入れ", UiDraw.yen(-store.spent))
 	y = _row(inner_x, width, y, "来店した客", "%d人" % store.visitor_total)
 	y = _row(inner_x, width, y, "取り逃した客", "%d人" % store.lost_total)
 	y = _row(inner_x, width, y, "廃棄した個数", "%d個" % store.wasted_count)

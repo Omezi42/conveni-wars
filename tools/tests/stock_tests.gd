@@ -23,6 +23,9 @@ func _test_order_pays_and_arrives_after_delivery_time() -> void:
 	var store := m.stores[0]
 	_assert.call(m.order(0, &"salmon_onigiri"), "order succeeds")
 	_assert.call(store.funds == 30000 - 90 * 30, "pays cost x 30 at once")
+	_assert.call(
+		store.spent == 90 * 30 and store.profit() == -90 * 30, "the cost counts against profit"
+	)
 	_assert.call(store.pending_count(&"salmon_onigiri") == 30, "30 on the way")
 	m.advance(4.9)
 	_assert.call(store.stock(&"salmon_onigiri") == 0, "not yet delivered at 4.9s")

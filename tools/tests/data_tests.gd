@@ -17,8 +17,8 @@ func run(assert_true: Callable) -> void:
 func _test_counts() -> void:
 	var db := T.db()
 	_assert.call(db.balance != null, "balance.tres should load")
-	_assert.call(db.categories.size() == 9, "9 categories")
-	_assert.call(db.products.size() == 13, "13 products")
+	_assert.call(db.categories.size() == 12, "12 categories")
+	_assert.call(db.products.size() == 16, "16 products")
 	_assert.call(db.customer_types.size() == 10, "10 customer types")
 	_assert.call(db.bands.size() == 4, "4 time bands")
 	_assert.call(db.combos.size() == 5, "5 combos")

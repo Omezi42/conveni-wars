@@ -35,6 +35,8 @@ var index: int
 var manager: ManagerData
 var funds: int
 var sales := 0
+## 仕入れに払った額(発注の代金の合計)
+var spent := 0
 ## 突発イベントの客による売上(シミュレーションで割合を見るため)
 var event_sales := 0
 ## 客層id → 来店数
@@ -51,6 +53,8 @@ var pending: Array[PendingOrder] = []
 var active_used := false
 ## アクティブスキルの効果の残り秒数
 var active_remaining := 0.0
+## 相手の店。値段補正は相手の同じカテゴリの値段と比べるため、どちらかが変われば両店の魅力度を計算し直す
+var rival: StoreState
 
 var _db: GameDatabase
 var _lots: Dictionary = {}
@@ -68,6 +72,11 @@ func _init(database: GameDatabase, store_index: int, manager_data: ManagerData) 
 	funds = database.balance.starting_funds
 	shelf.resize(SLOT_COUNT)
 	shelf.fill(EMPTY)
+
+
+## 利益 = 売上 − 仕入れ(GameDesign.md 1.3節)
+func profit() -> int:
+	return sales - spent
 
 
 func stock(product_id: StringName) -> int:
@@ -137,6 +146,25 @@ func is_slot_stocked(slot: int) -> bool:
 	return shelf[slot] != EMPTY and stock(shelf[slot]) > 0
 
 
+func category_of(product_id: StringName) -> StringName:
+	return _db.product(product_id).category_id
+
+
+## 棚にあって在庫のある、そのカテゴリの商品のうちいちばん安い段階の率。置いていなければ null
+func cheapest_rate_in(category_id: StringName) -> Variant:
+	var best: Variant = null
+	for slot in SLOT_COUNT:
+		if not is_slot_stocked(slot):
+			continue
+		var product_id := shelf[slot]
+		if category_of(product_id) != category_id:
+			continue
+		var rate := _db.balance.price_step_rates[price_step(product_id)]
+		if best == null or rate < best:
+			best = rate
+	return best
+
+
 func is_active_running(kind: SkillKinds.Active) -> bool:
 	return active_remaining > 0.0 and manager.active_kind == kind
 
@@ -167,6 +195,8 @@ func evaluation(customer_type: CustomerTypeData) -> Attraction.Evaluation:
 
 func mark_dirty() -> void:
 	_dirty = true
+	if rival != null:
+		rival._dirty = true
 
 
 # --- 以下は MatchState からだけ呼ぶ ---

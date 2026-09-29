@@ -174,10 +174,12 @@ func _price() -> void:
 	var store := _match.stores[_index]
 	var rival := _match.opponent(_index)
 	var default_step := _match.balance.default_price_step
+	var rates := _match.balance.price_step_rates
 	for id in store.shelf_product_ids():
 		var step := store.price_step(id)
-		if rival.is_on_shelf(id) and rival.stock(id) > 0:
-			if step > rival.price_step(id):
+		var rival_rate: Variant = rival.cheapest_rate_in(store.category_of(id))
+		if rival_rate != null:
+			if rates[step] > rival_rate:
 				_match.set_price_step(_index, id, step - 1)
 		elif step != default_step:
 			_match.set_price_step(_index, id, default_step)

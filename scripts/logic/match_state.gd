@@ -45,6 +45,8 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 	_duration = database.match_duration()
 	for i in STORE_COUNT:
 		stores.append(StoreState.new(database, i, database.manager(manager_ids[i])))
+	for i in STORE_COUNT:
+		stores[i].rival = opponent(i)
 	events = EventScheduler.new(database, rng, STORE_COUNT)
 
 
@@ -75,7 +77,9 @@ func order(store_index: int, product_id: StringName) -> bool:
 	if not can_order(store_index, product_id):
 		return false
 	var store := stores[store_index]
-	store.funds -= lot_cost(store_index, product_id)
+	var cost := lot_cost(store_index, product_id)
+	store.funds -= cost
+	store.spent += cost
 	store.order_count += 1
 	store.pending.append(
 		StoreState.PendingOrder.new(product_id, balance.lot_size, balance.delivery_seconds)
@@ -386,12 +390,12 @@ func _finish() -> void:
 	match_ended.emit(result)
 
 
-## 売上 → 来店した客の数 の順に比べる(GameDesign.md 1.4節)
+## 利益 → 来店した客の数 の順に比べる(GameDesign.md 1.4節)
 func _decide_winner() -> int:
 	var a := stores[0]
 	var b := stores[1]
-	if a.sales != b.sales:
-		return 0 if a.sales > b.sales else 1
+	if a.profit() != b.profit():
+		return 0 if a.profit() > b.profit() else 1
 	if a.visitor_total != b.visitor_total:
 		return 0 if a.visitor_total > b.visitor_total else 1
 	return MatchResult.DRAW
