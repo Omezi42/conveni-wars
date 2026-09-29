@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ManagerData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/manager_data.gd" id="1_flv2d"]
+[ext_resource type="Texture2D" path="res://assets/icons/managers/saver.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_flv2d")
@@ -19,3 +20,4 @@ active_params = {
 active_name = "タイムセール"
 active_description = "15秒間、自店の全商品を「安売り」として客を呼ぶ(売値は変わらない)"
 color = Color(0.22745098, 0.6156863, 0.3647059, 1)
+portrait = ExtResource("2_icon")

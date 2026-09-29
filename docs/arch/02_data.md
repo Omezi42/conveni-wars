@@ -7,7 +7,7 @@
 | `CategoryData` | `data/categories/` | `id` `display_name` `color` `perishable`(日持ちしないか) | GameDesign.md 3.1節 |
 | `ProductData` | `data/products/` | `id` `display_name` `category_id` `list_price` `cost` `icon` | 3.2節 |
 | `CustomerTypeData` | `data/customers/` | `id` `display_name` `wants: Dictionary`(カテゴリid→重み) `price_sensitivity` `buy_count` `icon` | 2.1節・11.3節 |
-| `TimeBandData` | `data/bands/` | `id` `display_name` `order` `duration` `customer_count` `clock_start` `clock_end`(店の時計の時刻) `mix: Dictionary`(客層id→重み) | 1.2節・2.2節 |
+| `TimeBandData` | `data/bands/` | `id` `display_name` `order` `duration` `customer_count` `clock_start` `clock_end`(店の時計の時刻) `mix: Dictionary`(客層id→重み) `icon` | 1.2節・2.2節 |
 | `ComboData` | `data/combos/` | `id` `display_name` `category_a` `category_b` | 4.3節 |
 | `EventData` | `data/events/` | `id` `display_name` `customer_type_id` `band_ids`(起きてよい時間帯) | 11章 |
 | `ManagerData` | `data/managers/` | `id` `display_name` `passive_kind` `passive_params` `active_kind` `active_params` `portrait` | 7章 |
@@ -15,6 +15,7 @@
 
 - 店長スキルの `*_kind` は `ManagerSkills`(3章)が解釈する列挙。効果の種類はコード、数値は `*_params` に持つ
 - イベントだけに来る客層は、どの時間帯の `mix` にも入れない
+- 絵(`icon` `portrait`)は `assets/icons/` のSVG(Twemoji、CC-BY 4.0。出典は `assets/icons/LICENSE_Twemoji.txt`)
 - 時間帯の順番は `order` で決める(ファイル名の並びに頼らない)
 - 試合時間と来店の総数は持たない。時間帯の `duration` と `customer_count` の合計から求める(二重に持つと食い違うため)
 

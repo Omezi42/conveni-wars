@@ -16,6 +16,7 @@ extends Resource
 @export var mix: Dictionary
 ## 時間帯が変わるときのカットインの文言(GameDesign.md 9.3節)
 @export var cutin_text: String
+@export var icon: Texture2D
 
 
 func mix_total() -> int:

@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="CustomerTypeData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_xtugu"]
+[ext_resource type="Texture2D" path="res://assets/icons/customers/youth.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_xtugu")
@@ -15,3 +16,4 @@ wants = {
 price_sensitivity = 0.6
 buy_count = 2
 color = Color(0.60784316, 0.34901962, 0.7137255, 1)
+icon = ExtResource("2_icon")

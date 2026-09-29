@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ProductData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_82h58"]
+[ext_resource type="Texture2D" path="res://assets/icons/products/tunamayo_onigiri.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_82h58")
@@ -10,3 +11,4 @@ short_name = "ツナマヨ"
 category_id = &"onigiri"
 list_price = 160
 cost = 100
+icon = ExtResource("2_icon")

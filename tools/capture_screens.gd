@@ -64,8 +64,7 @@ func _capture_match(controller: Control) -> void:
 		index += 1
 	var slot := state.stores[PLAYER].shelf.find(state.stores[PLAYER].shelf_product_ids()[0])
 	controller._on_own_slot_pressed(slot)
-	await _shot("%02d_match_price_menu" % index)
-	controller._price_menu.close()
+	await _shot("%02d_match_price_panel" % index)
 	index += 1
 	while not state.finished:
 		controller._physics_process(STEP)

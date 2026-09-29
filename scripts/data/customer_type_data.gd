@@ -28,3 +28,13 @@ func top_category() -> StringName:
 			best_weight = int(wants[category_id])
 			best = category_id
 	return best
+
+
+## 欲しいカテゴリを重みの大きい順に
+func sorted_wants() -> Array[StringName]:
+	var result: Array[StringName] = []
+	result.assign(wants.keys())
+	result.sort_custom(
+		func(a: StringName, b: StringName) -> bool: return weight_of(a) > weight_of(b)
+	)
+	return result

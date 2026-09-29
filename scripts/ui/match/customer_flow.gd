@@ -1,22 +1,24 @@
 class_name CustomerFlow
 extends MatchPart
 ## 両店の入口へ流れ込む人の流れと、取り逃した客の吹き出し(GameDesign.md 2.6節・9.2節)。
-## 客は1人ずつ通りを歩かせず、入った店の入口へ吸い込まれる短い流れとして描き、
+## 客は1人ずつ通りを歩かせず、歩道から入った店の入口(背景の絵の扉)へ吸い込まれる短い流れとして描き、
 ## 流れの太さでどちらの店へ多く入っているかを見せる(1秒に4〜9人来るため)。
 
 const WALK_SECONDS := 0.9
-const ICON_RADIUS := 7.0
-const EVENT_ICON_RADIUS := 9.0
+const ICON_RADIUS := 10.0
+const EVENT_ICON_RADIUS := 12.0
 const EVENT_RING := 2.0
-const LANE_JITTER := 22.0
-const DOOR_SPREAD := 18.0
+## 客が現れる歩道の帯(この部品の下端からの高さ)
+const SIDEWALK_TOP := 34.0
+const SIDEWALK_BOTTOM := 6.0
+const DOOR_SPREAD := 12.0
 const MAX_WALKERS := 60
 const LEAVE_ALPHA := 0.45
 ## 流れの太さに使う、最近の来店の勢い(秒あたり)の減り方
 const RATE_DECAY_SECONDS := 1.5
 const RATE_FOR_FULL_STREAM := 9.0
 const STREAM_MAX_WIDTH := 30.0
-const STREAM_ALPHA := 0.28
+const STREAM_ALPHA := 0.35
 const BUBBLE_SECONDS := 1.6
 ## 吹き出しは店ごとにこの秒数に1つまで(画面が埋まらないように間引く。数はすべて数える)
 const BUBBLE_INTERVAL := 1.2
@@ -24,8 +26,6 @@ const BUBBLE_RISE := 26.0
 const BUBBLE_PAD := 6.0
 const BUBBLE_HEIGHT := 22.0
 const BUBBLE_OFFSET := Vector2(0, -34)
-const DASH_LENGTH := 14.0
-const DASH_WIDTH := 3.0
 const HALF := 0.5
 
 ## 入口の位置(この部品の中の座標。自店・相手の順)
@@ -42,14 +42,17 @@ var _rng := RandomNumberGenerator.new()
 func push_arrival(type_id: StringName, store_index_in: int, is_event: bool) -> void:
 	if _walkers.size() >= MAX_WALKERS:
 		_walkers.pop_front()
-	var from_top := _rng.randf() < HALF
-	var start_x := size.x * HALF + _rng.randf_range(-LANE_JITTER, LANE_JITTER)
-	var start := Vector2(start_x, 0.0 if from_top else size.y)
-	var end := Vector2(start_x, size.y if from_top else 0.0)
+	var from_left := _rng.randf() < HALF
+	var lane_y := size.y - _rng.randf_range(SIDEWALK_BOTTOM, SIDEWALK_TOP)
+	var start := Vector2(0.0 if from_left else size.x, lane_y)
+	var end := Vector2(size.x if from_left else 0.0, lane_y)
+	var control := size * HALF
+	control.y = lane_y
 	if store_index_in >= 0:
-		end = door_points[store_index_in] + Vector2(0, _rng.randf_range(-DOOR_SPREAD, DOOR_SPREAD))
+		var door := door_points[store_index_in]
+		end = door + Vector2(_rng.randf_range(-DOOR_SPREAD, DOOR_SPREAD), 0.0)
+		control = Vector2(door.x, lane_y)
 		_rates[store_index_in] += 1.0 / RATE_DECAY_SECONDS
-	var control := Vector2(size.x * HALF, end.y)
 	(
 		_walkers
 		. append(
@@ -91,17 +94,6 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if match_state == null:
 		return
-	draw_rect(Rect2(Vector2.ZERO, size), UiPalette.STREET)
-	var x := size.x * HALF
-	var y := 0.0
-	while y < size.y:
-		draw_line(
-			Vector2(x, y),
-			Vector2(x, minf(y + DASH_LENGTH, size.y)),
-			UiPalette.STREET_LINE,
-			DASH_WIDTH
-		)
-		y += DASH_LENGTH * 2.0
 	for i in door_points.size():
 		_draw_stream(i)
 	for walker in _walkers:
@@ -110,6 +102,7 @@ func _draw() -> void:
 		_draw_bubble(bubble)
 
 
+## 入口の前の歩道に、最近の来店の勢いの太さで店の色の帯を敷く
 func _draw_stream(index: int) -> void:
 	var width := clampf(_rates[index] / RATE_FOR_FULL_STREAM, 0.0, 1.0) * STREAM_MAX_WIDTH
 	if width < 1.0:
@@ -117,8 +110,9 @@ func _draw_stream(index: int) -> void:
 	var color := UiPalette.STORE_COLORS[index]
 	color.a = STREAM_ALPHA
 	var door := door_points[index]
-	draw_line(Vector2(size.x * HALF, door.y), door, color, width)
-	draw_circle(Vector2(size.x * HALF, door.y), width * HALF, color)
+	var foot := Vector2(door.x, size.y)
+	draw_line(foot, door, color, width)
+	draw_circle(door, width * HALF, color)
 
 
 func _draw_walker(walker: Dictionary) -> void:
@@ -140,10 +134,10 @@ func _draw_bubble(bubble: Dictionary) -> void:
 	var label: String = bubble["text"]
 	var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + BUBBLE_PAD * 2.0
 	var anchor: Vector2 = bubble["anchor"] + Vector2(0, -BUBBLE_RISE * t)
-	var left := anchor.x if int(bubble["store"]) == 0 else anchor.x - width
+	var left := anchor.x - width if int(bubble["store"]) == 0 else anchor.x
 	var rect := Rect2(left, anchor.y - BUBBLE_HEIGHT * HALF, width, BUBBLE_HEIGHT)
 	var alpha := 1.0 - t * t
-	var fill := UiPalette.PANEL
+	var fill := UiPalette.CARD
 	fill.a = alpha
 	var edge := UiPalette.BAD
 	edge.a = alpha

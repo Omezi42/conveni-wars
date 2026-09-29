@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="TimeBandData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_bohum"]
+[ext_resource type="Texture2D" path="res://assets/icons/bands/morning.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_bohum")
@@ -16,3 +17,4 @@ mix = {
 &"student": 3
 }
 cutin_text = "朝の通勤ラッシュ!"
+icon = ExtResource("2_icon")

@@ -1,22 +1,27 @@
 class_name HudBar
 extends MatchPart
-## 上端:店の時計・時間帯・残り時間・両店の売上(GameDesign.md 9.2節)。売上は数字が回って追いつく。
+## 上端(GameDesign.md 9.2節):左右に両店の名前と売上、中央に時間帯・店の時計・残り時間。
+## 売上は数字が回って追いつき、店の札の下の帯で売上の取り分を見せる。
 
+const STORE_ICON := preload("res://assets/icons/ui/store.svg")
 const ROLL_SPEED := 6.0
 const BUMP_SECONDS := 0.25
 const BUMP_SCALE := 1.25
 const HURRY_SECONDS := 30.0
-const PAD := 16.0
-const CLOCK_WIDTH := 80.0
-const CHIP_SIZE := Vector2(64, 28)
-const BAND_BAR_SIZE := Vector2(120, 6)
-const GAP := 10.0
-const TUG_SIZE := Vector2(300, 10)
-const TUG_OFFSET := 8.0
-const SALES_OFFSET := -4.0
-const RIGHT_WIDTH := 280.0
-const LIGHTEN := 0.35
-const TRACK := Color(1, 1, 1, 0.25)
+const MARGIN := 8.0
+const BADGE_SIZE := Vector2(400, 44)
+const CENTER_SIZE := Vector2(380, 48)
+const PAD := 12.0
+const ICON_RADIUS := 15.0
+const ICON_RING := 3.0
+const SHARE_HEIGHT := 4.0
+const PROGRESS_HEIGHT := 4.0
+const BADGE_DARKEN := 0.35
+const BADGE_EDGE_LIGHTEN := 0.3
+const SHARE_TRACK := Color(1, 1, 1, 0.18)
+const BAND_ICON_RADIUS := 16.0
+const BAND_NAME_X := 44.0
+const CLOCK_GAP := 10.0
 
 var _shown_sales: Array[float] = [0.0, 0.0]
 var _bump: Array[float] = [0.0, 0.0]
@@ -37,70 +42,105 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if match_state == null:
 		return
-	draw_rect(Rect2(Vector2.ZERO, size), UiPalette.BAR)
-	var mid := size.y / 2.0
-	_draw_clock(mid)
-	_draw_sales(mid)
-	_draw_remaining(mid)
-
-
-func _draw_clock(mid: float) -> void:
-	var ink := UiPalette.INK_ON_DARK
-	var baseline := _baseline(mid, UiPalette.FONT_HEAD)
-	var clock := UiDraw.clock(match_state.clock_minutes())
-	UiDraw.text(self, Vector2(PAD, baseline), clock, UiPalette.FONT_HEAD, ink)
-	var chip := Rect2(Vector2(PAD + CLOCK_WIDTH, mid - CHIP_SIZE.y / 2.0), CHIP_SIZE)
-	UiDraw.panel(self, chip, ink)
-	var band := match_state.current_band()
-	UiDraw.text_centered(self, chip, band.display_name, UiPalette.FONT_LARGE, UiPalette.BAR)
-	var bar := Rect2(Vector2(chip.end.x + GAP, mid - BAND_BAR_SIZE.y / 2.0), BAND_BAR_SIZE)
-	var radius := int(BAND_BAR_SIZE.y / 2.0)
-	UiDraw.panel(self, bar, TRACK, Color.TRANSPARENT, 0, radius)
-	var progress := 0.0 if match_state.is_preparing() else match_state.band_progress()
-	var filled := Rect2(bar.position, Vector2(bar.size.x * progress, bar.size.y))
-	UiDraw.panel(self, filled, ink, Color.TRANSPARENT, 0, radius)
-
-
-func _draw_remaining(mid: float) -> void:
-	var baseline := _baseline(mid, UiPalette.FONT_HEAD)
-	var pos := Vector2(size.x - PAD - RIGHT_WIDTH, baseline)
-	var align := HORIZONTAL_ALIGNMENT_RIGHT
-	if match_state.is_preparing():
-		var prep := "開店準備 あと%d秒" % int(ceil(match_state.prep_remaining()))
-		UiDraw.text(self, pos, prep, UiPalette.FONT_HEAD, UiPalette.WARN, align, RIGHT_WIDTH)
-		return
-	var remaining := match_state.remaining_time()
-	var color := UiPalette.INK_ON_DARK
-	if remaining <= HURRY_SECONDS:
-		color = UiPalette.BAD.lightened(LIGHTEN)
-	var label := "残り " + UiDraw.mm_ss(remaining)
-	UiDraw.text(self, pos, label, UiPalette.FONT_HEAD, color, align, RIGHT_WIDTH)
-
-
-func _draw_sales(mid: float) -> void:
-	var center := size.x / 2.0
-	var tug := Rect2(Vector2(center - TUG_SIZE.x / 2.0, mid + TUG_OFFSET), TUG_SIZE)
+	var top := (size.y - BADGE_SIZE.y) / 2.0
 	var total := _shown_sales[0] + _shown_sales[1]
 	var share := 0.5 if total <= 0.0 else _shown_sales[0] / total
-	var radius := int(TUG_SIZE.y / 2.0)
-	UiDraw.panel(self, tug, UiPalette.STORE_COLORS[1], Color.TRANSPARENT, 0, radius)
-	var own := Rect2(tug.position, Vector2(tug.size.x * share, tug.size.y))
-	UiDraw.panel(self, own, UiPalette.STORE_COLORS[0], Color.TRANSPARENT, 0, radius)
-	var tick := Vector2(center, tug.position.y - radius)
-	draw_line(tick, Vector2(center, tug.end.y + radius), UiPalette.INK_ON_DARK, 2.0)
-	for i in MatchState.STORE_COUNT:
-		var font_size := UiPalette.FONT_LARGE
-		if _bump[i] > 0.0:
-			font_size = int(font_size * lerpf(1.0, BUMP_SCALE, _bump[i] / BUMP_SECONDS))
-		var sales := UiDraw.yen(int(round(_shown_sales[i])))
-		var label := "%s %s" % [UiPalette.STORE_NAMES[i], sales]
-		var color := UiPalette.STORE_COLORS[i].lightened(LIGHTEN)
-		var y := mid + SALES_OFFSET
-		if i == 0:
-			var pos := Vector2(center - GAP - TUG_SIZE.x, y)
-			UiDraw.text(self, pos, label, font_size, color, HORIZONTAL_ALIGNMENT_RIGHT, TUG_SIZE.x)
-		else:
-			UiDraw.text(self, Vector2(center + GAP, y), label, font_size, color)
+	_draw_badge(Rect2(Vector2(MARGIN, top), BADGE_SIZE), 0, share)
+	var right := Rect2(Vector2(size.x - MARGIN - BADGE_SIZE.x, top), BADGE_SIZE)
+	_draw_badge(right, 1, 1.0 - share)
+	var center := Rect2(
+		Vector2((size.x - CENTER_SIZE.x) / 2.0, (size.y - CENTER_SIZE.y) / 2.0), CENTER_SIZE
+	)
+	_draw_center(center)
+
+
+func _draw_badge(rect: Rect2, index: int, share: float) -> void:
+	var color := UiPalette.STORE_COLORS[index]
+	var fill := color.darkened(BADGE_DARKEN)
+	fill.a = UiPalette.PANEL.a
+	UiDraw.panel(self, rect, fill, color.lightened(BADGE_EDGE_LIGHTEN), 2, UiPalette.PANEL_RADIUS)
+	var mid := rect.get_center().y - SHARE_HEIGHT / 2.0
+	var icon_x := rect.position.x + PAD + ICON_RADIUS
+	if index == 1:
+		icon_x = rect.end.x - PAD - ICON_RADIUS
+	var icon := Vector2(icon_x, mid)
+	draw_circle(icon, ICON_RADIUS + ICON_RING, UiPalette.INK_ON_DARK)
+	UiDraw.texture_at(self, STORE_ICON, icon, ICON_RADIUS)
+	var font_size := UiPalette.FONT_HEAD
+	if _bump[index] > 0.0:
+		font_size = int(font_size * lerpf(1.0, BUMP_SCALE, _bump[index] / BUMP_SECONDS))
+	var sales := UiDraw.yen(int(round(_shown_sales[index])))
+	var name := UiPalette.STORE_TITLES[index]
+	var ink := UiPalette.INK_ON_DARK
+	var name_base := _baseline(mid, UiPalette.FONT_LARGE)
+	var sales_base := _baseline(mid, UiPalette.FONT_HEAD)
+	var inner := rect.size.x - PAD * 3.0 - ICON_RADIUS * 2.0
+	var text_x := icon.x + ICON_RADIUS + PAD if index == 0 else rect.position.x + PAD
+	var right := HORIZONTAL_ALIGNMENT_RIGHT
+	var left := HORIZONTAL_ALIGNMENT_LEFT
+	if index == 0:
+		UiDraw.text(self, Vector2(text_x, name_base), name, UiPalette.FONT_LARGE, ink)
+		UiDraw.text(self, Vector2(text_x, sales_base), sales, font_size, ink, right, inner)
+	else:
+		UiDraw.text(self, Vector2(text_x, name_base), name, UiPalette.FONT_LARGE, ink, right, inner)
+		UiDraw.text(self, Vector2(text_x, sales_base), sales, font_size, ink, left, inner)
+	var track := Rect2(
+		rect.position.x + PAD,
+		rect.end.y - SHARE_HEIGHT - 4.0,
+		rect.size.x - PAD * 2.0,
+		SHARE_HEIGHT
+	)
+	UiDraw.panel(self, track, SHARE_TRACK, Color.TRANSPARENT, 0, 2)
+	var filled := Rect2(track.position, Vector2(track.size.x * share, track.size.y))
+	if index == 1:
+		filled.position.x = track.end.x - filled.size.x
+	UiDraw.panel(self, filled, color.lightened(BADGE_EDGE_LIGHTEN), Color.TRANSPARENT, 0, 2)
+
+
+func _draw_center(rect: Rect2) -> void:
+	UiDraw.glass_panel(self, rect)
+	var band := match_state.current_band()
+	var mid := rect.get_center().y - PROGRESS_HEIGHT / 2.0
+	var icon := Vector2(rect.position.x + PAD + BAND_ICON_RADIUS, mid)
+	if band.icon != null:
+		UiDraw.texture_at(self, band.icon, icon, BAND_ICON_RADIUS)
+	var ink := UiPalette.INK
+	var head := _baseline(mid, UiPalette.FONT_HEAD)
+	UiDraw.text(
+		self,
+		Vector2(rect.position.x + PAD + BAND_NAME_X, head),
+		band.display_name,
+		UiPalette.FONT_HEAD,
+		ink
+	)
+	var clock := UiDraw.clock(match_state.clock_minutes())
+	var clock_x := (
+		rect.position.x
+		+ PAD
+		+ BAND_NAME_X
+		+ UiDraw.text_width(band.display_name, UiPalette.FONT_HEAD)
+		+ CLOCK_GAP
+	)
+	var clock_pos := Vector2(clock_x, _baseline(mid, UiPalette.FONT_LARGE))
+	UiDraw.text(self, clock_pos, clock, UiPalette.FONT_LARGE, UiPalette.INK_SOFT)
+	var width := rect.size.x - PAD * 2.0
+	var right := HORIZONTAL_ALIGNMENT_RIGHT
+	var remaining_pos := Vector2(rect.position.x + PAD, head)
+	if match_state.is_preparing():
+		var prep := "開店準備 あと%d秒" % int(ceil(match_state.prep_remaining()))
+		UiDraw.text(self, remaining_pos, prep, UiPalette.FONT_LARGE, UiPalette.WARN, right, width)
+	else:
+		var remaining := match_state.remaining_time()
+		var color := UiPalette.BAD_BRIGHT if remaining <= HURRY_SECONDS else ink
+		var label := "残り " + UiDraw.mm_ss(remaining)
+		UiDraw.text(self, remaining_pos, label, UiPalette.FONT_HEAD, color, right, width)
+	var bar := Rect2(
+		rect.position.x + PAD, rect.end.y - PROGRESS_HEIGHT - 4.0, width, PROGRESS_HEIGHT
+	)
+	UiDraw.panel(self, bar, SHARE_TRACK, Color.TRANSPARENT, 0, 2)
+	var progress := 0.0 if match_state.is_preparing() else match_state.band_progress()
+	var filled := Rect2(bar.position, Vector2(bar.size.x * progress, bar.size.y))
+	UiDraw.panel(self, filled, UiPalette.ACCENT, Color.TRANSPARENT, 0, 2)
 
 
 static func _baseline(mid: float, font_size: int) -> float:

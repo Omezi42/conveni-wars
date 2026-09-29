@@ -55,7 +55,7 @@ func _show(path: String) -> Control:
 	return scene
 
 
-## 画面の操作の経路(選んでマスを押す・値段メニュー・発注)を通す
+## 画面の操作の経路(選んでマスを押す・値付けパネル・発注)を通す
 func _exercise_player_moves(controller: Control) -> void:
 	var state: MatchState = controller.match_state
 	_check(state.order(PLAYER, &"nori_bento"), "order from the match screen")
@@ -63,11 +63,17 @@ func _exercise_player_moves(controller: Control) -> void:
 	controller._on_own_slot_pressed(4)
 	_check(state.stores[0].shelf[4] == &"nori_bento", "tap-select then tap a slot places it")
 	_check(not controller._selection.has_selection(), "placing clears the selection")
+	controller._selection.clear_focus()
 	controller._on_own_slot_pressed(4)
-	_check(controller._price_menu.visible, "tapping a stocked slot opens the price menu")
-	controller._price_menu._on_step_pressed(0)
-	_check(state.stores[0].price_step(&"nori_bento") == 0, "the price menu changes the price")
-	_check(not controller._price_menu.visible, "choosing a price closes the menu")
+	var focused: bool = controller._selection.focus_product == &"nori_bento"
+	_check(focused and controller._selection.focus_slot == 4, "tapping a slot shows it for pricing")
+	controller._price_panel._on_step_pressed(0)
+	_check(state.stores[0].price_step(&"nori_bento") == 0, "the price panel changes the price")
+	controller._price_panel._on_remove_pressed()
+	_check(
+		state.stores[0].shelf[4] == StoreState.EMPTY, "the price panel removes it from the shelf"
+	)
+	_check(controller._selection.focus_slot == -1, "removing leaves no slot in focus")
 	controller._on_product_dropped(&"hot_coffee", 1)
 	_check(state.stores[0].shelf[1] == &"hot_coffee", "dropping a card places it")
 

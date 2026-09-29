@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="TimeBandData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_ypsth"]
+[ext_resource type="Texture2D" path="res://assets/icons/bands/night.svg" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ypsth")
@@ -17,3 +18,4 @@ mix = {
 &"youth": 4
 }
 cutin_text = "夜の部!"
+icon = ExtResource("2_icon")

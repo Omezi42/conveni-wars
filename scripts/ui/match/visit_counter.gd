@@ -10,19 +10,23 @@ const ICON_GAP := 4.0
 const DIVIDER_GAP := 4.0
 const COLUMN_WIDTH := 52.0
 const TEXT_BASELINE := 0.72
-const DIVIDER := Color("#e1e6eb")
+## 紺のパネルの上で店の色を読みやすくする
+const LIGHTEN := 0.3
+const DIVIDER := Color(1, 1, 1, 0.2)
 
 
 func _draw() -> void:
 	if match_state == null:
 		return
-	UiDraw.shadowed_panel(self, Rect2(Vector2.ZERO, size), UiPalette.PANEL)
+	UiDraw.glass_panel(self, Rect2(Vector2.ZERO, size))
 	var own := match_state.stores[0]
 	var rival := match_state.stores[1]
 	var colors := UiPalette.STORE_COLORS
 	var baseline := HEADER_HEIGHT * TEXT_BASELINE
-	UiDraw.text(self, Vector2(PAD, baseline), "来店数", UiPalette.FONT_BODY, UiPalette.INK)
-	_draw_pair(baseline, UiPalette.STORE_NAMES[0], UiPalette.STORE_NAMES[1], colors[0], colors[1])
+	UiDraw.panel_title(self, Vector2(PAD, baseline), "来店数")
+	var own_color := colors[0].lightened(LIGHTEN)
+	var rival_color := colors[1].lightened(LIGHTEN)
+	_draw_pair(baseline, UiPalette.STORE_NAMES[0], UiPalette.STORE_NAMES[1], own_color, rival_color)
 	var y := HEADER_HEIGHT
 	for customer in _visible_types():
 		var mid := y + ROW_HEIGHT / 2.0
@@ -42,10 +46,10 @@ func _draw() -> void:
 	var band := match_state.current_band()
 	var lost_base := y + ROW_HEIGHT * TEXT_BASELINE
 	var label := "取り逃し(%s)" % band.display_name
-	UiDraw.text(self, Vector2(PAD, lost_base), label, UiPalette.FONT_SMALL, UiPalette.BAD)
+	UiDraw.text(self, Vector2(PAD, lost_base), label, UiPalette.FONT_SMALL, UiPalette.BAD_BRIGHT)
 	var own_lost := str(own.lost_in_band(band.id))
 	var rival_lost := str(rival.lost_in_band(band.id))
-	_draw_pair(lost_base, own_lost, rival_lost, UiPalette.BAD, UiPalette.BAD)
+	_draw_pair(lost_base, own_lost, rival_lost, UiPalette.BAD_BRIGHT, UiPalette.BAD_BRIGHT)
 
 
 ## 来た客層と、いまの時間帯に来る客層
@@ -64,8 +68,10 @@ func _visible_types() -> Array[CustomerTypeData]:
 ## 多いほうを店の色で出す
 func _draw_counts(baseline: float, own_count: int, rival_count: int) -> void:
 	var colors := UiPalette.STORE_COLORS
-	var own_color := colors[0] if own_count > rival_count else UiPalette.INK_SOFT
-	var rival_color := colors[1] if rival_count > own_count else UiPalette.INK_SOFT
+	var own_color := colors[0].lightened(LIGHTEN) if own_count > rival_count else UiPalette.INK_SOFT
+	var rival_color := (
+		colors[1].lightened(LIGHTEN) if rival_count > own_count else UiPalette.INK_SOFT
+	)
 	_draw_pair(baseline, str(own_count), str(rival_count), own_color, rival_color)
 
 

@@ -1,0 +1,6 @@
+アイコン(assets/icons/)は Twemoji を使用しています。
+Copyright 2020 Twitter, Inc and other contributors
+Code licensed under the MIT License: http://opensource.org/licenses/MIT
+Graphics licensed under CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/
+出典: https://github.com/twitter/twemoji
+変更点: SVGのルート要素に width/height を追加(内容は無改変)

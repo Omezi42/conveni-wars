@@ -22,20 +22,14 @@ const TAG_RADIUS := 4
 const TAG_SPACING := 2.0
 const MULT_WIDTH := 60.0
 const BLINK_MIN_ALPHA := 0.3
-## 札の行の中でベースラインを置く高さの割合
-const LIST_BASELINE := 0.75
-const LIST_LINE := 20.0
-const LIST_GAP := 8.0
 const DROP_HIGHLIGHT := Color(0.18, 0.49, 0.88, 0.25)
 const SELECT_HINT := Color(0.18, 0.49, 0.88, 0.6)
-const BONUS_SEPARATOR := " / "
 
 var cell_size := 116.0
 var gap := 6.0
 var interactive := false
+## 自店の棚だけが持つ(置く商品の選択と、値付けパネルに出しているマス)
 var selection: UiSelection
-## 値段のメニューを開いているマス(強調する)
-var open_slot := -1
 
 var _drop_slot := -1
 
@@ -117,8 +111,6 @@ func _draw() -> void:
 	var bonus := store().shelf_bonus()
 	for slot in StoreState.SLOT_COUNT:
 		_draw_cell(slot, bonus)
-	if size.y > grid_size().y + LIST_GAP:
-		_draw_bonus_list(bonus)
 
 
 func _draw_cell(slot: int, bonus: ShelfBonus.Result) -> void:
@@ -129,14 +121,16 @@ func _draw_cell(slot: int, bonus: ShelfBonus.Result) -> void:
 		UiDraw.panel(self, rect, UiPalette.EMPTY_SLOT)
 		if detailed:
 			UiDraw.text_centered(self, rect, "空き", UiPalette.FONT_BODY, UiPalette.INK_SOFT)
+		else:
+			UiDraw.text_centered(self, rect, "空", UiPalette.FONT_SMALL, UiPalette.INK_SOFT)
 	else:
 		_draw_product_cell(rect, slot, product_id, bonus, detailed)
 	if slot == _drop_slot:
 		UiDraw.panel(self, rect, DROP_HIGHLIGHT)
 	if interactive and selection != null and selection.has_selection():
 		draw_rect(rect.grow(-1.0), SELECT_HINT, false, 2.0)
-	if slot == open_slot:
-		draw_rect(rect.grow(1.0), UiPalette.STORE_COLORS[0], false, FRAME_WIDTH)
+	if selection != null and slot == selection.focus_slot:
+		draw_rect(rect.grow(2.0), UiPalette.ACCENT, false, FRAME_WIDTH)
 
 
 func _draw_product_cell(
@@ -144,7 +138,7 @@ func _draw_product_cell(
 ) -> void:
 	var product := db().product(product_id)
 	var stock := store().stock(product_id)
-	UiDraw.panel(self, rect, UiPalette.PANEL if stock > 0 else UiPalette.SOLD_OUT)
+	UiDraw.panel(self, rect, UiPalette.CARD if stock > 0 else UiPalette.SOLD_OUT)
 	var kinds := _bonus_kinds(bonus.bonuses_at(slot))
 	for i in kinds.size():
 		var inset := FRAME_WIDTH * (i + 0.5)
@@ -157,7 +151,7 @@ func _draw_product_cell(
 	var price_y := PRICE_Y if detailed else SMALL_PRICE_Y
 	var font := UiPalette.FONT_BODY if detailed else UiPalette.FONT_SMALL
 	if detailed:
-		_line(rect, NAME_Y, product.short_name, UiPalette.FONT_SMALL, UiPalette.INK_SOFT)
+		_line(rect, NAME_Y, product.short_name, UiPalette.FONT_SMALL, UiPalette.CARD_INK_SOFT)
 	_line(rect, stock_y, _stock_label(product_id, stock), font, _stock_color(stock))
 	var step := store().price_step(product_id)
 	var price := UiDraw.yen(store().sell_price(product_id))
@@ -182,7 +176,7 @@ func _stock_color(stock: int) -> Color:
 		var color := UiPalette.BAD
 		color.a = lerpf(BLINK_MIN_ALPHA, 1.0, blink())
 		return color
-	return UiPalette.INK
+	return UiPalette.CARD_INK
 
 
 func _line(rect: Rect2, ratio: float, value: String, font_size: int, color: Color) -> void:
@@ -213,25 +207,6 @@ func _draw_tags(rect: Rect2, kinds: Array[int], multiplier: float) -> void:
 		var pos := Vector2(rect.end.x - TAG_PAD - MULT_WIDTH, rect.position.y + TAG_HEIGHT)
 		var align := HORIZONTAL_ALIGNMENT_RIGHT
 		UiDraw.text(self, pos, label, UiPalette.FONT_SMALL, UiPalette.GOOD, align, MULT_WIDTH)
-
-
-func _draw_bonus_list(bonus: ShelfBonus.Result) -> void:
-	var y := grid_size().y + LIST_GAP + LIST_LINE * LIST_BASELINE
-	if bonus.bonuses.is_empty():
-		var hint := "中央・縦1列・隣り合わせでボーナス"
-		UiDraw.text(self, Vector2(0, y), hint, UiPalette.FONT_SMALL, UiPalette.INK_SOFT)
-		return
-	var x := 0.0
-	for item in bonus.bonuses:
-		var label := item.display_name
-		var width := UiDraw.text_width(label, UiPalette.FONT_BODY) + TAG_PAD * 3.0
-		if x + width > size.x:
-			x = 0.0
-			y += LIST_LINE
-		var tag := Rect2(x, y - LIST_LINE * LIST_BASELINE, width, LIST_LINE - TAG_SPACING)
-		UiDraw.panel(self, tag, UiPalette.BONUS_COLORS[item.kind])
-		UiDraw.text_centered(self, tag, label, UiPalette.FONT_BODY, UiPalette.INK_ON_DARK)
-		x += width + TAG_PAD
 
 
 static func _bonus_kinds(bonuses: Array[ShelfBonus.Bonus]) -> Array[int]:

@@ -7,6 +7,14 @@ GODOT="${GODOT:-C:/Users/omezi/Documents/Godot_v4.6.2-stable_win64_console.exe}"
 # 1回の実行の上限(秒)。コンパイルに失敗したスクリプトは quit() まで届かず終わらないため。
 GODOT_TIMEOUT="${GODOT_TIMEOUT:-600}"
 PY_SCRIPTS="C:/Users/omezi/AppData/Roaming/Python/Python314/Scripts"
+# Windows以外(クラウドの作業環境など)では PATH 上の gdformat/gdlint を使う
+if [ -x "$PY_SCRIPTS/gdlint.exe" ]; then
+  GDFORMAT="$PY_SCRIPTS/gdformat.exe"
+  GDLINT="$PY_SCRIPTS/gdlint.exe"
+else
+  GDFORMAT=gdformat
+  GDLINT=gdlint
+fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 mkdir -p logs
@@ -23,8 +31,8 @@ FILES=$(echo "$FILES" | grep -v '^tools/godot_apply_patch.gd$' || true)
 status=0
 if [ -n "$FILES" ]; then
   echo "== gdformat/gdlint ($(echo "$FILES" | wc -l) files)"
-  "$PY_SCRIPTS/gdformat.exe" $FILES >/dev/null 2>&1 || true
-  "$PY_SCRIPTS/gdlint.exe" $FILES > logs/check_lint.log 2>&1 || { status=1; cat logs/check_lint.log; }
+  "$GDFORMAT" $FILES >/dev/null 2>&1 || true
+  "$GDLINT" $FILES > logs/check_lint.log 2>&1 || { status=1; cat logs/check_lint.log; }
 else
   echo "== gdformat/gdlint: 変更された .gd なし"
 fi

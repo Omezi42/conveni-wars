@@ -8,21 +8,24 @@ const RESULT_SCENE := "res://scenes/result.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
 const HUD_RECT := Rect2(0, 0, 1280, 56)
-const ORDER_RECT := Rect2(8, 64, 188, 496)
-const OWN_FRAME_RECT := Rect2(204, 64, 380, 496)
-const OWN_SHELF_POS := Vector2(10, 42)
-const OWN_SHELF_SIZE := Vector2(360, 448)
-const OWN_CELL := 116.0
-const OWN_GAP := 6.0
-const STREET_RECT := Rect2(592, 64, 144, 496)
-const RIVAL_FRAME_RECT := Rect2(744, 64, 224, 248)
-const RIVAL_SHELF_POS := Vector2(12, 40)
-const RIVAL_CELL := 64.0
+const GRID_RECT := Rect2(8, 64, 300, 496)
+const SKILL_RECT := Rect2(8, 568, 300, 144)
+const FORECAST_RECT := Rect2(316, 64, 648, 96)
+const STREET_RECT := Rect2(316, 160, 648, 220)
+const EVENT_RECT := Rect2(430, 168, 420, 66)
+## 背景の絵(assets/backgrounds/street.svg)の両店の扉の足もと(自店・相手の順)
+const DOORS: Array[Vector2] = [Vector2(565, 338), Vector2(715, 338)]
+const OWN_FRAME_RECT := Rect2(316, 384, 320, 328)
+const OWN_SHELF_POS := Vector2(17, 36)
+const OWN_CELL := 92.0
+const OWN_GAP := 5.0
+const PRICE_RECT := Rect2(644, 384, 320, 164)
+const BONUS_RECT := Rect2(644, 556, 320, 156)
+const RIVAL_FRAME_RECT := Rect2(972, 64, 300, 266)
+const RIVAL_SHELF_POS := Vector2(38, 36)
+const RIVAL_CELL := 72.0
 const RIVAL_GAP := 4.0
-const VISIT_RECT := Rect2(744, 320, 224, 240)
-const FORECAST_RECT := Rect2(976, 64, 296, 496)
-const INVENTORY_RECT := Rect2(8, 568, 988, 144)
-const SKILL_RECT := Rect2(1004, 568, 268, 144)
+const VISIT_RECT := Rect2(972, 338, 300, 374)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
@@ -39,9 +42,7 @@ var _cpu: CpuPlayer
 var _selection := UiSelection.new()
 var _own_shelf: ShelfView
 var _rival_shelf: ShelfView
-var _own_frame: StoreFrame
-var _rival_frame: StoreFrame
-var _price_menu: PriceMenu
+var _price_panel: PricePanel
 var _flow: CustomerFlow
 var _fx: FxLayer
 ## "店番号:商品id" → [店番号, 商品id, 金額]
@@ -90,57 +91,50 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _build() -> void:
-	var background := ColorRect.new()
-	background.color = UiPalette.BACKGROUND
+	var background := TextureRect.new()
+	background.texture = UiDraw.background()
+	background.stretch_mode = TextureRect.STRETCH_SCALE
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_place(background, Rect2(Vector2.ZERO, SCREEN_SIZE))
 
-	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
-	_place(_part(OrderPanel.new(), PLAYER), ORDER_RECT)
-
-	_own_frame = _part(StoreFrame.new(), PLAYER)
-	_own_frame.door_on_right = true
-	_own_frame.door_y = OWN_SHELF_POS.y + OWN_CELL * 1.5 + OWN_GAP
-	_place(_own_frame, OWN_FRAME_RECT)
-	_own_shelf = _part(ShelfView.new(), PLAYER)
-	_own_shelf.configure(OWN_CELL, OWN_GAP, true)
-	_own_shelf.selection = _selection
-	_own_frame.add_child(_own_shelf)
-	_own_shelf.position = OWN_SHELF_POS
-	_own_shelf.size = OWN_SHELF_SIZE
-
-	_rival_frame = _part(StoreFrame.new(), CPU)
-	_rival_frame.door_on_right = false
-	_rival_frame.door_y = RIVAL_SHELF_POS.y + RIVAL_CELL * 1.5 + RIVAL_GAP
-	_place(_rival_frame, RIVAL_FRAME_RECT)
-	_rival_shelf = _part(ShelfView.new(), CPU)
-	_rival_shelf.configure(RIVAL_CELL, RIVAL_GAP, false)
-	_rival_frame.add_child(_rival_shelf)
-	_rival_shelf.position = RIVAL_SHELF_POS
-	_rival_shelf.size = _rival_shelf.grid_size()
-
 	_flow = _part(CustomerFlow.new(), PLAYER)
 	_place(_flow, STREET_RECT)
-	var street_top := STREET_RECT.position.y
-	var own_door := OWN_FRAME_RECT.position.y + _own_frame.door_y - street_top
-	var rival_door := RIVAL_FRAME_RECT.position.y + _rival_frame.door_y - street_top
-	_flow.door_points[PLAYER] = Vector2(0.0, own_door)
-	_flow.door_points[CPU] = Vector2(STREET_RECT.size.x, rival_door)
+	for i in DOORS.size():
+		_flow.door_points[i] = DOORS[i] - STREET_RECT.position
+	_place(_part(EventBanner.new(), PLAYER), EVENT_RECT)
 
-	_place(_part(VisitCounter.new(), PLAYER), VISIT_RECT)
-	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
-	var inventory: InventoryView = _part(InventoryView.new(), PLAYER)
-	inventory.selection = _selection
-	_place(inventory, INVENTORY_RECT)
+	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
+	var grid: ProductGrid = _part(ProductGrid.new(), PLAYER)
+	grid.selection = _selection
+	_place(grid, GRID_RECT)
 	_place(_part(SkillButton.new(), PLAYER), SKILL_RECT)
+	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
 
-	_price_menu = PriceMenu.new()
-	_place(_price_menu, Rect2(Vector2.ZERO, SCREEN_SIZE))
-	_price_menu.setup(match_state, PLAYER)
-	_price_menu.closed.connect(func() -> void: _own_shelf.open_slot = -1)
+	_own_shelf = _add_shelf(PLAYER, OWN_FRAME_RECT, OWN_SHELF_POS, OWN_CELL, OWN_GAP)
+	_own_shelf.selection = _selection
+	_price_panel = _part(PricePanel.new(), PLAYER)
+	_price_panel.selection = _selection
+	_place(_price_panel, PRICE_RECT)
+	_place(_part(BonusPanel.new(), PLAYER), BONUS_RECT)
+
+	_rival_shelf = _add_shelf(CPU, RIVAL_FRAME_RECT, RIVAL_SHELF_POS, RIVAL_CELL, RIVAL_GAP)
+	_place(_part(VisitCounter.new(), PLAYER), VISIT_RECT)
 
 	_fx = FxLayer.new()
 	_place(_fx, Rect2(Vector2.ZERO, SCREEN_SIZE))
+
+
+func _add_shelf(
+	index: int, frame_rect: Rect2, pos: Vector2, cell: float, spacing: float
+) -> ShelfView:
+	var frame: StoreFrame = _part(StoreFrame.new(), index)
+	_place(frame, frame_rect)
+	var shelf: ShelfView = _part(ShelfView.new(), index)
+	shelf.configure(cell, spacing, index == PLAYER)
+	frame.add_child(shelf)
+	shelf.position = pos
+	shelf.size = shelf.grid_size()
+	return shelf
 
 
 func _part(part: MatchPart, index: int) -> MatchPart:
@@ -170,19 +164,22 @@ func _connect_signals() -> void:
 
 func _on_own_slot_pressed(slot: int) -> void:
 	if _selection.has_selection():
-		match_state.assign(PLAYER, _selection.product_id, slot)
+		var product_id := _selection.product_id
+		match_state.assign(PLAYER, product_id, slot)
 		_selection.clear()
+		_selection.focus(product_id, slot)
 		return
-	if match_state.stores[PLAYER].shelf[slot] == StoreState.EMPTY:
+	var product_id := match_state.stores[PLAYER].shelf[slot]
+	if product_id == StoreState.EMPTY:
+		_selection.clear_focus()
 		return
-	var rect := _own_shelf.slot_rect(slot)
-	_price_menu.open_for(slot, Rect2(_own_shelf.global_position + rect.position, rect.size))
-	_own_shelf.open_slot = slot
+	_selection.focus(product_id, slot)
 
 
 func _on_product_dropped(product_id: StringName, slot: int) -> void:
 	match_state.assign(PLAYER, product_id, slot)
 	_selection.clear()
+	_selection.focus(product_id, slot)
 
 
 func _on_band_changed(band_id: StringName) -> void:
