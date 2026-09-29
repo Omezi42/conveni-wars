@@ -13,3 +13,5 @@
   描いた絵が空に隠れる。空と絵を同じ `_draw()` で描く画面は `SkyBackdrop.paint()` を呼ぶ
 - **`CanvasItem` の描画ははみ出しを切らない。**通りの明かりのように隣の部品へ漏らしたくないものは、
   円ではなく片側だけの形(半円)で描く
+- **大きな画像を小さく描くとギザギザになる。**256pxの絵を40px前後で描くときは、`.import` の `mipmaps/generate=true` と
+  `rendering/textures/canvas_textures/default_texture_filter=2`(Linear Mipmap)の両方が要る。絵を足したら `.import` を確かめる

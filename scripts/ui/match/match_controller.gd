@@ -7,27 +7,26 @@ const CPU := 1
 const RESULT_SCENE := "res://scenes/result.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
-const HUD_RECT := Rect2(0, 0, 1280, 66)
-const OWN_FRAME_RECT := Rect2(12, 76, 606, 462)
-const OWN_SHELF_POS := Vector2(148, 64)
-const OWN_CELL := Vector2(140, 118)
-const OWN_GAP := Vector2(12, 16)
-## 自店の棚の左の、ボーナスの一覧と見方(店の中の座標)
-const BONUS_RECT := Rect2(14, 64, 122, 386)
-const STREET_RECT := Rect2(618, 76, 148, 462)
-const RIVAL_FRAME_RECT := Rect2(766, 76, 204, 246)
-const RIVAL_SHELF_POS := Vector2(12, 44)
-const RIVAL_CELL := Vector2(56, 60)
-const RIVAL_GAP := Vector2(6, 8)
-const VISIT_RECT := Rect2(766, 332, 204, 206)
-const FORECAST_RECT := Rect2(980, 76, 288, 462)
+const HUD_RECT := Rect2(0, 0, 1280, 80)
+const OWN_FRAME_RECT := Rect2(12, 86, 628, 454)
+const OWN_SHELF_POS := Vector2(30, 68)
+const OWN_CELL := Vector2(176, 116)
+const OWN_GAP := Vector2(16, 12)
+## 自店の看板の「?」(店の中の座標)と、押すと出るボーナスの見方(店の中の座標)
+const HELP_RECT := Rect2(583, 8, 30, 30)
+const HELP_LEGEND_RECT := Rect2(150, 72, 420, 200)
+const STREET_RECT := Rect2(640, 86, 120, 454)
+const RIVAL_FRAME_RECT := Rect2(760, 86, 508, 226)
+const RIVAL_SHELF_POS := Vector2(100, 46)
+const RIVAL_CELL := Vector2(96, 52)
+const RIVAL_GAP := Vector2(10, 6)
+const FORECAST_RECT := Rect2(760, 322, 508, 218)
 const INVENTORY_RECT := Rect2(12, 548, 988, 164)
 const SKILL_RECT := Rect2(1010, 548, 258, 164)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
-const OWN_POP_SIZE := UiPalette.FONT_HEAD
-const RIVAL_POP_SIZE := UiPalette.FONT_BODY
+const POP_SIZE := UiPalette.FONT_HEAD
 ## 開店直後は客数の差が小さく入れ替わりやすいため、逆転の表示を出さない秒数
 const REVERSAL_GRACE := 15.0
 const REVERSAL_COOLDOWN := 12.0
@@ -110,10 +109,12 @@ func _build() -> void:
 	_own_frame.add_child(_own_shelf)
 	_own_shelf.position = OWN_SHELF_POS
 	_own_shelf.size = _own_shelf.grid_size()
-	var bonus_board: BonusBoard = _part(BonusBoard.new(), PLAYER)
-	_own_frame.add_child(bonus_board)
-	bonus_board.position = BONUS_RECT.position
-	bonus_board.size = BONUS_RECT.size
+	var help: BonusHelp = _part(BonusHelp.new(), PLAYER)
+	_own_frame.add_child(help)
+	help.position = HELP_RECT.position
+	help.size = HELP_RECT.size
+	help.legend_rect = Rect2(HELP_LEGEND_RECT.position - HELP_RECT.position, HELP_LEGEND_RECT.size)
+	_own_frame.sign_reserved = OWN_FRAME_RECT.size.x - HELP_RECT.position.x - StoreFrame.PAD
 
 	_rival_frame = _part(StoreFrame.new(), CPU)
 	_rival_frame.door_on_right = false
@@ -134,7 +135,6 @@ func _build() -> void:
 	_flow.door_points[PLAYER] = Vector2(0.0, own_door)
 	_flow.door_points[CPU] = Vector2(STREET_RECT.size.x, rival_door)
 
-	_place(_part(VisitCounter.new(), PLAYER), VISIT_RECT)
 	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
 	_inventory = _part(InventoryView.new(), PLAYER)
 	_inventory.selection = _selection
@@ -198,7 +198,10 @@ func _on_band_changed(band_id: StringName) -> void:
 	_fx.cutin(band.cutin_text, band.sky_top.darkened(BAND_CUTIN_DARKEN))
 
 
+## 「+¥」は自店の棚からだけ出す(相手の売上は上端のバーで分かる。9.2節)
 func _on_purchased(store_index: int, product_id: StringName, _count: int, amount: int) -> void:
+	if store_index != PLAYER:
+		return
 	var key := "%d:%s" % [store_index, product_id]
 	if not _pending_pops.has(key):
 		_pending_pops[key] = [store_index, product_id, 0]
@@ -207,11 +210,9 @@ func _on_purchased(store_index: int, product_id: StringName, _count: int, amount
 
 func _flush_sale_pops() -> void:
 	for entry: Array in _pending_pops.values():
-		var store_index: int = entry[0]
-		var shelf := _own_shelf if store_index == PLAYER else _rival_shelf
-		var font_size := OWN_POP_SIZE if store_index == PLAYER else RIVAL_POP_SIZE
-		var color := UiPalette.MONEY if store_index == PLAYER else UiPalette.STORE_COLORS[CPU]
-		_fx.pop(shelf.sale_origin(entry[1]), "+" + UiDraw.yen(entry[2]), color, font_size)
+		_fx.pop(
+			_own_shelf.sale_origin(entry[1]), "+" + UiDraw.yen(entry[2]), UiPalette.MONEY, POP_SIZE
+		)
 	_pending_pops.clear()
 
 

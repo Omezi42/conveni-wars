@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ProductData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_ykfj0"]
+[ext_resource type="Texture2D" path="res://assets/icons/karaage.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ykfj0")
@@ -10,3 +11,4 @@ short_name = "からあげ"
 category_id = &"hot_snack"
 list_price = 200
 cost = 110
+icon = ExtResource("2_icon")

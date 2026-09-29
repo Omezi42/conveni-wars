@@ -2,13 +2,11 @@ class_name ShelfView
 extends MatchPart
 ## 3×3の棚(GameDesign.md 4章・9.2節・9.5節)。自店は操作でき、相手は表示だけ(同じ部品を大きさを変えて使う)。
 ## 各段の手前に棚板があり、値札は棚板に掛かる。マスには商品・在庫数・売値を出し、
-## 成立しているボーナスを枠の色で示す(名前は横の BonusBoard)。
+## 成立しているボーナスを枠の色と、マスの左上に縦に並べた名前の札で示す(自店だけ。相手は枠の色だけ)。
 
 signal slot_pressed(slot: int)
 signal product_dropped(product_id: StringName, slot: int)
 
-## 名前・倍率・ボーナスの札を出す、マスの最小の幅
-const DETAIL_MIN_CELL := 90.0
 ## 棚板の厚さと、棚板が左右へはみ出す量
 const BOARD_HEIGHT := 12.0
 const COMPACT_BOARD_HEIGHT := 8.0
@@ -28,8 +26,9 @@ const COMPACT_TAG_WIDTH := 0.9
 const COMPACT_TAG_HEIGHT := 17.0
 const FRAME_WIDTH := 3.0
 const FRAME_STEP := 3.5
-const MULT_POS := Vector2(6, 6)
-const MULT_HEIGHT := 18.0
+const BONUS_TAG_POS := Vector2(6, 6)
+const BONUS_TAG_HEIGHT := 18.0
+const BONUS_TAG_GAP := 3.0
 const SOLD_OUT_ALPHA := 0.35
 ## 在庫が少ない札の点滅で明るくする量
 const LOW_STOCK_FLASH := 0.45
@@ -121,8 +120,9 @@ func _notification(what: int) -> void:
 		_drop_slot = -1
 
 
+## 名前・ボーナスの札まで出すか(操作する自店の棚だけ)
 func _detailed() -> bool:
-	return cell_size.x >= DETAIL_MIN_CELL
+	return interactive
 
 
 func _board_height() -> float:
@@ -220,9 +220,7 @@ func _draw_product(
 			HORIZONTAL_ALIGNMENT_CENTER,
 			space.size.x
 		)
-		var multiplier := bonus.multipliers[slot]
-		if multiplier > 1.0:
-			_draw_multiplier(space, multiplier)
+		_draw_bonus_tags(space, kinds)
 
 
 ## 在庫数の札。アイコンの右上に出し、少ないと赤く点滅する。
@@ -254,13 +252,23 @@ func _draw_stock_badge(
 	UiDraw.pill(self, center, label, font_size, fill, ink, height)
 
 
-func _draw_multiplier(space: Rect2, multiplier: float) -> void:
-	var label := "×%.2f" % multiplier
-	var width := UiDraw.text_width(label, UiPalette.FONT_TINY) + MULT_HEIGHT * UiDraw.PILL_PAD_RATIO
-	var center := space.position + MULT_POS + Vector2(width, MULT_HEIGHT) * 0.5
-	UiDraw.pill(
-		self, center, label, UiPalette.FONT_TINY, UiPalette.MONEY, UiPalette.INK, MULT_HEIGHT
-	)
+func _draw_bonus_tags(space: Rect2, kinds: Array[int]) -> void:
+	var pos := space.position + BONUS_TAG_POS
+	for kind in kinds:
+		var label: String = ShelfBonus.KIND_LABELS[kind]
+		var pad := BONUS_TAG_HEIGHT * UiDraw.PILL_PAD_RATIO
+		var width := UiDraw.text_width(label, UiPalette.FONT_TINY) + pad
+		var center := pos + Vector2(width, BONUS_TAG_HEIGHT) * 0.5
+		UiDraw.pill(
+			self,
+			center,
+			label,
+			UiPalette.FONT_TINY,
+			UiPalette.BONUS_COLORS[kind],
+			UiPalette.INK,
+			BONUS_TAG_HEIGHT
+		)
+		pos.y += BONUS_TAG_HEIGHT + BONUS_TAG_GAP
 
 
 ## 棚板に掛かる値札。色で値段の段階(安売り=黄色の特価札・定価=白・強気=紺)を見せる

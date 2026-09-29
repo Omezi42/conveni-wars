@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ManagerData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/manager_data.gd" id="1_c7yvh"]
+[ext_resource type="Texture2D" path="res://assets/icons/idol.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_c7yvh")
@@ -20,3 +21,4 @@ active_params = {
 active_name = "握手会"
 active_description = "10秒間、来店する客はすべて自店を選ぶ"
 color = Color(0.8784314, 0.3529412, 0.6039216, 1)
+portrait = ExtResource("2_icon")

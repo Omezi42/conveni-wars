@@ -1,7 +1,7 @@
 class_name InventoryView
 extends MatchPart
-## 在庫一覧(GameDesign.md 6.1節〜6.4節・9.2節・9.5節)。商品ごとのカードに在庫数・棚に出ているか・
-## 廃棄までの残りと個数・入荷待ちと、1ロットの代金を書いた発注ボタンを出す。
+## 在庫一覧(GameDesign.md 6.1節〜6.4節・9.2節・9.5節)。商品ごとのカードに絵・在庫数・廃棄までの残りのバー・
+## 入荷待ちと、1ロットの代金を書いた発注ボタンを出す。棚に出ている商品は店の色の枠、出ていない商品は薄く描く。
 ## 発注ボタンを押すと1ロットを発注する(押すと沈み、成否の色が一瞬光る。資金が足りないと灰色)。
 ## カードのほかの所をタップで選ぶ(浮き上がる)かドラッグして、棚のマスへ置く。
 
@@ -9,16 +9,15 @@ const CARD_WIDTH := 72.0
 const CARD_GAP := 4.0
 const CARD_HEIGHT := 160.0
 const PAD := 5.0
-const FLAG_HEIGHT := 16.0
-const ICON_Y := 40.0
-const ICON_SIDE := 30.0
-const NAME_Y := 68.0
-const STOCK_Y := 90.0
+const ICON_Y := 34.0
+const ICON_SIDE := 46.0
+const NAME_Y := 72.0
+const STOCK_Y := 96.0
 const STOCK_FONT := 22
-const BAR_Y := 95.0
-const BAR_HEIGHT := 11.0
-const DELIVERY_Y := 114.0
-const DELIVERY_HEIGHT := 13.0
+const BAR_Y := 101.0
+const BAR_HEIGHT := 5.0
+const DELIVERY_Y := 116.0
+const DELIVERY_HEIGHT := 14.0
 const ORDER_TOP := 124.0
 const ORDER_HEIGHT := 28.0
 const ORDER_DROP := 2.0
@@ -29,7 +28,7 @@ const WASTE_WARN_SECONDS := 15.0
 const WASTE_DANGER_SECONDS := 5.0
 const LIFT := 6.0
 const SELECTED_GLOW := 3.0
-const EMPTY_ALPHA := 0.45
+const OFF_SHELF_ALPHA := 0.5
 const BAR_TRACK := Color("#e4ded0")
 const DRAG_TOKEN_SIDE := 56.0
 const FLASH_SECONDS := 0.35
@@ -156,12 +155,12 @@ func _draw_card(rect: Rect2, product: ProductData) -> void:
 		glow.a = blink()
 		var glow_radius := UiPalette.RADIUS + int(SELECTED_GLOW)
 		UiDraw.panel(self, rect.grow(SELECTED_GLOW), glow, Color.TRANSPARENT, 0, glow_radius)
-	var border := UiPalette.OUTLINE if selected else UiPalette.OUTLINE_THIN
-	UiDraw.card(self, rect, UiPalette.PAPER, UiPalette.RADIUS_SMALL + 2, border)
-	_draw_flag(rect, on_shelf, stock)
-	var center_x := rect.get_center().x
-	var alpha := 1.0 if stock > 0 or on_shelf else EMPTY_ALPHA
-	var icon_center := Vector2(center_x, rect.position.y + ICON_Y)
+	var radius := UiPalette.RADIUS_SMALL + 2
+	UiDraw.card(self, rect, UiPalette.PAPER if on_shelf else UiPalette.PAPER_DIM, radius)
+	if on_shelf or selected:
+		UiDraw.panel(self, rect, Color.TRANSPARENT, team, UiPalette.OUTLINE, radius)
+	var alpha := 1.0 if on_shelf else OFF_SHELF_ALPHA
+	var icon_center := Vector2(rect.get_center().x, rect.position.y + ICON_Y)
 	UiDraw.product_icon(self, icon_center, ICON_SIDE, product, alpha)
 	var name_width := rect.size.x - PAD * 2.0
 	var name_size := UiDraw.fit_size(product.short_name, UiPalette.FONT_TINY, name_width)
@@ -169,18 +168,6 @@ func _draw_card(rect: Rect2, product: ProductData) -> void:
 	_center_text(rect, STOCK_Y, str(stock), STOCK_FONT, _stock_color(stock, on_shelf))
 	_draw_waste(rect, id)
 	_draw_delivery(rect, id)
-
-
-## 上端の札:棚に出ている=店の色の「棚」/在庫はあるが倉庫にある=「倉庫」
-func _draw_flag(rect: Rect2, on_shelf: bool, stock: int) -> void:
-	if not on_shelf and stock <= 0:
-		return
-	var flag_size := Vector2(rect.size.x - PAD * 2.0, FLAG_HEIGHT)
-	var flag := Rect2(rect.position + Vector2(PAD, PAD), flag_size)
-	var fill := UiPalette.STORE_COLORS[store_index] if on_shelf else UiPalette.PAPER_DIM
-	var ink := UiPalette.INK_ON_DARK if on_shelf else UiPalette.INK_SOFT
-	UiDraw.panel(self, flag, fill, Color.TRANSPARENT, 0, UiPalette.RADIUS_SMALL - 2)
-	UiDraw.text_centered(self, flag, "棚" if on_shelf else "倉庫", UiPalette.FONT_TINY, ink)
 
 
 ## 発注ボタン:1行目に「発注」、2行目に1ロットの代金
@@ -222,28 +209,26 @@ func _stock_color(stock: int, on_shelf: bool) -> Color:
 	return UiPalette.INK
 
 
-## いちばん古いロットが廃棄されるまでの残りを、減っていくバーと「秒×個数」で出す
+## いちばん古いロットが廃棄されるまでの残りを、減っていくバーで出す(残りが少ないと赤く点滅する)
 func _draw_waste(rect: Rect2, product_id: StringName) -> void:
 	var lot := store().oldest_lot(product_id)
 	if lot == null or lot.expires_at == INF:
 		return
 	var left := maxf(lot.expires_at - match_state.elapsed, 0.0)
 	var bar := Rect2(
-		rect.position.x + PAD, rect.position.y + BAR_Y, rect.size.x - PAD * 2.0, BAR_HEIGHT
+		rect.position.x + PAD * 2.0, rect.position.y + BAR_Y, rect.size.x - PAD * 4.0, BAR_HEIGHT
 	)
 	var radius := int(BAR_HEIGHT * 0.5)
 	UiDraw.panel(self, bar, BAR_TRACK, Color.TRANSPARENT, 0, radius)
 	var ratio := clampf(left / match_state.balance.waste_seconds, 0.0, 1.0)
 	var color := UiPalette.GOOD
 	if left <= WASTE_DANGER_SECONDS:
-		color = UiPalette.BAD
+		color = UiPalette.BAD.lerp(BAR_TRACK, blink())
 	elif left <= WASTE_WARN_SECONDS:
-		color = UiPalette.WARN
+		color = UiPalette.BAD
 	var filled := Rect2(bar.position, Vector2(bar.size.x * ratio, bar.size.y))
 	UiDraw.panel(self, filled, color, Color.TRANSPARENT, 0, radius)
 	UiDraw.panel(self, bar, Color.TRANSPARENT, UiPalette.INK, 1, radius)
-	var label := "%d秒×%d" % [int(ceil(left)), lot.count]
-	UiDraw.text_centered(self, bar, label, UiPalette.FONT_TINY, UiPalette.INK)
 
 
 ## 入荷待ち:届くまでの秒数と個数

@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ProductData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_ddfkk"]
+[ext_resource type="Texture2D" path="res://assets/icons/umbrella.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ddfkk")
@@ -10,3 +11,4 @@ short_name = "傘"
 category_id = &"daily"
 list_price = 500
 cost = 300
+icon = ExtResource("2_icon")

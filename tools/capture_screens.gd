@@ -57,9 +57,7 @@ func _capture_match(controller: Control) -> void:
 	var index := 3
 	for at in MATCH_SHOTS:
 		while state.elapsed < at:
-			controller._physics_process(STEP)
-			controller._process(STEP)
-			player_cpu.update(STEP)
+			_step(controller, player_cpu)
 		await _shot("%02d_match_%ds" % [index, int(at)])
 		index += 1
 	var slot := state.stores[PLAYER].shelf.find(state.stores[PLAYER].shelf_product_ids()[0])
@@ -78,6 +76,15 @@ func _capture_match(controller: Control) -> void:
 	while _find(&"ResultScreen") == null:
 		controller._physics_process(STEP)
 		await process_frame
+
+
+## 試合を1コマ進める。演出と人の流れも同じ時間だけ進め、早送りのあいだに溜まらないようにする
+func _step(controller: Control, player_cpu: CpuPlayer) -> void:
+	controller._physics_process(STEP)
+	controller._process(STEP)
+	controller._fx._process(STEP)
+	controller._flow._process(STEP)
+	player_cpu.update(STEP)
 
 
 func _show(path: String) -> Control:

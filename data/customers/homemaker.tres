@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="CustomerTypeData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_ylx54"]
+[ext_resource type="Texture2D" path="res://assets/icons/homemaker.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_ylx54")
@@ -15,3 +16,4 @@ wants = {
 price_sensitivity = 0.8
 buy_count = 3
 color = Color(0.8156863, 0.39215687, 0.5411765, 1)
+icon = ExtResource("2_icon")

@@ -5,8 +5,8 @@ extends MatchPart
 ## 流れの太さでどちらの店へ多く入っているかを見せる(1秒に4〜9人来るため)。夜は入口から明かりがこぼれる。
 
 const WALK_SECONDS := 0.9
-const ICON_RADIUS := 6.5
-const EVENT_ICON_RADIUS := 8.5
+const ICON_RADIUS := 9.0
+const EVENT_ICON_RADIUS := 11.0
 const EVENT_RING := 2.5
 const LANE_JITTER := 22.0
 const DOOR_SPREAD := 18.0

@@ -15,6 +15,11 @@ const ICON_SHINE_HEIGHT := 0.34
 const ICON_SHINE_INSET := 0.14
 const ICON_BORDER_MIN := 1
 const ICON_BORDER_RATIO := 0.05
+## 絵の足もとの影の幅・高さ(辺に対する割合)と、絵の下端から影を上げる量
+const ICON_SHADOW_WIDTH := 0.7
+const ICON_SHADOW_HEIGHT := 0.16
+const ICON_SHADOW_RISE := 0.06
+const ELLIPSE_STEPS := 20
 ## 客層アイコンに頭文字を入れる最小の半径
 const LETTER_MIN_RADIUS := 9.0
 const CUSTOMER_LETTER_RATIO := 1.05
@@ -248,12 +253,13 @@ static func stripes_in(
 		x += width * 2.0
 
 
-## 商品の絵。イラストが無いうちは、カテゴリの色の角丸の箱に短い名前の1文字目
+## 商品の絵(足もとに楕円の影を落とす)。イラストが無いときは、カテゴリの色の角丸の箱に短い名前の1文字目
 static func product_icon(
 	item: CanvasItem, center: Vector2, side: float, product: ProductData, alpha := 1.0
 ) -> void:
 	var rect := Rect2(center - Vector2(side, side) * HALF, Vector2(side, side))
 	if product.icon != null:
+		ground_shadow(item, Vector2(center.x, rect.end.y - side * ICON_SHADOW_RISE), side, alpha)
 		item.draw_texture_rect(product.icon, rect, false, Color(1, 1, 1, alpha))
 		return
 	var category := GameDatabase.get_default().category(product.category_id)
@@ -275,6 +281,28 @@ static func product_icon(
 	var white := UiPalette.INK_ON_DARK
 	white.a = alpha
 	text_centered(item, rect, product.short_name.left(1), int(side * ICON_LETTER_RATIO), white, ink)
+
+
+## カテゴリの絵(そのカテゴリの最初の商品の絵を使う)
+static func category_icon(
+	item: CanvasItem, center: Vector2, side: float, category_id: StringName, alpha := 1.0
+) -> void:
+	for product in GameDatabase.get_default().sorted_products():
+		if product.category_id == category_id:
+			product_icon(item, center, side, product, alpha)
+			return
+
+
+## 絵の足もとの楕円の影。bottom は影の中心、width は絵の幅
+static func ground_shadow(item: CanvasItem, bottom: Vector2, width: float, alpha := 1.0) -> void:
+	var radius := Vector2(width * ICON_SHADOW_WIDTH, width * ICON_SHADOW_HEIGHT) * HALF
+	var points := PackedVector2Array()
+	for step in ELLIPSE_STEPS:
+		var angle := TAU * step / ELLIPSE_STEPS
+		points.append(bottom + Vector2(cos(angle), sin(angle)) * radius)
+	var shadow := UiPalette.SHADOW
+	shadow.a *= alpha
+	item.draw_colored_polygon(points, shadow)
 
 
 ## 客層の絵。イラストが無いうちは、客層の色の丸(大きければ頭文字)

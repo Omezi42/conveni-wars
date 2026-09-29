@@ -2,6 +2,7 @@ class_name StoreFrame
 extends MatchPart
 ## 店の建物(GameDesign.md 9.5節)。店の色の看板と帯・明るい店内の床・通りに面したガラスの入口。
 ## 棚はこの上に重ねる。compact は相手の店(小さく描く)。
+## 自店の看板の右には、この時間帯に取り逃した客の数を赤い札で出す(0人なら出さない。2.6節)。
 
 const SIGN_HEIGHT := 40.0
 const COMPACT_SIGN_HEIGHT := 28.0
@@ -15,6 +16,7 @@ const DOOR_SIZE := Vector2(10, 70)
 const COMPACT_DOOR_SIZE := Vector2(8, 52)
 const DOOR_RADIUS := 3
 const DOOR_FRAME_GAP := 3.0
+const LOST_HEIGHT := 26.0
 
 ## 入口の縦の位置(この部品の中の座標)
 var door_y := 0.0
@@ -22,6 +24,8 @@ var door_y := 0.0
 var door_on_right := true
 ## 相手の店として小さく描くか
 var compact := false
+## 看板の右端で、ほかの部品(ボーナスの見方の「?」)のために空けておく幅
+var sign_reserved := 0.0
 
 ## 看板の地(上の角だけ丸い)
 var _sign_box: StyleBoxFlat
@@ -52,6 +56,8 @@ func _draw() -> void:
 	)
 	UiDraw.panel(self, rect, Color.TRANSPARENT, UiPalette.INK, UiPalette.OUTLINE)
 	_draw_sign_text(sign_rect)
+	if not compact:
+		_draw_lost(sign_rect)
 	_draw_door()
 
 
@@ -80,6 +86,19 @@ func _draw_sign_text(sign_rect: Rect2) -> void:
 	var label_size := UiDraw.fit_size(label, UiPalette.FONT_BODY, width)
 	var label_base := UiDraw.baseline_in(sign_rect, label_size)
 	UiDraw.text_outlined(self, Vector2(label_x, label_base), label, label_size, white)
+
+
+func _draw_lost(sign_rect: Rect2) -> void:
+	var lost := store().lost_in_band(match_state.current_band().id)
+	if lost <= 0 or match_state.is_preparing():
+		return
+	var label := "取り逃し %d人" % lost
+	var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + LOST_HEIGHT
+	var right := sign_rect.end.x - PAD - sign_reserved
+	var center := Vector2(right - width * 0.5, sign_rect.get_center().y)
+	UiDraw.pill(
+		self, center, label, UiPalette.FONT_SMALL, UiPalette.BAD, UiPalette.INK_ON_DARK, LOST_HEIGHT
+	)
 
 
 ## 通りに面したガラスの入口。夜は明かりがこぼれる(CustomerFlow が通り側を描く)

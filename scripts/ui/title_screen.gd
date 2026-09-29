@@ -38,7 +38,7 @@ const DOOR_WIDTH := 84.0
 const DOOR_GAP := 14.0
 const SHELF_ROWS := 3
 const SHELF_LINE := 3.0
-const ITEM_SIZE := Vector2(16, 20)
+const ITEM_SIDE := 36.0
 const ITEM_GAP := 6.0
 const HANDLE := Vector2(4, 22)
 
@@ -124,21 +124,18 @@ func _draw_store(rect: Rect2, index: int) -> void:
 	draw_rect(handle, UiPalette.INK)
 
 
-## 窓の中の棚と、カテゴリの色の商品
+## 窓の中の棚と、並んだ商品の絵
 func _draw_window_goods(window: Rect2) -> void:
-	var categories := GameDatabase.get_default().sorted_categories()
+	var products := GameDatabase.get_default().sorted_products()
 	var row_height := window.size.y / SHELF_ROWS
 	var count := 0
 	for row in SHELF_ROWS:
 		var shelf_y := window.position.y + row_height * (row + 1) - ITEM_GAP
 		var x := window.position.x + ITEM_GAP * 2.0
-		while x + ITEM_SIZE.x < window.end.x - ITEM_GAP:
-			var color := categories[count % categories.size()].color
-			var item := Rect2(x, shelf_y - ITEM_SIZE.y, ITEM_SIZE.x, ITEM_SIZE.y)
-			UiDraw.panel(
-				self, item, color, UiPalette.INK, UiPalette.OUTLINE_THIN, UiPalette.RADIUS_SMALL - 3
-			)
-			x += ITEM_SIZE.x + ITEM_GAP
+		while x + ITEM_SIDE < window.end.x - ITEM_GAP:
+			var center := Vector2(x + ITEM_SIDE * 0.5, shelf_y - ITEM_SIDE * 0.5)
+			UiDraw.product_icon(self, center, ITEM_SIDE, products[count % products.size()])
+			x += ITEM_SIDE + ITEM_GAP
 			count += 1
 		var line_from := Vector2(window.position.x + UiPalette.OUTLINE, shelf_y)
 		var line_to := Vector2(window.end.x - UiPalette.OUTLINE, shelf_y)
