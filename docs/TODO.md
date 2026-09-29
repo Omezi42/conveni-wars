@@ -15,24 +15,26 @@
 
 ## 2. データ(Architecture.md 2章)
 
-- [ ] Resourceクラス6種と `GameDatabase`
-- [ ] 初期データの `.tres`:カテゴリ9・商品12・客層6・時間帯4・セット5・店長4・`balance.tres`
+- [ ] Resourceクラス7種と `GameDatabase`
+- [ ] 初期データの `.tres`:カテゴリ9・商品13・客層10(時間帯6+イベント4)・時間帯4・セット5・イベント4・店長4・`balance.tres`
 
 ## 3. ロジック(Architecture.md 3章)
 
-- [ ] `MatchState` / `StoreState` と進行(時計・時間帯・配送・客の到着)
-- [ ] `ShelfBonus` と `Attraction`(魅力度・店の選択・買い物)
+- [ ] `MatchState` / `StoreState` と進行(時計・時間帯・配送・廃棄・客の到着)
+- [ ] `ShelfBonus` と `Attraction`(魅力度・店の選択・買い物・取り逃した客)
+- [ ] `EventScheduler`(抽選・予告・イベント客)
 - [ ] コマンド5種
 - [ ] `ManagerSkills`(パッシブ4・アクティブ4)
 - [ ] ヘッドレステスト
 
 ## 4. CPUとシミュレーション(Architecture.md 5章・6章)
 
-- [ ] `CpuPlayer`(GameDesign.md 8.2節)
-- [ ] `tools/simulate.gd` で CPU 対 CPU を回し、数値の極端な偏りを直す
+- [ ] `CpuPlayer` と `CpuProfile`(GameDesign.md 8.2節・8.3節)
+- [ ] `tools/simulate.gd` で CPU 対 CPU を回し、数値の極端な偏りと、イベントが売上に占める割合を見る
 
 ## 5. 画面(Architecture.md 4章)
 
-- [ ] 試合画面(棚・発注・在庫一覧・値段メニュー・HUD・予報・来店数カウンタ・スキル)
+- [ ] 試合画面(棚・発注・在庫一覧・値段ボタン・HUD・予報とイベント予告・来店数カウンタ・スキル)
 - [ ] タイトル・店長選択・結果
-- [ ] 両店の入口へ流れ込む人の流れの演出
+- [ ] 人の流れと取り逃した客の吹き出し
+- [ ] 演出(`FxLayer`:売上の飛び出し・カットイン・大口獲得・逆転)
