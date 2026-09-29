@@ -1,25 +1,28 @@
 class_name PriceMenu
 extends MatchPart
-## マスをタップすると出る値段の3段階のボタンと、棚から外すボタン(GameDesign.md 5.1節・6.3節・9.2節)。
+## マスをタップすると出る値段の3段階のボタンと、棚から外すボタン(GameDesign.md 5.1節・6.3節・9.2節・9.5節)。
+## ボタンは棚の値札と同じ色(安売り=黄色の特価札・定価=白・強気=紺)で、いまの段階は沈んで印が付く。
 ## 画面全体を覆い、メニューの外をタップすると閉じる。
 
 signal closed
 
-const BUTTON_SIZE := Vector2(92, 52)
-const REMOVE_HEIGHT := 34.0
-const PAD := 10.0
+const BUTTON_SIZE := Vector2(98, 60)
+const REMOVE_HEIGHT := 36.0
+const PAD := 12.0
 const HEADER_HEIGHT := 30.0
-const STATUS_HEIGHT := 20.0
-const OFFSET := 8.0
-const SELECTED_EDGE := 3
-const SELECTED_LIGHTEN := 0.5
-const TEXT_BASELINE := 0.75
+const STATUS_HEIGHT := 22.0
+const OFFSET := 14.0
+const POINTER := Vector2(18, 10)
+const PRICE_FONT := 20
+const REMOVE_FILL := Color("#dcd6c8")
 
 var _slot := -1
 var _product_id: StringName = &""
 var _box := Rect2()
-var _buttons: Array[Button] = []
-var _remove: Button
+## 吹き出しの先(マスを指す点)
+var _pointer_tip := Vector2.ZERO
+var _buttons: Array[PopButton] = []
+var _remove: PopButton
 
 
 func _ready() -> void:
@@ -30,12 +33,16 @@ func _ready() -> void:
 func setup(state: MatchState, index: int) -> void:
 	super.setup(state, index)
 	for step in state.balance.price_step_count():
-		var button := UiDraw.make_button("", UiPalette.PRICE_COLORS[step], UiPalette.FONT_BODY)
+		var button := PopButton.create(
+			"", UiPalette.PRICE_FILLS[step], UiPalette.PRICE_INKS[step], PRICE_FONT
+		)
+		button.caption = state.balance.price_step_names[step]
 		button.size = BUTTON_SIZE
 		button.pressed.connect(_on_step_pressed.bind(step))
 		add_child(button)
 		_buttons.append(button)
-	_remove = UiDraw.make_button("棚から外す", UiPalette.INK_SOFT, UiPalette.FONT_BODY)
+	_remove = PopButton.create("棚から外す", REMOVE_FILL, UiPalette.INK, UiPalette.FONT_BODY)
+	_remove.radius = UiPalette.RADIUS_SMALL
 	_remove.pressed.connect(_on_remove_pressed)
 	add_child(_remove)
 
@@ -47,11 +54,14 @@ func open_for(slot: int, anchor: Rect2) -> void:
 	var width := BUTTON_SIZE.x * count + PAD * (count + 1)
 	var height := HEADER_HEIGHT + STATUS_HEIGHT + BUTTON_SIZE.y + REMOVE_HEIGHT + PAD * 3.0
 	var pos := Vector2(anchor.get_center().x - width / 2.0, anchor.end.y + OFFSET)
-	if pos.y + height > size.y:
+	var below := pos.y + height <= size.y
+	if not below:
 		pos.y = anchor.position.y - OFFSET - height
-	pos.x = clampf(pos.x, 0.0, size.x - width)
+	pos.x = clampf(pos.x, PAD, size.x - width - PAD)
 	_box = Rect2(pos, Vector2(width, height))
-	var y := pos.y + HEADER_HEIGHT + STATUS_HEIGHT
+	var tip_y := anchor.end.y if below else anchor.position.y
+	_pointer_tip = Vector2(anchor.get_center().x, tip_y)
+	var y := pos.y + PAD * 0.5 + HEADER_HEIGHT + STATUS_HEIGHT
 	for i in count:
 		_buttons[i].position = Vector2(pos.x + PAD + i * (BUTTON_SIZE.x + PAD), y)
 	_remove.position = Vector2(pos.x + PAD, y + BUTTON_SIZE.y + PAD)
@@ -85,14 +95,9 @@ func _refresh() -> void:
 	var current := store().price_step(_product_id)
 	for step in _buttons.size():
 		var button := _buttons[step]
-		var name := match_state.balance.price_step_names[step]
-		button.text = "%s\n%s" % [name, UiDraw.yen(store().price_for_step(_product_id, step))]
+		button.text = UiDraw.yen(store().price_for_step(_product_id, step))
+		button.chosen = step == current
 		button.disabled = not can_change or step == current
-		var edge := UiPalette.INK if step == current else Color.TRANSPARENT
-		var fill := UiPalette.PRICE_COLORS[step]
-		button.add_theme_stylebox_override(
-			"disabled", UiDraw.box(fill.lightened(SELECTED_LIGHTEN), edge, SELECTED_EDGE)
-		)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -105,13 +110,37 @@ func _gui_input(event: InputEvent) -> void:
 func _draw() -> void:
 	if not visible or match_state == null or _slot < 0:
 		return
-	UiDraw.shadowed_panel(self, _box, UiPalette.PANEL)
+	_draw_pointer()
+	UiDraw.card(self, _box, UiPalette.PAPER)
 	var product := db().product(_product_id)
-	var header := Vector2(_box.position.x + PAD, _box.position.y + HEADER_HEIGHT * TEXT_BASELINE)
-	UiDraw.text(self, header, product.display_name, UiPalette.FONT_LARGE, UiPalette.INK)
-	var status := _status_text()
-	var status_pos := header + Vector2(0, STATUS_HEIGHT)
-	UiDraw.text(self, status_pos, status, UiPalette.FONT_SMALL, UiPalette.INK_SOFT)
+	var inner_x := _box.position.x + PAD
+	var header_base := _box.position.y + PAD * 0.5 + HEADER_HEIGHT * 0.8
+	UiDraw.text(
+		self,
+		Vector2(inner_x, header_base),
+		product.display_name,
+		UiPalette.FONT_LARGE,
+		UiPalette.INK
+	)
+	var status_pos := Vector2(inner_x, header_base + STATUS_HEIGHT)
+	var status_color := (
+		UiPalette.BAD
+		if not match_state.can_set_price(store_index, _product_id)
+		else UiPalette.INK_SOFT
+	)
+	UiDraw.text(self, status_pos, _status_text(), UiPalette.FONT_SMALL, status_color)
+
+
+## 吹き出しのしっぽ(メニューがどのマスのものかを指す)
+func _draw_pointer() -> void:
+	var edge_y := _box.position.y if _pointer_tip.y < _box.position.y else _box.end.y
+	var direction := signf(edge_y - _pointer_tip.y)
+	var base_y := edge_y + direction * UiPalette.OUTLINE
+	var tip := Vector2(_pointer_tip.x, edge_y - direction * POINTER.y)
+	var points := PackedVector2Array(
+		[Vector2(tip.x - POINTER.x * 0.5, base_y), Vector2(tip.x + POINTER.x * 0.5, base_y), tip]
+	)
+	draw_colored_polygon(points, UiPalette.INK)
 
 
 func _status_text() -> String:

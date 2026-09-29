@@ -8,7 +8,7 @@ const PLAYER := 0
 const STEP := 1.0 / 30.0
 const SETTLE_FRAMES := 6
 ## 試合のどの時刻(開店からの秒)で撮るか
-const MATCH_SHOTS: Array[float] = [-5.0, 12.0, 70.0, 160.0]
+const MATCH_SHOTS: Array[float] = [-5.0, 12.0, 70.0, 160.0, 245.0]
 const SEED := 20260929
 
 var _out_dir := ""
@@ -45,7 +45,7 @@ func _run() -> void:
 	var result := _find(&"ResultScreen")
 	if result == null:
 		result = await _show("res://scenes/result.tscn")
-	await _shot("09_result")
+	await _shot("99_result")
 	print("captured to ", _out_dir)
 	quit()
 
@@ -66,6 +66,10 @@ func _capture_match(controller: Control) -> void:
 	controller._on_own_slot_pressed(slot)
 	await _shot("%02d_match_price_menu" % index)
 	controller._price_menu.close()
+	index += 1
+	controller._selection.toggle(state.db.sorted_products()[0].id)
+	await _shot("%02d_match_selecting" % index)
+	controller._selection.clear()
 	index += 1
 	while not state.finished:
 		controller._physics_process(STEP)

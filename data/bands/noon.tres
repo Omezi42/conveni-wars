@@ -17,3 +17,6 @@ mix = {
 &"senior": 2
 }
 cutin_text = "昼ラッシュ!"
+sky_top = Color(0.25, 0.64, 0.96, 1)
+sky_bottom = Color(0.68, 0.87, 0.99, 1)
+night = false

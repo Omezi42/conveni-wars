@@ -7,35 +7,39 @@ const CPU := 1
 const RESULT_SCENE := "res://scenes/result.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
-const HUD_RECT := Rect2(0, 0, 1280, 56)
-const ORDER_RECT := Rect2(8, 64, 188, 496)
-const OWN_FRAME_RECT := Rect2(204, 64, 380, 496)
-const OWN_SHELF_POS := Vector2(10, 42)
-const OWN_SHELF_SIZE := Vector2(360, 448)
-const OWN_CELL := 116.0
-const OWN_GAP := 6.0
-const STREET_RECT := Rect2(592, 64, 144, 496)
-const RIVAL_FRAME_RECT := Rect2(744, 64, 224, 248)
-const RIVAL_SHELF_POS := Vector2(12, 40)
-const RIVAL_CELL := 64.0
-const RIVAL_GAP := 4.0
-const VISIT_RECT := Rect2(744, 320, 224, 240)
-const FORECAST_RECT := Rect2(976, 64, 296, 496)
-const INVENTORY_RECT := Rect2(8, 568, 988, 144)
-const SKILL_RECT := Rect2(1004, 568, 268, 144)
+const HUD_RECT := Rect2(0, 0, 1280, 66)
+const ORDER_RECT := Rect2(12, 76, 200, 484)
+const OWN_FRAME_RECT := Rect2(222, 76, 396, 484)
+const OWN_SHELF_POS := Vector2(14, 64)
+const OWN_CELL := Vector2(116, 108)
+const OWN_GAP := Vector2(10, 16)
+## 棚の下に成立しているボーナスの名前を並べるぶんまで含めた大きさ
+const OWN_SHELF_SIZE := Vector2(368, 412)
+const STREET_RECT := Rect2(618, 76, 148, 484)
+const RIVAL_FRAME_RECT := Rect2(766, 76, 204, 256)
+const RIVAL_SHELF_POS := Vector2(12, 46)
+const RIVAL_CELL := Vector2(56, 62)
+const RIVAL_GAP := Vector2(6, 8)
+const VISIT_RECT := Rect2(766, 342, 204, 218)
+const FORECAST_RECT := Rect2(980, 76, 288, 484)
+const INVENTORY_RECT := Rect2(12, 574, 988, 138)
+const SKILL_RECT := Rect2(1010, 574, 258, 138)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
-const OWN_POP_SIZE := UiPalette.FONT_LARGE
-const RIVAL_POP_SIZE := UiPalette.FONT_SMALL
+const OWN_POP_SIZE := UiPalette.FONT_HEAD
+const RIVAL_POP_SIZE := UiPalette.FONT_BODY
 ## 開店直後は客数の差が小さく入れ替わりやすいため、逆転の表示を出さない秒数
 const REVERSAL_GRACE := 15.0
 const REVERSAL_COOLDOWN := 12.0
 const RESULT_DELAY := 2.5
+## 時間帯のカットインの地は空の色を暗くして白い文字を読めるようにする
+const BAND_CUTIN_DARKEN := 0.25
 
 var match_state: MatchState
 
 var _cpu: CpuPlayer
+var _sky: SkyBackdrop
 var _selection := UiSelection.new()
 var _own_shelf: ShelfView
 var _rival_shelf: ShelfView
@@ -90,17 +94,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _build() -> void:
-	var background := ColorRect.new()
-	background.color = UiPalette.BACKGROUND
-	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_place(background, Rect2(Vector2.ZERO, SCREEN_SIZE))
+	_sky = SkyBackdrop.new()
+	_place(_sky, Rect2(Vector2.ZERO, SCREEN_SIZE))
+	_sky.set_band(match_state.current_band(), true)
 
 	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
 	_place(_part(OrderPanel.new(), PLAYER), ORDER_RECT)
 
 	_own_frame = _part(StoreFrame.new(), PLAYER)
 	_own_frame.door_on_right = true
-	_own_frame.door_y = OWN_SHELF_POS.y + OWN_CELL * 1.5 + OWN_GAP
+	_own_frame.door_y = OWN_SHELF_POS.y + OWN_CELL.y * 1.5 + OWN_GAP.y
 	_place(_own_frame, OWN_FRAME_RECT)
 	_own_shelf = _part(ShelfView.new(), PLAYER)
 	_own_shelf.configure(OWN_CELL, OWN_GAP, true)
@@ -111,7 +114,8 @@ func _build() -> void:
 
 	_rival_frame = _part(StoreFrame.new(), CPU)
 	_rival_frame.door_on_right = false
-	_rival_frame.door_y = RIVAL_SHELF_POS.y + RIVAL_CELL * 1.5 + RIVAL_GAP
+	_rival_frame.compact = true
+	_rival_frame.door_y = RIVAL_SHELF_POS.y + RIVAL_CELL.y * 1.5 + RIVAL_GAP.y
 	_place(_rival_frame, RIVAL_FRAME_RECT)
 	_rival_shelf = _part(ShelfView.new(), CPU)
 	_rival_shelf.configure(RIVAL_CELL, RIVAL_GAP, false)
@@ -187,7 +191,8 @@ func _on_product_dropped(product_id: StringName, slot: int) -> void:
 
 func _on_band_changed(band_id: StringName) -> void:
 	var band := match_state.db.band(band_id)
-	_fx.cutin(band.cutin_text, UiPalette.BAR)
+	_sky.set_band(band)
+	_fx.cutin(band.cutin_text, band.sky_top.darkened(BAND_CUTIN_DARKEN))
 
 
 func _on_purchased(store_index: int, product_id: StringName, _count: int, amount: int) -> void:
@@ -202,19 +207,19 @@ func _flush_sale_pops() -> void:
 		var store_index: int = entry[0]
 		var shelf := _own_shelf if store_index == PLAYER else _rival_shelf
 		var font_size := OWN_POP_SIZE if store_index == PLAYER else RIVAL_POP_SIZE
-		var color := UiPalette.GOOD if store_index == PLAYER else UiPalette.STORE_COLORS[CPU]
+		var color := UiPalette.MONEY if store_index == PLAYER else UiPalette.STORE_COLORS[CPU]
 		_fx.pop(shelf.sale_origin(entry[1]), "+" + UiDraw.yen(entry[2]), color, font_size)
 	_pending_pops.clear()
 
 
 func _on_event_started(event_id: StringName) -> void:
-	_fx.cutin("%s!" % match_state.db.event(event_id).display_name, UiPalette.WARN)
+	_fx.cutin("%s!" % match_state.db.event(event_id).display_name, UiPalette.WARN, true)
 
 
 func _on_event_ended(_event_id: StringName, store_counts: Array[int]) -> void:
 	var balance := match_state.balance
 	if store_counts[PLAYER] >= ceili(balance.event_customer_count * balance.big_catch_ratio):
-		_fx.big("大口獲得!", UiPalette.WARN)
+		_fx.big("大口獲得!", UiPalette.MONEY, true)
 
 
 func _on_skill_used(store_index: int) -> void:
@@ -224,7 +229,7 @@ func _on_skill_used(store_index: int) -> void:
 
 
 func _on_match_ended(_result: MatchResult) -> void:
-	_fx.big("閉店!", UiPalette.INK)
+	_fx.big("閉店!", UiPalette.INK_ON_DARK)
 	_end_timer = RESULT_DELAY
 
 
@@ -235,6 +240,6 @@ func _check_reversal(delta: float) -> void:
 	var leading := own > rival
 	if leading and not _player_leading and match_state.elapsed > REVERSAL_GRACE:
 		if _reversal_cooldown <= 0.0:
-			_fx.big("客数で逆転!", UiPalette.STORE_COLORS[PLAYER])
+			_fx.big("客数で逆転!", UiPalette.STORE_COLORS[PLAYER], true)
 			_reversal_cooldown = REVERSAL_COOLDOWN
 	_player_leading = leading

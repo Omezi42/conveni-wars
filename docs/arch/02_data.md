@@ -7,7 +7,7 @@
 | `CategoryData` | `data/categories/` | `id` `display_name` `color` `perishable`(日持ちしないか) | GameDesign.md 3.1節 |
 | `ProductData` | `data/products/` | `id` `display_name` `category_id` `list_price` `cost` `icon` | 3.2節 |
 | `CustomerTypeData` | `data/customers/` | `id` `display_name` `wants: Dictionary`(カテゴリid→重み) `price_sensitivity` `buy_count` `icon` | 2.1節・11.3節 |
-| `TimeBandData` | `data/bands/` | `id` `display_name` `order` `duration` `customer_count` `clock_start` `clock_end`(店の時計の時刻) `mix: Dictionary`(客層id→重み) | 1.2節・2.2節 |
+| `TimeBandData` | `data/bands/` | `id` `display_name` `order` `duration` `customer_count` `clock_start` `clock_end`(店の時計の時刻) `mix: Dictionary`(客層id→重み) `cutin_text` `sky_top` `sky_bottom` `night`(背景の空の色と、月と星を出すか) | 1.2節・2.2節・9.5節 |
 | `ComboData` | `data/combos/` | `id` `display_name` `category_a` `category_b` | 4.3節 |
 | `EventData` | `data/events/` | `id` `display_name` `customer_type_id` `band_ids`(起きてよい時間帯) | 11章 |
 | `ManagerData` | `data/managers/` | `id` `display_name` `passive_kind` `passive_params` `active_kind` `active_params` `portrait` | 7章 |

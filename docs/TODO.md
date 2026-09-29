@@ -12,7 +12,7 @@
 
 - [ ] 2章: GameDatabase を autoload ではなく `GameDatabase.get_default()` にしたこと、追加したフィールド(`order` `color` `short_name` `cutin_text` 店長の説明文)、`data/cpu/`
 - [ ] 3章: シグナルの引数の変更(`purchased` の個数と金額、`customer_arrived` の is_event、`event_announced` の店番号、`opened` `ordered` `skill_ended`)
-- [ ] 4章: `StoreFrame` `MatchPart` `UiSelection`、資金は `SkillButton` に同居
+- [ ] 4章: `MatchPart` `UiSelection`、資金は `SkillButton` に同居
 - [ ] 5章: CPUの需要の見積もり方、6章: `screen_flow_smoke.gd` `capture_screens.gd` `simulate.gd` の使い方
 - [ ] Pitfalls.md: .tres は辞書のキーを並べ替えて保存する/`--script` の本体はautoload登録前にコンパイルされる
 

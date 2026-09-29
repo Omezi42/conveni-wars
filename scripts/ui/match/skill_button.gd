@@ -1,36 +1,58 @@
 class_name SkillButton
 extends MatchPart
-## 資金と、アクティブスキルのボタン(GameDesign.md 7章・9.2節)。スキルは試合中に1回だけ使える。
+## 資金と、アクティブスキルのボタン(GameDesign.md 7章・9.2節・9.5節)。スキルは試合中に1回だけ使える。
+## 使えるときは黄色く光り、発動中は残り時間のバーが減っていき、使い終わると灰色になる。
+## 説明文はカーソルを乗せると出る(ボタンには名前と状態だけを大きく出す)。
 
-const PAD := 10.0
-const FUNDS_HEIGHT := 40.0
-const GAP := 6.0
-const TEXT_BASELINE := 0.7
-const DESC_LINES := 2
-const USED_ALPHA := 0.35
+const PAD := 12.0
+const FUNDS_HEIGHT := 44.0
+const GAP := 8.0
+const COIN_RADIUS := 11.0
+const FUNDS_FONT := 24
+const TOKEN_RADIUS := 24.0
+const TOKEN_X := 36.0
+const TEXT_X := 70.0
+const NAME_Y := 0.42
+const STATE_Y := 0.76
+const GLOW_SIZE := 5.0
 const HOVER_LIGHTEN := 0.1
-const GLOW_SIZE := 3.0
+const USED_GRAY := Color("#a9a59c")
+const RUNNING_TRACK := Color(1, 1, 1, 0.35)
+const TOKEN_DARKEN := 0.25
+## 開店準備中(まだ使えない)の色のくすませ方
+const WAITING_FADE := 0.6
 
 var _hover := false
+var _pressing := false
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 
 
+func setup(state: MatchState, index: int) -> void:
+	super.setup(state, index)
+	tooltip_text = "%s:%s" % [store().manager.active_name, store().manager.active_description]
+
+
 func _button_rect() -> Rect2:
-	return Rect2(0.0, FUNDS_HEIGHT + GAP, size.x, size.y - FUNDS_HEIGHT - GAP)
+	var top := FUNDS_HEIGHT + GAP
+	return Rect2(0.0, top, size.x, size.y - top - UiPalette.SHADOW_DROP)
 
 
 func _gui_input(event: InputEvent) -> void:
 	var motion := event as InputEventMouseMotion
 	if motion != null:
 		_hover = _button_rect().has_point(motion.position)
+		mouse_default_cursor_shape = (
+			Control.CURSOR_POINTING_HAND if _hover else Control.CURSOR_ARROW
+		)
 		return
 	var press := event as InputEventMouseButton
-	if press == null or not press.pressed or press.button_index != MOUSE_BUTTON_LEFT:
+	if press == null or press.button_index != MOUSE_BUTTON_LEFT:
 		return
-	if _button_rect().has_point(press.position):
+	_pressing = press.pressed and _button_rect().has_point(press.position)
+	if _pressing:
 		match_state.use_active(store_index)
 		accept_event()
 
@@ -38,6 +60,7 @@ func _gui_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_MOUSE_EXIT:
 		_hover = false
+		_pressing = false
 
 
 func _draw() -> void:
@@ -47,30 +70,68 @@ func _draw() -> void:
 	var manager := store().manager
 	var rect := _button_rect()
 	var usable := match_state.can_use_active(store_index)
+	var running := store().active_remaining > 0.0
 	var fill := manager.color
-	if not usable and store().active_remaining <= 0.0:
-		fill.a = USED_ALPHA
+	if store().active_used and not running:
+		fill = USED_GRAY
+	elif not usable and not running:
+		fill = manager.color.lerp(USED_GRAY, WAITING_FADE)
 	elif _hover and usable:
 		fill = fill.lightened(HOVER_LIGHTEN)
 	if usable:
-		var glow := UiPalette.WARN
+		var glow := UiPalette.MONEY
 		glow.a = blink()
-		UiDraw.panel(self, rect.grow(GLOW_SIZE), glow)
-	UiDraw.panel(self, rect, fill)
-	var ink := UiPalette.INK_ON_DARK
-	var title := "%s %s" % [manager.active_name, _state_text()]
-	var title_pos := rect.position + Vector2(PAD, UiPalette.FONT_LARGE + PAD / 2.0)
-	UiDraw.text(self, title_pos, title, UiPalette.FONT_LARGE, ink)
-	var desc_y := UiPalette.FONT_LARGE + UiPalette.FONT_SMALL + PAD
-	draw_multiline_string(
-		UiDraw.font(),
-		rect.position + Vector2(PAD, desc_y),
-		manager.active_description,
-		HORIZONTAL_ALIGNMENT_LEFT,
-		rect.size.x - PAD * 2.0,
-		UiPalette.FONT_SMALL,
-		DESC_LINES,
-		ink
+		UiDraw.panel(
+			self,
+			rect.grow(GLOW_SIZE),
+			glow,
+			Color.TRANSPARENT,
+			0,
+			UiPalette.RADIUS + int(GLOW_SIZE)
+		)
+	if _pressing and usable:
+		rect.position.y += UiPalette.SHADOW_DROP
+		UiDraw.panel(self, rect, fill, UiPalette.INK, UiPalette.OUTLINE)
+	else:
+		UiDraw.card(self, rect, fill)
+	if running:
+		_draw_running_bar(rect)
+	_draw_token(rect, manager)
+	var white := UiPalette.INK_ON_DARK
+	var text_width := rect.size.x - TEXT_X - PAD
+	var name_size := UiDraw.fit_size(manager.active_name, UiPalette.FONT_HEAD, text_width)
+	var name_pos := Vector2(rect.position.x + TEXT_X, rect.position.y + rect.size.y * NAME_Y)
+	UiDraw.text_outlined(self, name_pos, manager.active_name, name_size, white)
+	var state_pos := Vector2(rect.position.x + TEXT_X, rect.position.y + rect.size.y * STATE_Y)
+	UiDraw.text_outlined(self, state_pos, _state_text(), UiPalette.FONT_BODY, white)
+
+
+## 店長の顔(絵が無いうちは店長の色の丸に頭文字)
+func _draw_token(rect: Rect2, manager: ManagerData) -> void:
+	var center := Vector2(rect.position.x + TOKEN_X, rect.get_center().y)
+	draw_circle(center, TOKEN_RADIUS + UiPalette.OUTLINE, UiPalette.INK)
+	draw_circle(center, TOKEN_RADIUS, UiPalette.INK_ON_DARK)
+	if manager.portrait != null:
+		var side := Vector2.ONE * TOKEN_RADIUS * 2.0
+		draw_texture_rect(manager.portrait, Rect2(center - side / 2.0, side), false)
+		return
+	draw_circle(center, TOKEN_RADIUS - UiPalette.OUTLINE, manager.color.darkened(TOKEN_DARKEN))
+	var cell := Rect2(center - Vector2.ONE * TOKEN_RADIUS, Vector2.ONE * TOKEN_RADIUS * 2.0)
+	UiDraw.text_centered(
+		self, cell, manager.display_name.left(1), UiPalette.FONT_HEAD, UiPalette.INK_ON_DARK
+	)
+
+
+## 発動中は残り時間のぶんだけ明るい帯を残す
+func _draw_running_bar(rect: Rect2) -> void:
+	var total := ManagerSkills.active_duration(store().manager)
+	if total <= 0.0:
+		return
+	var ratio := clampf(store().active_remaining / total, 0.0, 1.0)
+	var inner := rect.grow(-UiPalette.OUTLINE)
+	var bar := Rect2(inner.position, Vector2(inner.size.x * ratio, inner.size.y))
+	UiDraw.panel(
+		self, bar, RUNNING_TRACK, Color.TRANSPARENT, 0, UiPalette.RADIUS - UiPalette.OUTLINE
 	)
 
 
@@ -78,22 +139,26 @@ func _state_text() -> String:
 	if store().active_remaining > 0.0:
 		return "発動中 あと%d秒" % int(ceil(store().active_remaining))
 	if store().active_used:
-		return "(使用済み)"
+		return "使用済み"
 	if match_state.is_preparing():
-		return "(開店後に使える)"
+		return "開店後に使える"
 	return "タップで発動!"
 
 
 func _draw_funds() -> void:
 	var rect := Rect2(0.0, 0.0, size.x, FUNDS_HEIGHT)
-	UiDraw.shadowed_panel(self, rect, UiPalette.PANEL)
-	var baseline := FUNDS_HEIGHT * TEXT_BASELINE
-	UiDraw.text(self, Vector2(PAD, baseline), "資金", UiPalette.FONT_BODY, UiPalette.INK_SOFT)
+	UiDraw.card(self, rect, UiPalette.PAPER)
+	var coin := Vector2(PAD + COIN_RADIUS, FUNDS_HEIGHT / 2.0)
+	UiDraw.coin(self, coin, COIN_RADIUS)
+	var label_x := coin.x + COIN_RADIUS + PAD * 0.5
+	var label_base := UiDraw.baseline_in(rect, UiPalette.FONT_BODY)
+	UiDraw.text(self, Vector2(label_x, label_base), "資金", UiPalette.FONT_BODY, UiPalette.INK_SOFT)
 	var cheapest := INF
 	for product in db().sorted_products():
 		cheapest = minf(cheapest, match_state.lot_cost(store_index, product.id))
 	var color := UiPalette.BAD if store().funds < cheapest else UiPalette.INK
 	var funds := UiDraw.yen(store().funds)
-	var align := HORIZONTAL_ALIGNMENT_RIGHT
-	var pos := Vector2(PAD, baseline)
-	UiDraw.text(self, pos, funds, UiPalette.FONT_HEAD, color, align, rect.size.x - PAD * 2.0)
+	var pos := Vector2(PAD, UiDraw.baseline_in(rect, FUNDS_FONT))
+	UiDraw.text(
+		self, pos, funds, FUNDS_FONT, color, HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x - PAD * 2.0
+	)

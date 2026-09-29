@@ -17,3 +17,6 @@ mix = {
 &"student": 4
 }
 cutin_text = "夕方の帰り道!"
+sky_top = Color(0.91, 0.45, 0.42, 1)
+sky_bottom = Color(1, 0.8, 0.55, 1)
+night = false

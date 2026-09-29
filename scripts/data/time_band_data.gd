@@ -16,6 +16,10 @@ extends Resource
 @export var mix: Dictionary
 ## 時間帯が変わるときのカットインの文言(GameDesign.md 9.3節)
 @export var cutin_text: String
+## 画面の背景の空の色(上端・下端)と、夜か(月と星を出す)(GameDesign.md 9.5節)
+@export var sky_top: Color
+@export var sky_bottom: Color
+@export var night: bool
 
 
 func mix_total() -> int:

@@ -1,13 +1,13 @@
 class_name CustomerFlow
 extends MatchPart
-## 両店の入口へ流れ込む人の流れと、取り逃した客の吹き出し(GameDesign.md 2.6節・9.2節)。
+## 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ・取り逃した客の吹き出し(GameDesign.md 2.6節・9.2節・9.5節)。
 ## 客は1人ずつ通りを歩かせず、入った店の入口へ吸い込まれる短い流れとして描き、
-## 流れの太さでどちらの店へ多く入っているかを見せる(1秒に4〜9人来るため)。
+## 流れの太さでどちらの店へ多く入っているかを見せる(1秒に4〜9人来るため)。夜は入口から明かりがこぼれる。
 
 const WALK_SECONDS := 0.9
-const ICON_RADIUS := 7.0
-const EVENT_ICON_RADIUS := 9.0
-const EVENT_RING := 2.0
+const ICON_RADIUS := 6.5
+const EVENT_ICON_RADIUS := 8.5
+const EVENT_RING := 2.5
 const LANE_JITTER := 22.0
 const DOOR_SPREAD := 18.0
 const MAX_WALKERS := 60
@@ -16,16 +16,23 @@ const LEAVE_ALPHA := 0.45
 const RATE_DECAY_SECONDS := 1.5
 const RATE_FOR_FULL_STREAM := 9.0
 const STREAM_MAX_WIDTH := 30.0
-const STREAM_ALPHA := 0.28
+const STREAM_ALPHA := 0.35
 const BUBBLE_SECONDS := 1.6
 ## 吹き出しは店ごとにこの秒数に1つまで(画面が埋まらないように間引く。数はすべて数える)
 const BUBBLE_INTERVAL := 1.2
 const BUBBLE_RISE := 26.0
-const BUBBLE_PAD := 6.0
-const BUBBLE_HEIGHT := 22.0
-const BUBBLE_OFFSET := Vector2(0, -34)
-const DASH_LENGTH := 14.0
+const BUBBLE_PAD := 7.0
+const BUBBLE_HEIGHT := 24.0
+const BUBBLE_OFFSET := Vector2(0, -44)
+const BUBBLE_TAIL_INSET := 16.0
+const SIDEWALK_WIDTH := 16.0
+const CURB := 2.0
+const DASH_LENGTH := 16.0
 const DASH_WIDTH := 3.0
+const DOOR_MAT := Vector2(8, 60)
+const LIGHT_RADIUS := 56.0
+const LIGHT_RINGS := 4
+const HALF_DISC_STEPS := 16
 const HALF := 0.5
 
 ## 入口の位置(この部品の中の座標。自店・相手の順)
@@ -35,6 +42,8 @@ var _walkers: Array[Dictionary] = []
 var _bubbles: Array[Dictionary] = []
 var _bubble_cooldown: Array[float] = [0.0, 0.0]
 var _rates: Array[float] = [0.0, 0.0]
+## 夜の度合い(空と同じ速さで移る)
+var _night := -1.0
 ## 見た目だけの乱数(試合の乱数は使わない。使うと同じ種で同じ試合にならなくなる)
 var _rng := RandomNumberGenerator.new()
 
@@ -85,29 +94,66 @@ func _process(delta: float) -> void:
 	for i in _rates.size():
 		_rates[i] *= exp(-delta / RATE_DECAY_SECONDS)
 		_bubble_cooldown[i] = maxf(_bubble_cooldown[i] - delta, 0.0)
+	if match_state != null:
+		var target := 1.0 if match_state.current_band().night else 0.0
+		if _night < 0.0:
+			_night = target
+		_night = move_toward(_night, target, delta / SkyBackdrop.BLEND_SECONDS)
 	super._process(delta)
 
 
 func _draw() -> void:
 	if match_state == null:
 		return
-	draw_rect(Rect2(Vector2.ZERO, size), UiPalette.STREET)
-	var x := size.x * HALF
-	var y := 0.0
-	while y < size.y:
-		draw_line(
-			Vector2(x, y),
-			Vector2(x, minf(y + DASH_LENGTH, size.y)),
-			UiPalette.STREET_LINE,
-			DASH_WIDTH
-		)
-		y += DASH_LENGTH * 2.0
+	_draw_street()
 	for i in door_points.size():
 		_draw_stream(i)
 	for walker in _walkers:
 		_draw_walker(walker)
 	for bubble in _bubbles:
 		_draw_bubble(bubble)
+
+
+## 上から見た通り:両側の歩道・車道・中央の破線。夜は暗くなり、入口の前に店の明かりがこぼれる
+func _draw_street() -> void:
+	var night := clampf(_night, 0.0, 1.0)
+	var road := UiPalette.STREET.lerp(UiPalette.STREET_NIGHT, night)
+	var walk := UiPalette.SIDEWALK.lerp(UiPalette.SIDEWALK_NIGHT, night)
+	draw_rect(Rect2(Vector2.ZERO, size), road)
+	draw_rect(Rect2(0, 0, SIDEWALK_WIDTH, size.y), walk)
+	draw_rect(Rect2(size.x - SIDEWALK_WIDTH, 0, SIDEWALK_WIDTH, size.y), walk)
+	for x in [SIDEWALK_WIDTH, size.x - SIDEWALK_WIDTH]:
+		draw_line(Vector2(x, 0), Vector2(x, size.y), UiPalette.INK, CURB)
+	var mid := size.x * HALF
+	var y := 0.0
+	while y < size.y:
+		draw_line(
+			Vector2(mid, y),
+			Vector2(mid, minf(y + DASH_LENGTH, size.y)),
+			UiPalette.STREET_LINE,
+			DASH_WIDTH
+		)
+		y += DASH_LENGTH * 2.0
+	for i in door_points.size():
+		var door := door_points[i]
+		if night > 0.0:
+			var facing := 1.0 if i == 0 else -1.0
+			for ring in LIGHT_RINGS:
+				var light := UiPalette.DOOR_LIGHT
+				light.a *= night / LIGHT_RINGS
+				_half_disc(door, LIGHT_RADIUS * (ring + 1) / LIGHT_RINGS, facing, light)
+		var mat_x := door.x if i == 0 else door.x - DOOR_MAT.x
+		var mat := Rect2(mat_x, door.y - DOOR_MAT.y * HALF, DOOR_MAT.x, DOOR_MAT.y)
+		draw_rect(mat, UiPalette.STORE_ACCENTS[i])
+
+
+## 通りの側(facing が正なら右)だけの半円。店の壁へ明かりがはみ出さないようにする
+func _half_disc(center: Vector2, radius: float, facing: float, color: Color) -> void:
+	var points := PackedVector2Array()
+	for step in HALF_DISC_STEPS + 1:
+		var angle := -PI * HALF + PI * step / HALF_DISC_STEPS
+		points.append(center + Vector2(cos(angle) * facing, sin(angle)) * radius)
+	draw_colored_polygon(points, color)
 
 
 func _draw_stream(index: int) -> void:
@@ -131,7 +177,7 @@ func _draw_walker(walker: Dictionary) -> void:
 	var alpha := 1.0 if int(walker["store"]) >= 0 else LEAVE_ALPHA
 	var radius := EVENT_ICON_RADIUS if walker["event"] else ICON_RADIUS
 	if walker["event"]:
-		draw_circle(pos, radius + EVENT_RING, UiPalette.WARN)
+		draw_circle(pos, radius + EVENT_RING * 2.0, UiPalette.MONEY)
 	UiDraw.customer_icon(self, pos, radius, customer, alpha)
 
 
@@ -140,14 +186,14 @@ func _draw_bubble(bubble: Dictionary) -> void:
 	var label: String = bubble["text"]
 	var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + BUBBLE_PAD * 2.0
 	var anchor: Vector2 = bubble["anchor"] + Vector2(0, -BUBBLE_RISE * t)
-	var left := anchor.x if int(bubble["store"]) == 0 else anchor.x - width
+	var own := int(bubble["store"]) == 0
+	var left := anchor.x if own else anchor.x - width
 	var rect := Rect2(left, anchor.y - BUBBLE_HEIGHT * HALF, width, BUBBLE_HEIGHT)
 	var alpha := 1.0 - t * t
-	var fill := UiPalette.PANEL
+	var fill := UiPalette.INK_ON_DARK
 	fill.a = alpha
 	var edge := UiPalette.BAD
 	edge.a = alpha
-	UiDraw.panel(self, rect, fill, edge, 1)
-	var ink := UiPalette.BAD
-	ink.a = alpha
-	UiDraw.text_centered(self, rect, label, UiPalette.FONT_SMALL, ink)
+	var tail_x := rect.position.x + BUBBLE_TAIL_INSET if own else rect.end.x - BUBBLE_TAIL_INSET
+	UiDraw.bubble(self, rect, fill, edge, tail_x)
+	UiDraw.text_centered(self, rect, label, UiPalette.FONT_SMALL, edge)

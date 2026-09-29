@@ -1,32 +1,47 @@
 class_name ManagerSelectScreen
 extends Control
-## 店長の選択(GameDesign.md 7章)。カードをタップして選び、開店する。CPUは残りから選ばれる(8.1節)。
+## 店長の選択(GameDesign.md 7章・9.5節)。店長は社員証の形のカードで並べる。
+## カードをタップして選び(浮き上がって黄色い枠が付く)、開店する。CPUは残りから選ばれる(8.1節)。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
-const HEADER_Y := 70.0
-const CARD_SIZE := Vector2(290, 400)
-const CARD_GAP := 16.0
-const CARD_Y := 110.0
+const HEADER_RECT := Rect2(490, 22, 300, 52)
+const CARD_SIZE := Vector2(272, 438)
+const CARD_GAP := 18.0
+const CARD_Y := 104.0
+const CARD_RADIUS := 16
+const LIFT := 10.0
+const HOVER_LIFT := 4.0
 const PAD := 16.0
+const STRAP := Vector2(44, 9)
+const STRAP_Y := 12.0
+const BADGE_TOP := 30.0
+const BADGE_HEIGHT := 118.0
 const PORTRAIT_RADIUS := 44.0
-const PORTRAIT_Y := 70.0
-const NAME_Y := 150.0
-const SECTION_GAP := 26.0
-const DESC_LINES := 4
-const BUTTON_SIZE := Vector2(300, 64)
-const BUTTON_Y := 580.0
-const SELECTED_EDGE := 4
-const PORTRAIT_TEXT_RATIO := 0.9
+const PORTRAIT_RING := 5.0
+const PORTRAIT_TEXT := 40
+const PORTRAIT_DARKEN := 0.2
+const NAME_Y := 182.0
+const SECTION_Y := 202.0
+const LABEL_HEIGHT := 22.0
+const BODY_GAP := 8.0
+const SECTION_GAP := 14.0
+const PASSIVE_LINES := 3
+const ACTIVE_LINES := 4
+const SELECT_RING := 5.0
+const RIBBON_SIZE := Vector2(96, 28)
+const BUTTON_RECT := Rect2(460, 582, 360, 78)
+const GROUND_Y := 680.0
 
 var _selected := -1
-var _start: Button
+var _hover := -1
+var _start: PopButton
 
 
 func _ready() -> void:
-	_start = UiDraw.make_button("この店長で開店", UiPalette.STORE_COLORS[0], UiPalette.FONT_HEAD)
+	_start = PopButton.create("この店長で開店!", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
 	add_child(_start)
-	_start.size = BUTTON_SIZE
-	_start.position = Vector2((size.x - BUTTON_SIZE.x) / 2.0, BUTTON_Y)
+	_start.position = BUTTON_RECT.position
+	_start.size = BUTTON_RECT.size
 	_start.disabled = true
 	_start.pressed.connect(_on_start)
 
@@ -42,46 +57,79 @@ func _card_rect(index: int) -> Rect2:
 	return Rect2(Vector2(x, CARD_Y), CARD_SIZE)
 
 
+func _card_at(pos: Vector2) -> int:
+	for i in _managers().size():
+		if _card_rect(i).grow_individual(0, LIFT, 0, 0).has_point(pos):
+			return i
+	return -1
+
+
 func _gui_input(event: InputEvent) -> void:
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		var hover := _card_at(motion.position)
+		if hover != _hover:
+			_hover = hover
+			mouse_default_cursor_shape = CURSOR_POINTING_HAND if hover >= 0 else CURSOR_ARROW
+			queue_redraw()
+		return
 	var press := event as InputEventMouseButton
 	if press == null or not press.pressed or press.button_index != MOUSE_BUTTON_LEFT:
 		return
-	for i in _managers().size():
-		if _card_rect(i).has_point(press.position):
-			_selected = i
-			_start.disabled = false
-			queue_redraw()
+	var index := _card_at(press.position)
+	if index >= 0:
+		_selected = index
+		_start.disabled = false
+		queue_redraw()
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), UiPalette.BACKGROUND)
-	var center := HORIZONTAL_ALIGNMENT_CENTER
-	var header := "店長を選ぶ"
-	UiDraw.text(
-		self, Vector2(0, HEADER_Y), header, UiPalette.FONT_HUGE, UiPalette.INK, center, size.x
+	var screen := Rect2(Vector2.ZERO, size)
+	SkyBackdrop.paint(self, screen, UiPalette.MENU_SKY_TOP, UiPalette.MENU_SKY_BOTTOM, 0.0)
+	draw_rect(Rect2(0, GROUND_Y, size.x, size.y - GROUND_Y), UiPalette.SIDEWALK)
+	draw_line(Vector2(0, GROUND_Y), Vector2(size.x, GROUND_Y), UiPalette.INK, UiPalette.OUTLINE)
+	UiDraw.panel(
+		self, HEADER_RECT, UiPalette.INK, Color.TRANSPARENT, 0, int(HEADER_RECT.size.y * 0.5)
 	)
+	UiDraw.text_centered(self, HEADER_RECT, "店長を選ぶ", UiPalette.FONT_HEAD, UiPalette.INK_ON_DARK)
 	var managers := _managers()
 	for i in managers.size():
-		_draw_card(_card_rect(i), managers[i], i == _selected)
+		var rect := _card_rect(i)
+		if i == _selected:
+			rect.position.y -= LIFT
+		elif i == _hover:
+			rect.position.y -= HOVER_LIFT
+		_draw_card(rect, managers[i], i == _selected)
 
 
 func _draw_card(rect: Rect2, manager: ManagerData, selected: bool) -> void:
-	UiDraw.shadowed_panel(self, rect, UiPalette.PANEL)
 	if selected:
-		draw_rect(rect.grow(2.0), manager.color, false, SELECTED_EDGE)
-	var center := HORIZONTAL_ALIGNMENT_CENTER
-	var portrait := rect.position + Vector2(rect.size.x / 2.0, PORTRAIT_Y)
-	if manager.portrait != null:
-		var side := Vector2.ONE * PORTRAIT_RADIUS * 2.0
-		draw_texture_rect(manager.portrait, Rect2(portrait - side / 2.0, side), false)
-	else:
-		draw_circle(portrait, PORTRAIT_RADIUS, manager.color)
-		var cell := Rect2(
-			portrait - Vector2.ONE * PORTRAIT_RADIUS, Vector2.ONE * PORTRAIT_RADIUS * 2.0
+		var ring := rect.grow(SELECT_RING)
+		UiDraw.panel(
+			self,
+			ring,
+			UiPalette.MONEY,
+			UiPalette.INK,
+			UiPalette.OUTLINE_THIN,
+			CARD_RADIUS + int(SELECT_RING)
 		)
-		var letter := manager.display_name.left(1)
-		var letter_size := int(PORTRAIT_RADIUS * PORTRAIT_TEXT_RATIO)
-		UiDraw.text_centered(self, cell, letter, letter_size, UiPalette.INK_ON_DARK)
+	UiDraw.card(self, rect, UiPalette.PAPER, CARD_RADIUS)
+	var strap := Rect2(
+		rect.get_center().x - STRAP.x * 0.5, rect.position.y + STRAP_Y, STRAP.x, STRAP.y
+	)
+	UiDraw.panel(
+		self, strap, UiPalette.PAPER_DIM, UiPalette.INK, UiPalette.OUTLINE_THIN, int(STRAP.y * 0.5)
+	)
+	var badge := Rect2(
+		rect.position.x + PAD * 0.75,
+		rect.position.y + BADGE_TOP,
+		rect.size.x - PAD * 1.5,
+		BADGE_HEIGHT
+	)
+	UiDraw.panel(
+		self, badge, manager.color, UiPalette.INK, UiPalette.OUTLINE_THIN, UiPalette.RADIUS
+	)
+	_draw_portrait(badge.get_center(), manager)
 	var name_pos := Vector2(rect.position.x, rect.position.y + NAME_Y)
 	UiDraw.text(
 		self,
@@ -89,28 +137,79 @@ func _draw_card(rect: Rect2, manager: ManagerData, selected: bool) -> void:
 		manager.display_name,
 		UiPalette.FONT_HEAD,
 		UiPalette.INK,
-		center,
+		HORIZONTAL_ALIGNMENT_CENTER,
 		rect.size.x
 	)
-	var y := rect.position.y + NAME_Y + SECTION_GAP * 1.5
-	y = _draw_section(rect, y, "パッシブ(ずっと効く)", manager.passive_description, manager.color)
-	var active_text := "%s:%s" % [manager.active_name, manager.active_description]
-	_draw_section(rect, y, "アクティブ(1回だけ)", active_text, manager.color)
+	var y := rect.position.y + SECTION_Y
+	y = _draw_section(
+		rect, y, "パッシブ", UiPalette.INK_SOFT, "", manager.passive_description, PASSIVE_LINES
+	)
+	y += SECTION_GAP
+	_draw_section(
+		rect,
+		y,
+		"アクティブ",
+		manager.color,
+		manager.active_name,
+		manager.active_description,
+		ACTIVE_LINES
+	)
+	if selected:
+		var ribbon := Rect2(
+			rect.end.x - RIBBON_SIZE.x + PAD * 0.5,
+			rect.position.y - RIBBON_SIZE.y * 0.5,
+			RIBBON_SIZE.x,
+			RIBBON_SIZE.y
+		)
+		UiDraw.card(self, ribbon, UiPalette.MONEY, int(RIBBON_SIZE.y * 0.5), UiPalette.OUTLINE_THIN)
+		UiDraw.text_centered(self, ribbon, "選択中", UiPalette.FONT_BODY, UiPalette.INK)
 
 
-func _draw_section(rect: Rect2, y: float, label: String, body: String, color: Color) -> float:
+func _draw_portrait(center: Vector2, manager: ManagerData) -> void:
+	draw_circle(center, PORTRAIT_RADIUS + PORTRAIT_RING + UiPalette.OUTLINE_THIN, UiPalette.INK)
+	draw_circle(center, PORTRAIT_RADIUS + PORTRAIT_RING, UiPalette.INK_ON_DARK)
+	if manager.portrait != null:
+		var side := Vector2.ONE * PORTRAIT_RADIUS * 2.0
+		draw_texture_rect(manager.portrait, Rect2(center - side / 2.0, side), false)
+		return
+	draw_circle(center, PORTRAIT_RADIUS, manager.color.darkened(PORTRAIT_DARKEN))
+	var cell := Rect2(center - Vector2.ONE * PORTRAIT_RADIUS, Vector2.ONE * PORTRAIT_RADIUS * 2.0)
+	UiDraw.text_centered(
+		self,
+		cell,
+		manager.display_name.left(1),
+		PORTRAIT_TEXT,
+		UiPalette.INK_ON_DARK,
+		UiPalette.INK
+	)
+
+
+## 札(パッシブ/アクティブ)と、その右に名前、下に説明。描き終えた下端を返す
+func _draw_section(
+	rect: Rect2, y: float, label: String, color: Color, title: String, body: String, max_lines: int
+) -> float:
 	var x := rect.position.x + PAD
 	var width := rect.size.x - PAD * 2.0
-	UiDraw.text(self, Vector2(x, y), label, UiPalette.FONT_SMALL, color)
-	var body_y := y + SECTION_GAP * 0.9
+	var label_width := UiDraw.text_width(label, UiPalette.FONT_TINY) + PAD
+	var chip := Rect2(x, y, label_width, LABEL_HEIGHT)
+	UiDraw.panel(self, chip, color, UiPalette.INK, UiPalette.OUTLINE_THIN, int(LABEL_HEIGHT * 0.5))
+	UiDraw.text_centered(
+		self, chip, label, UiPalette.FONT_TINY, UiPalette.INK_ON_DARK, UiPalette.INK
+	)
+	if not title.is_empty():
+		var title_pos := Vector2(
+			chip.end.x + BODY_GAP, UiDraw.baseline_in(chip, UiPalette.FONT_LARGE)
+		)
+		UiDraw.text(self, title_pos, title, UiPalette.FONT_LARGE, UiPalette.INK)
 	var font := UiDraw.font()
 	var font_size := UiPalette.FONT_BODY
 	var left := HORIZONTAL_ALIGNMENT_LEFT
+	var body_top := chip.end.y + BODY_GAP + font.get_ascent(font_size)
 	draw_multiline_string(
-		font, Vector2(x, body_y), body, left, width, font_size, DESC_LINES, UiPalette.INK
+		font, Vector2(x, body_top), body, left, width, font_size, max_lines, UiPalette.INK
 	)
-	var lines := font.get_multiline_string_size(body, left, width, font_size, DESC_LINES).y
-	return body_y + lines + SECTION_GAP
+	var lines := font.get_multiline_string_size(body, left, width, font_size, max_lines).y
+	return chip.end.y + BODY_GAP + lines
 
 
 func _on_start() -> void:
