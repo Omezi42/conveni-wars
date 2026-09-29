@@ -50,6 +50,7 @@ var _pop_timer := 0.0
 var _player_leading := false
 var _reversal_cooldown := 0.0
 var _end_timer := -1.0
+var _leaving := false
 
 
 func _ready() -> void:
@@ -63,7 +64,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if match_state.finished:
 		_end_timer -= delta
-		if _end_timer <= 0.0 and is_inside_tree():
+		if _end_timer <= 0.0 and not _leaving:
+			_leaving = true
 			GameSession.last_result = match_state.result
 			get_tree().change_scene_to_file(RESULT_SCENE)
 		return

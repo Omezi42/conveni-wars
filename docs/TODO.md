@@ -8,33 +8,15 @@
 
 ---
 
-## 1. 土台
+## 1. 設計書の追随(実装で決めたことを Architecture.md へ)
 
-- [ ] Godotプロジェクトを作る(1280×720・`canvas_items`・Web書き出しの設定。GameDesign.md 10章)
-- [ ] `tools/check.sh` と `gdlintrc` を `砂時計pvp` を手本に用意する(Architecture.md 6章)
+- [ ] 2章: GameDatabase を autoload ではなく `GameDatabase.get_default()` にしたこと、追加したフィールド(`order` `color` `short_name` `cutin_text` 店長の説明文)、`data/cpu/`
+- [ ] 3章: シグナルの引数の変更(`purchased` の個数と金額、`customer_arrived` の is_event、`event_announced` の店番号、`opened` `ordered` `skill_ended`)
+- [ ] 4章: `StoreFrame` `MatchPart` `UiSelection`、資金は `SkillButton` に同居
+- [ ] 5章: CPUの需要の見積もり方、6章: `screen_flow_smoke.gd` `capture_screens.gd` `simulate.gd` の使い方
+- [ ] Pitfalls.md: .tres は辞書のキーを並べ替えて保存する/`--script` の本体はautoload登録前にコンパイルされる
 
-## 2. データ(Architecture.md 2章)
+## 2. 仕様の判断待ち(提案)
 
-- [ ] Resourceクラス7種と `GameDatabase`
-- [ ] 初期データの `.tres`:カテゴリ9・商品13・客層10(時間帯6+イベント4)・時間帯4・セット5・イベント4・店長4・`balance.tres`
-
-## 3. ロジック(Architecture.md 3章)
-
-- [ ] `MatchState` / `StoreState` と進行(時計・時間帯・配送・廃棄・客の到着)
-- [ ] `ShelfBonus` と `Attraction`(魅力度・店の選択・買い物・取り逃した客)
-- [ ] `EventScheduler`(抽選・予告・イベント客)
-- [ ] コマンド5種
-- [ ] `ManagerSkills`(パッシブ4・アクティブ4)
-- [ ] ヘッドレステスト
-
-## 4. CPUとシミュレーション(Architecture.md 5章・6章)
-
-- [ ] `CpuPlayer` と `CpuProfile`(GameDesign.md 8.2節・8.3節)
-- [ ] `tools/simulate.gd` で CPU 対 CPU を回し、数値の極端な偏りと、イベントが売上に占める割合を見る
-
-## 5. 画面(Architecture.md 4章)
-
-- [ ] 試合画面(棚・発注・在庫一覧・値段ボタン・HUD・予報とイベント予告・来店数カウンタ・スキル)
-- [ ] タイトル・店長選択・結果
-- [ ] 人の流れと取り逃した客の吹き出し
-- [ ] 演出(`FxLayer`:売上の飛び出し・カットイン・大口獲得・逆転)
+- [ ] シミュレーション結果への対応(売上の想定・元アイドルの勝率・資金が余る)
+- [ ] 握手会で自店の魅力度が0の客の扱い
