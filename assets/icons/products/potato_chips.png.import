@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dq3x38jl002w0"
-path="res://.godot/imported/club_student.png-ecacc2f270145860975a3a6404e938fc.ctex"
+uid="uid://dsgcodyklw8qo"
+path="res://.godot/imported/potato_chips.png-17600b7649caa24aaa490adbc5f98537.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/club_student.png"
-dest_files=["res://.godot/imported/club_student.png-ecacc2f270145860975a3a6404e938fc.ctex"]
+source_file="res://assets/icons/products/potato_chips.png"
+dest_files=["res://.godot/imported/potato_chips.png-17600b7649caa24aaa490adbc5f98537.ctex"]
 
 [params]
 

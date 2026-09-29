@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dopmglklv3lo5"
-path="res://.godot/imported/tissue.png-17e37b3e19f0c9bb925548ecfccf8daa.ctex"
+uid="uid://d3mbgrfema4ei"
+path="res://.godot/imported/youth.png-528e4d161406def352d7f73b25a540fe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/tissue.png"
-dest_files=["res://.godot/imported/tissue.png-17e37b3e19f0c9bb925548ecfccf8daa.ctex"]
+source_file="res://assets/icons/customers/youth.png"
+dest_files=["res://.godot/imported/youth.png-528e4d161406def352d7f73b25a540fe.ctex"]
 
 [params]
 

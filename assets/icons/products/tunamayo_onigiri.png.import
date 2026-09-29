@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ybj737drxqvs"
-path="res://.godot/imported/bread.png-890d607558d8f2d2aef60932d246aa95.ctex"
+uid="uid://dihk1u8df1ak4"
+path="res://.godot/imported/tunamayo_onigiri.png-879a907840792bcd217ed159740e55b6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/bread.png"
-dest_files=["res://.godot/imported/bread.png-890d607558d8f2d2aef60932d246aa95.ctex"]
+source_file="res://assets/icons/products/tunamayo_onigiri.png"
+dest_files=["res://.godot/imported/tunamayo_onigiri.png-879a907840792bcd217ed159740e55b6.ctex"]
 
 [params]
 

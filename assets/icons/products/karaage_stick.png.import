@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cu2k6bd30aflj"
-path="res://.godot/imported/student.png-b7fffc05be33cb17d587aa38688ad3ed.ctex"
+uid="uid://lnqwweiw6dux"
+path="res://.godot/imported/karaage_stick.png-87c6978a9bc4555f909c795b2f4da1e9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/student.png"
-dest_files=["res://.godot/imported/student.png-b7fffc05be33cb17d587aa38688ad3ed.ctex"]
+source_file="res://assets/icons/products/karaage_stick.png"
+dest_files=["res://.godot/imported/karaage_stick.png-87c6978a9bc4555f909c795b2f4da1e9.ctex"]
 
 [params]
 

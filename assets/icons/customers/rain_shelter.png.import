@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnjvia1r7yy5q"
-path="res://.godot/imported/analyst.png-6ba07f244cd4314de41b6d6e32f79d21.ctex"
+uid="uid://6vfhybmo3xa6"
+path="res://.godot/imported/rain_shelter.png-dca7072cbe0451645a17cbcef5fcd618.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/analyst.png"
-dest_files=["res://.godot/imported/analyst.png-6ba07f244cd4314de41b6d6e32f79d21.ctex"]
+source_file="res://assets/icons/customers/rain_shelter.png"
+dest_files=["res://.godot/imported/rain_shelter.png-dca7072cbe0451645a17cbcef5fcd618.ctex"]
 
 [params]
 

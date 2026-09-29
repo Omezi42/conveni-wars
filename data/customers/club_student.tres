@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="CustomerTypeData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_f45dk"]
-[ext_resource type="Texture2D" path="res://assets/icons/club_student.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://assets/icons/customers/club_student.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_f45dk")

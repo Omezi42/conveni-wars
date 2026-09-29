@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d1e7fn2o14i12"
-path="res://.godot/imported/night_worker.png-b5fe1d3a0383e760d0fd12050bfeb5d8.ctex"
+uid="uid://dd5mmxtf6616k"
+path="res://.godot/imported/tissue.png-1c06bae7e458138a7a55f33336aad924.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/night_worker.png"
-dest_files=["res://.godot/imported/night_worker.png-b5fe1d3a0383e760d0fd12050bfeb5d8.ctex"]
+source_file="res://assets/icons/products/tissue.png"
+dest_files=["res://.godot/imported/tissue.png-1c06bae7e458138a7a55f33336aad924.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cx30pgn3qf6lj"
-path="res://.godot/imported/senior.png-fad1458b8346f5e844857bacaf0f1d08.ctex"
+uid="uid://cty0i5ktiuykh"
+path="res://.godot/imported/night_worker.png-9658803078b3dd0b957ff172f42940ee.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/senior.png"
-dest_files=["res://.godot/imported/senior.png-fad1458b8346f5e844857bacaf0f1d08.ctex"]
+source_file="res://assets/icons/customers/night_worker.png"
+dest_files=["res://.godot/imported/night_worker.png-9658803078b3dd0b957ff172f42940ee.ctex"]
 
 [params]
 

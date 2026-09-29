@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://x3qh8of8ywgv"
-path="res://.godot/imported/green_tea.png-b5be75544076876d26d121d83ab4236d.ctex"
+uid="uid://cbufpuxfw5ped"
+path="res://.godot/imported/nori_bento.png-79319bf4722f8fb42df4c5fc2fd02040.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/green_tea.png"
-dest_files=["res://.godot/imported/green_tea.png-b5be75544076876d26d121d83ab4236d.ctex"]
+source_file="res://assets/icons/products/nori_bento.png"
+dest_files=["res://.godot/imported/nori_bento.png-79319bf4722f8fb42df4c5fc2fd02040.ctex"]
 
 [params]
 

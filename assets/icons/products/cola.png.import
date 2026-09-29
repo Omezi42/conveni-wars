@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://fyqguiae8wug"
-path="res://.godot/imported/office.png-2fb66937b23508c594e43c24c1f8c3a6.ctex"
+uid="uid://cneqayng2vxgr"
+path="res://.godot/imported/cola.png-0c26a64697b3cd1360a62c557e65e0c6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/office.png"
-dest_files=["res://.godot/imported/office.png-2fb66937b23508c594e43c24c1f8c3a6.ctex"]
+source_file="res://assets/icons/products/cola.png"
+dest_files=["res://.godot/imported/cola.png-0c26a64697b3cd1360a62c557e65e0c6.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dlwlwi21hwial"
-path="res://.godot/imported/umbrella.png-d546ac7803b85ebc7484aed8398c6a8f.ctex"
+uid="uid://cfgrvwxwtghf"
+path="res://.godot/imported/idol.png-01d726651dc021c86e177e80404850e7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/umbrella.png"
-dest_files=["res://.godot/imported/umbrella.png-d546ac7803b85ebc7484aed8398c6a8f.ctex"]
+source_file="res://assets/icons/managers/idol.png"
+dest_files=["res://.godot/imported/idol.png-01d726651dc021c86e177e80404850e7.ctex"]
 
 [params]
 

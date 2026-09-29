@@ -1,8 +1,10 @@
 class_name ShelfView
 extends MatchPart
-## 3×3の棚(GameDesign.md 4章・9.2節・9.5節)。自店は操作でき、相手は表示だけ(同じ部品を大きさを変えて使う)。
+## 3×3の棚(GameDesign.md 4章・6章・9.2節・9.5節)。自店は操作でき、相手は表示だけ(同じ部品を大きさを変えて使う)。
 ## 各段の手前に棚板があり、値札は棚板に掛かる。マスには商品・在庫数・売値を出し、
 ## 成立しているボーナスを枠の色と、マスの左上に縦に並べた名前の札で示す(自店だけ。相手は枠の色だけ)。
+## 自店のマスは左に絵と名前、右の列に在庫数・廃棄までの残りのバー・入荷待ち・発注ボタンを置く。
+## 発注ボタンを押すとその商品を発注し、ほかの所を押すと値段のメニューを開く(slot_pressed)。
 
 signal slot_pressed(slot: int)
 signal product_dropped(product_id: StringName, slot: int)
@@ -14,9 +16,21 @@ const BOARD_OVERHANG := 5.0
 const BOARD_RADIUS := 4
 ## マスの中の配置(アイコンの辺は棚板より上の幅と高さの短いほう、縦の位置はその高さに対する割合)
 const ICON_SIZE := 0.6
-const ICON_Y := 0.4
 const COMPACT_ICON_Y := 0.44
-const NAME_Y := 0.94
+## 自店のマス:左の絵の列の幅(マスの幅に対する割合)・絵の辺と縦の位置・名前のベースライン(割合)
+const ART_WIDTH := 0.54
+const ART_ICON_SIZE := 0.72
+const ART_ICON_Y := 0.42
+const NAME_Y := 0.9
+## 自店のマス:右の列の余白・在庫数のベースライン・廃棄バー・入荷待ちの札・発注ボタン(マスの中の座標)
+const COLUMN_PAD := 6.0
+const STOCK_BASELINE := 30.0
+const STOCK_FONT := 26
+const WASTE_BAR_Y := 38.0
+const WASTE_BAR_HEIGHT := 6.0
+const DELIVERY_Y := 58.0
+const DELIVERY_HEIGHT := 17.0
+const ORDER_HEIGHT := 30.0
 const BADGE_HEIGHT := 22.0
 const COMPACT_BADGE_HEIGHT := 16.0
 ## 値札の幅(マスの幅に対する割合)と高さ
@@ -45,6 +59,12 @@ var selection: UiSelection
 var open_slot := -1
 
 var _drop_slot := -1
+var _gauge: StockGauge
+
+
+func setup(state: MatchState, index: int) -> void:
+	super.setup(state, index)
+	_gauge = StockGauge.new(state, index)
 
 
 func configure(cell: Vector2, spacing: Vector2, is_interactive: bool) -> void:
@@ -69,6 +89,29 @@ func slot_rect(slot: int) -> Rect2:
 	return Rect2(pos, cell_size)
 
 
+## 自店のマスの発注ボタン(棚板より上の右下)
+func order_rect(slot: int) -> Rect2:
+	var space := _space_rect(slot_rect(slot))
+	var left := space.position.x + space.size.x * ART_WIDTH
+	var bottom := space.end.y - COLUMN_PAD - StockGauge.ORDER_DROP
+	return Rect2(
+		left, bottom - ORDER_HEIGHT, space.end.x - COLUMN_PAD - left, ORDER_HEIGHT
+	)
+
+
+## 商品の入っている自店のマスのうち、発注ボタンの上にある番号(無ければ -1)
+func order_slot_at(pos: Vector2) -> int:
+	if not interactive:
+		return -1
+	for slot in StoreState.SLOT_COUNT:
+		if (
+			store().shelf[slot] != StoreState.EMPTY
+			and StockGauge.hit_rect(order_rect(slot)).has_point(pos)
+		):
+			return slot
+	return -1
+
+
 func slot_at(pos: Vector2) -> int:
 	for slot in StoreState.SLOT_COUNT:
 		if slot_rect(slot).has_point(pos):
@@ -91,9 +134,31 @@ func sale_origin(product_id: StringName) -> Vector2:
 	return global_position + _space_rect(slot_rect(best)).get_center()
 
 
+func _process(delta: float) -> void:
+	if _gauge != null:
+		_gauge.tick(delta)
+	super._process(delta)
+
+
 func _gui_input(event: InputEvent) -> void:
+	var motion := event as InputEventMouseMotion
+	if motion != null:
+		var hovered := order_slot_at(motion.position)
+		_gauge.hover_id = store().shelf[hovered] if hovered >= 0 else &""
+		mouse_default_cursor_shape = (
+			Control.CURSOR_POINTING_HAND if slot_at(motion.position) >= 0 else Control.CURSOR_ARROW
+		)
+		return
 	var press := event as InputEventMouseButton
-	if press == null or not press.pressed or press.button_index != MOUSE_BUTTON_LEFT:
+	if press == null or press.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not press.pressed:
+		_gauge.release()
+		return
+	var order_slot := order_slot_at(press.position)
+	if order_slot >= 0:
+		_gauge.press(store().shelf[order_slot])
+		accept_event()
 		return
 	var slot := slot_at(press.position)
 	if slot >= 0:
@@ -118,6 +183,8 @@ func _drop_data(at_position: Vector2, data: Variant) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_DRAG_END:
 		_drop_slot = -1
+	if what == NOTIFICATION_MOUSE_EXIT and _gauge != null:
+		_gauge.release()
 
 
 ## 名前・ボーナスの札まで出すか(操作する自店の棚だけ)
@@ -202,35 +269,63 @@ func _draw_product(
 		)
 	if stock <= 0:
 		UiDraw.panel(self, space, Color.TRANSPARENT, UiPalette.BAD, UiPalette.OUTLINE_THIN, radius)
-	var icon_side := minf(space.size.x, space.size.y) * ICON_SIZE
-	var icon_y := space.size.y * (ICON_Y if detailed else COMPACT_ICON_Y)
-	var icon_center := space.position + Vector2(space.size.x * 0.5, icon_y)
 	var alpha := 1.0 if stock > 0 else SOLD_OUT_ALPHA
-	UiDraw.product_icon(self, icon_center, icon_side, product, alpha)
-	_draw_stock_badge(icon_center, icon_side, product_id, stock)
-	if detailed:
-		var name_pos := Vector2(space.position.x, space.position.y + space.size.y * NAME_Y)
-		var name_size := UiDraw.fit_size(product.short_name, UiPalette.FONT_SMALL, space.size.x)
-		UiDraw.text(
+	if not detailed:
+		var icon_side := minf(space.size.x, space.size.y) * ICON_SIZE
+		var icon_center := space.position + Vector2(space.size.x * 0.5, space.size.y * COMPACT_ICON_Y)
+		UiDraw.product_icon(self, icon_center, icon_side, product, alpha)
+		_draw_stock_badge(icon_center, icon_side, product_id, stock)
+		return
+	var art := Rect2(space.position, Vector2(space.size.x * ART_WIDTH, space.size.y))
+	var art_side := minf(art.size.x, art.size.y) * ART_ICON_SIZE
+	var art_center := art.position + Vector2(art.size.x * 0.5, art.size.y * ART_ICON_Y)
+	UiDraw.product_icon(self, art_center, art_side, product, alpha)
+	if stock <= 0 and store().next_delivery_seconds(product_id) < 0.0:
+		UiDraw.pill(
 			self,
-			name_pos,
-			product.short_name,
-			name_size,
-			UiPalette.INK_SOFT,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			space.size.x
+			art_center,
+			"品切れ",
+			UiPalette.FONT_BODY,
+			UiPalette.BAD,
+			UiPalette.INK_ON_DARK,
+			BADGE_HEIGHT
 		)
-		_draw_bonus_tags(space, kinds)
+	var name_pos := Vector2(art.position.x, art.position.y + art.size.y * NAME_Y)
+	var name_size := UiDraw.fit_size(product.short_name, UiPalette.FONT_SMALL, art.size.x)
+	UiDraw.text(
+		self,
+		name_pos,
+		product.short_name,
+		name_size,
+		UiPalette.INK_SOFT,
+		HORIZONTAL_ALIGNMENT_CENTER,
+		art.size.x
+	)
+	_draw_bonus_tags(space, kinds)
+	_draw_stock_column(slot, space, product_id, stock)
 
 
-## 在庫数の札。アイコンの右上に出し、少ないと赤く点滅する。
+## 自店のマスの右の列:在庫数(残り少ないと赤く点滅、切れると赤)・廃棄バー・入荷待ち・発注ボタン
+func _draw_stock_column(slot: int, space: Rect2, product_id: StringName, stock: int) -> void:
+	var left := space.position.x + space.size.x * ART_WIDTH
+	var width := space.end.x - COLUMN_PAD - left
+	var color := _gauge.stock_color(stock, true, blink()) if stock > 0 else UiPalette.BAD
+	var stock_pos := Vector2(left, space.position.y + STOCK_BASELINE)
+	UiDraw.text(self, stock_pos, str(stock), STOCK_FONT, color, HORIZONTAL_ALIGNMENT_CENTER, width)
+	var bar := Rect2(left, space.position.y + WASTE_BAR_Y, width, WASTE_BAR_HEIGHT)
+	_gauge.draw_waste_bar(self, bar, product_id, blink())
+	var delivery := Vector2(left + width * 0.5, space.position.y + DELIVERY_Y)
+	_gauge.draw_delivery(self, delivery, product_id, DELIVERY_HEIGHT)
+	_gauge.draw_order_button(self, order_rect(slot), product_id, true)
+
+
+## 相手の棚の在庫数の札。アイコンの右上に出し、少ないと赤く点滅する。
 ## 切れたらアイコンの上に、入荷までの秒数か「品切れ」を出す
 func _draw_stock_badge(
 	icon_center: Vector2, icon_side: float, product_id: StringName, stock: int
 ) -> void:
-	var detailed := _detailed()
-	var height := BADGE_HEIGHT if detailed else COMPACT_BADGE_HEIGHT
-	var font_size := UiPalette.FONT_BODY if detailed else UiPalette.FONT_TINY
+	var height := COMPACT_BADGE_HEIGHT
+	var font_size := UiPalette.FONT_TINY
 	var center := icon_center + Vector2(icon_side, -icon_side) * 0.5
 	var fill := UiPalette.PAPER
 	var ink := UiPalette.INK
@@ -242,7 +337,7 @@ func _draw_stock_badge(
 		if arriving >= 0.0:
 			fill = UiPalette.DELIVERY
 			var seconds := int(ceil(arriving))
-			label = ("入荷%d秒" if detailed else "%d秒") % seconds
+			label = "%d秒" % seconds
 		else:
 			fill = UiPalette.BAD
 			label = "品切れ"

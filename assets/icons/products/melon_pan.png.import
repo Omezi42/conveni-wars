@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://carnwcn6oa88d"
-path="res://.godot/imported/snack_buyer.png-cb5f2fe3283c57af43bbe3eef363995c.ctex"
+uid="uid://biscnw8ntqrfr"
+path="res://.godot/imported/melon_pan.png-b8f970a4dda927a467b1649ce11bf8fd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/snack_buyer.png"
-dest_files=["res://.godot/imported/snack_buyer.png-cb5f2fe3283c57af43bbe3eef363995c.ctex"]
+source_file="res://assets/icons/products/melon_pan.png"
+dest_files=["res://.godot/imported/melon_pan.png-b8f970a4dda927a467b1649ce11bf8fd.ctex"]
 
 [params]
 

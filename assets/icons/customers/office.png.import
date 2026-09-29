@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cp1mrgwfbon3b"
-path="res://.godot/imported/homemaker.png-aeb662d949f9001d4a8acf9c60fe1aae.ctex"
+uid="uid://c3gqk03r3klc6"
+path="res://.godot/imported/office.png-6ee365de2a990481ce79128a84792fd6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/homemaker.png"
-dest_files=["res://.godot/imported/homemaker.png-aeb662d949f9001d4a8acf9c60fe1aae.ctex"]
+source_file="res://assets/icons/customers/office.png"
+dest_files=["res://.godot/imported/office.png-6ee365de2a990481ce79128a84792fd6.ctex"]
 
 [params]
 

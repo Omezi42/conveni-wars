@@ -17,7 +17,8 @@
 | `ForecastPanel` | 次の時間帯に欲しがられるカテゴリ(客層の割合×欲しい重みの合計の大きい順)と来る客層。突発イベントの予告中は枠全体を予告に切り替える |
 | `ShelfView` | 3×3の棚。自店は操作可で名前・ボーナスの札まで出し、相手は表示だけ(同じ部品を使い分ける) |
 | `PriceMenu` | 値段の3段階のボタン |
-| `InventoryView` | 在庫一覧。商品ごとのカードに絵・在庫数・廃棄までの残りのバー・入荷待ちと、発注ボタン。棚に出ている商品は店の色の枠。カードから棚へドラッグする(またはタップで選ぶ) |
+| `CatalogView` | 品ぞろえの帯。全商品の小さな札をカテゴリ順に並べる。棚に出ていない商品は在庫数・廃棄バー・入荷待ち・発注ボタン、出ている商品は「陳列中」と薄く。札から棚へドラッグする(またはタップで選ぶ) |
+| `StockGauge` | 在庫数・廃棄バー・入荷待ち・発注ボタンを1つの矩形に描く部品(static)。`ShelfView` のマスと `CatalogView` の札で共有する |
 | `BonusHelp` | 自店の看板の「?」。乗せるか押すと棚の上にボーナスの見方を重ねる |
 | `SkillButton` | アクティブスキル |
 | `StoreFrame` | 店の建物(看板と帯・床・入口)。棚はこの上に重ねる。自店は看板に取り逃した客の数の札を出す。相手の店は `compact` で小さく描く |
@@ -37,7 +38,7 @@ UIクロームはすべてコードで描く。色・文字の大きさ・線の
 | `PopButton` | 輪郭線と影のあるボタン。押すと沈み、`chosen` でチェックを付ける。`caption` で上に小さな1行 |
 | `SkyBackdrop` | 背景の空。試合中は `set_band()` で時間帯の空へ移る。空だけを描く `paint()` はタイトル・店長選択・結果も使う |
 
-- 商品・客層・店長の絵は `assets/icons/`(Fluent Emoji 3D、MIT License。`LICENSE_FluentEmoji.txt` を同梱)。
+- 商品・客層・店長の絵は `assets/icons/{products,customers,managers}/<データのid>.png`(いまは仮に Fluent Emoji 3D、MIT License。`LICENSE_FluentEmoji.txt` を同梱)。同じ名前で上書きすれば差し替わる。
   データの `icon` / `portrait` に入れる。空なら仮アイコンを描く
 - 絵は256pxを小さく描くため、取り込みで mipmap を作り、画面の既定のフィルタを「Linear Mipmap」にしている(Pitfalls.md)
 - フォントに無い記号(✓ ⚠ など)は文字で書かず `UiDraw` で形を描く(Pitfalls.md)

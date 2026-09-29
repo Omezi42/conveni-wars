@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ou3hifxfx72p"
-path="res://.godot/imported/rice_ball.png-79f2cfa108704fc6ffb96a0cce5067bd.ctex"
+uid="uid://6irb2jtgo0f"
+path="res://.godot/imported/umbrella.png-537c3a689a89cf26eab0e37aba97ecc1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/rice_ball.png"
-dest_files=["res://.godot/imported/rice_ball.png-79f2cfa108704fc6ffb96a0cce5067bd.ctex"]
+source_file="res://assets/icons/products/umbrella.png"
+dest_files=["res://.godot/imported/umbrella.png-537c3a689a89cf26eab0e37aba97ecc1.ctex"]
 
 [params]
 

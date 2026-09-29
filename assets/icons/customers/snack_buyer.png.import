@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bprnoscw510ad"
-path="res://.godot/imported/cola.png-837640800833ebaa404dcf01da526f5d.ctex"
+uid="uid://cs2hlc7sma1je"
+path="res://.godot/imported/snack_buyer.png-e143fb7efa0ce1b500f580a309d0f840.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/cola.png"
-dest_files=["res://.godot/imported/cola.png-837640800833ebaa404dcf01da526f5d.ctex"]
+source_file="res://assets/icons/customers/snack_buyer.png"
+dest_files=["res://.godot/imported/snack_buyer.png-e143fb7efa0ce1b500f580a309d0f840.ctex"]
 
 [params]
 

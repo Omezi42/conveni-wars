@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dwhp0n5omq8ej"
-path="res://.godot/imported/rain_shelter.png-41bbf389b0772359acf8b350379e9924.ctex"
+uid="uid://cpp4r5lad4me0"
+path="res://.godot/imported/karaage_bento.png-fdbae5e5e65c4b271a78ad0f64770a86.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/rain_shelter.png"
-dest_files=["res://.godot/imported/rain_shelter.png-41bbf389b0772359acf8b350379e9924.ctex"]
+source_file="res://assets/icons/products/karaage_bento.png"
+dest_files=["res://.godot/imported/karaage_bento.png-fdbae5e5e65c4b271a78ad0f64770a86.ctex"]
 
 [params]
 

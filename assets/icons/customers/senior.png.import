@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cii201ldryeim"
-path="res://.godot/imported/karaage.png-485c97cd8288b86d46dadfb8127b98bf.ctex"
+uid="uid://cl6go51c25omq"
+path="res://.godot/imported/senior.png-ea4345ab9172a657bb75886f4ff1590a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/icons/karaage.png"
-dest_files=["res://.godot/imported/karaage.png-485c97cd8288b86d46dadfb8127b98bf.ctex"]
+source_file="res://assets/icons/customers/senior.png"
+dest_files=["res://.godot/imported/senior.png-ea4345ab9172a657bb75886f4ff1590a.ctex"]
 
 [params]
 
