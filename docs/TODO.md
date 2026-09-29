@@ -1,0 +1,38 @@
+# 開発タスク・進捗(TODO)
+
+## 運用ルール
+
+- **今やっている/次にやるタスクだけ**を残す。完了したら削除する(チェックを付けて残さない)
+- 経緯・知見はここに書かない。設計は `Architecture.md`、仕様は `GameDesign.md`、落とし穴は `Pitfalls.md` へ
+- 実機で人が確かめる項目はここに書かない(スクリーンショットをその場で渡して済ませる)
+
+---
+
+## 1. 土台
+
+- [ ] Godotプロジェクトを作る(1280×720・`canvas_items`・Web書き出しの設定。GameDesign.md 10章)
+- [ ] `tools/check.sh` と `gdlintrc` を `砂時計pvp` を手本に用意する(Architecture.md 6章)
+
+## 2. データ(Architecture.md 2章)
+
+- [ ] Resourceクラス6種と `GameDatabase`
+- [ ] 初期データの `.tres`:カテゴリ9・商品12・客層6・時間帯4・セット5・店長4・`balance.tres`
+
+## 3. ロジック(Architecture.md 3章)
+
+- [ ] `MatchState` / `StoreState` / `SlotState` と進行(時計・時間帯・配送・客の到着)
+- [ ] `ShelfBonus` と `Attraction`(魅力度・店の選択・買い物)
+- [ ] コマンド5種
+- [ ] `ManagerSkills`(パッシブ4・アクティブ4)
+- [ ] ヘッドレステスト
+
+## 4. CPUとシミュレーション(Architecture.md 5章・6章)
+
+- [ ] `CpuPlayer`(GameDesign.md 8.2節)
+- [ ] `tools/simulate.gd` で CPU 対 CPU を回し、数値の極端な偏りを直す
+
+## 5. 画面(Architecture.md 4章)
+
+- [ ] 試合画面(棚・発注・倉庫・値段メニュー・HUD・予報・スキル)
+- [ ] タイトル・店長選択・結果
+- [ ] 客が歩いて店へ入る演出
