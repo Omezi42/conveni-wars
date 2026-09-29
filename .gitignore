@@ -1,0 +1,17 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# ビルド成果物(エクスポートで再生成できるため管理しない)
+/build/
+
+# 作業ログ・一時ファイル
+/logs/
+/scratchpad/
+*.bak
+__pycache__/
+tools/tmp_*
+
+# Claude Code のローカル状態(共有しない)
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
