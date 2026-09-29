@@ -70,6 +70,29 @@ func _exercise_player_moves(controller: Control) -> void:
 	_check(not controller._price_menu.visible, "choosing a price closes the menu")
 	controller._on_product_dropped(&"hot_coffee", 1)
 	_check(state.stores[0].shelf[1] == &"hot_coffee", "dropping a card places it")
+	_exercise_inventory(controller, state)
+
+
+## 在庫一覧のカードの発注ボタンで発注し、カードのほかの所を押すと選べる
+func _exercise_inventory(controller: Control, state: MatchState) -> void:
+	var inventory = controller._inventory
+	var product := state.db.product(&"melon_pan")
+	var index := state.db.sorted_products().find(product)
+	var before := state.stores[PLAYER].pending_count(product.id)
+	inventory._gui_input(_left_press(inventory.order_rect(index).get_center()))
+	var after := state.stores[PLAYER].pending_count(product.id)
+	_check(after == before + state.balance.lot_size, "the order button on a card orders a lot")
+	inventory._gui_input(_left_press(inventory.card_rect(index).get_center()))
+	_check(controller._selection.product_id == product.id, "tapping a card selects it")
+	controller._selection.clear()
+
+
+func _left_press(pos: Vector2) -> InputEventMouseButton:
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	press.position = pos
+	return press
 
 
 func _play_to_the_end(controller: Control) -> void:

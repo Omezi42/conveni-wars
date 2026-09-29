@@ -8,22 +8,21 @@ const RESULT_SCENE := "res://scenes/result.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
 const HUD_RECT := Rect2(0, 0, 1280, 66)
-const ORDER_RECT := Rect2(12, 76, 200, 484)
-const OWN_FRAME_RECT := Rect2(222, 76, 396, 484)
-const OWN_SHELF_POS := Vector2(14, 64)
-const OWN_CELL := Vector2(116, 108)
-const OWN_GAP := Vector2(10, 16)
-## 棚の下に成立しているボーナスの名前を並べるぶんまで含めた大きさ
-const OWN_SHELF_SIZE := Vector2(368, 412)
-const STREET_RECT := Rect2(618, 76, 148, 484)
-const RIVAL_FRAME_RECT := Rect2(766, 76, 204, 256)
-const RIVAL_SHELF_POS := Vector2(12, 46)
-const RIVAL_CELL := Vector2(56, 62)
+const OWN_FRAME_RECT := Rect2(12, 76, 606, 462)
+const OWN_SHELF_POS := Vector2(148, 64)
+const OWN_CELL := Vector2(140, 118)
+const OWN_GAP := Vector2(12, 16)
+## 自店の棚の左の、ボーナスの一覧と見方(店の中の座標)
+const BONUS_RECT := Rect2(14, 64, 122, 386)
+const STREET_RECT := Rect2(618, 76, 148, 462)
+const RIVAL_FRAME_RECT := Rect2(766, 76, 204, 246)
+const RIVAL_SHELF_POS := Vector2(12, 44)
+const RIVAL_CELL := Vector2(56, 60)
 const RIVAL_GAP := Vector2(6, 8)
-const VISIT_RECT := Rect2(766, 342, 204, 218)
-const FORECAST_RECT := Rect2(980, 76, 288, 484)
-const INVENTORY_RECT := Rect2(12, 574, 988, 138)
-const SKILL_RECT := Rect2(1010, 574, 258, 138)
+const VISIT_RECT := Rect2(766, 332, 204, 206)
+const FORECAST_RECT := Rect2(980, 76, 288, 462)
+const INVENTORY_RECT := Rect2(12, 548, 988, 164)
+const SKILL_RECT := Rect2(1010, 548, 258, 164)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
@@ -46,6 +45,7 @@ var _rival_shelf: ShelfView
 var _own_frame: StoreFrame
 var _rival_frame: StoreFrame
 var _price_menu: PriceMenu
+var _inventory: InventoryView
 var _flow: CustomerFlow
 var _fx: FxLayer
 ## "店番号:商品id" → [店番号, 商品id, 金額]
@@ -99,7 +99,6 @@ func _build() -> void:
 	_sky.set_band(match_state.current_band(), true)
 
 	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
-	_place(_part(OrderPanel.new(), PLAYER), ORDER_RECT)
 
 	_own_frame = _part(StoreFrame.new(), PLAYER)
 	_own_frame.door_on_right = true
@@ -110,7 +109,11 @@ func _build() -> void:
 	_own_shelf.selection = _selection
 	_own_frame.add_child(_own_shelf)
 	_own_shelf.position = OWN_SHELF_POS
-	_own_shelf.size = OWN_SHELF_SIZE
+	_own_shelf.size = _own_shelf.grid_size()
+	var bonus_board: BonusBoard = _part(BonusBoard.new(), PLAYER)
+	_own_frame.add_child(bonus_board)
+	bonus_board.position = BONUS_RECT.position
+	bonus_board.size = BONUS_RECT.size
 
 	_rival_frame = _part(StoreFrame.new(), CPU)
 	_rival_frame.door_on_right = false
@@ -133,9 +136,9 @@ func _build() -> void:
 
 	_place(_part(VisitCounter.new(), PLAYER), VISIT_RECT)
 	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
-	var inventory: InventoryView = _part(InventoryView.new(), PLAYER)
-	inventory.selection = _selection
-	_place(inventory, INVENTORY_RECT)
+	_inventory = _part(InventoryView.new(), PLAYER)
+	_inventory.selection = _selection
+	_place(_inventory, INVENTORY_RECT)
 	_place(_part(SkillButton.new(), PLAYER), SKILL_RECT)
 
 	_price_menu = PriceMenu.new()

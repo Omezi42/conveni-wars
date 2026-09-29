@@ -2,7 +2,7 @@ class_name ShelfView
 extends MatchPart
 ## 3×3の棚(GameDesign.md 4章・9.2節・9.5節)。自店は操作でき、相手は表示だけ(同じ部品を大きさを変えて使う)。
 ## 各段の手前に棚板があり、値札は棚板に掛かる。マスには商品・在庫数・売値を出し、
-## 成立しているボーナスを枠の色で、名前を棚の下の札で示す。
+## 成立しているボーナスを枠の色で示す(名前は横の BonusBoard)。
 
 signal slot_pressed(slot: int)
 signal product_dropped(product_id: StringName, slot: int)
@@ -14,10 +14,9 @@ const BOARD_HEIGHT := 12.0
 const COMPACT_BOARD_HEIGHT := 8.0
 const BOARD_OVERHANG := 5.0
 const BOARD_RADIUS := 4
-## マスの中の配置(マスの幅・棚板より上の高さに対する割合)
-const ICON_SIZE := 0.47
+## マスの中の配置(アイコンの辺は棚板より上の幅と高さの短いほう、縦の位置はその高さに対する割合)
+const ICON_SIZE := 0.6
 const ICON_Y := 0.4
-const COMPACT_ICON_SIZE := 0.52
 const COMPACT_ICON_Y := 0.44
 const NAME_Y := 0.94
 const BADGE_HEIGHT := 22.0
@@ -36,10 +35,6 @@ const SOLD_OUT_ALPHA := 0.35
 const LOW_STOCK_FLASH := 0.45
 const SOLD_OUT_FILL := Color("#f8d3cf")
 const EMPTY_INK := Color(0.36, 0.4, 0.51, 0.55)
-const LIST_GAP := 10.0
-const LIST_LINE := 26.0
-const LIST_CHIP_HEIGHT := 22.0
-const LIST_CHIP_PAD := 8.0
 const DROP_HIGHLIGHT := Color(0.18, 0.44, 0.91, 0.25)
 const SELECT_MIN_ALPHA := 0.35
 
@@ -149,8 +144,6 @@ func _draw() -> void:
 	for slot in StoreState.SLOT_COUNT:
 		if store().shelf[slot] != StoreState.EMPTY:
 			_draw_tag(slot)
-	if size.y > grid_size().y + LIST_GAP:
-		_draw_bonus_list(bonus)
 
 
 func _draw_boards() -> void:
@@ -209,7 +202,7 @@ func _draw_product(
 		)
 	if stock <= 0:
 		UiDraw.panel(self, space, Color.TRANSPARENT, UiPalette.BAD, UiPalette.OUTLINE_THIN, radius)
-	var icon_side := space.size.x * (ICON_SIZE if detailed else COMPACT_ICON_SIZE)
+	var icon_side := minf(space.size.x, space.size.y) * ICON_SIZE
 	var icon_y := space.size.y * (ICON_Y if detailed else COMPACT_ICON_Y)
 	var icon_center := space.position + Vector2(space.size.x * 0.5, icon_y)
 	var alpha := 1.0 if stock > 0 else SOLD_OUT_ALPHA
@@ -293,36 +286,6 @@ func _draw_tag(slot: int) -> void:
 	var font_size := UiPalette.FONT_BODY if detailed else UiPalette.FONT_TINY
 	var price := UiDraw.yen(store().sell_price(product_id))
 	UiDraw.text_centered(self, tag, price, font_size, UiPalette.PRICE_INKS[step])
-
-
-func _draw_bonus_list(bonus: ShelfBonus.Result) -> void:
-	var top := grid_size().y + LIST_GAP
-	if bonus.bonuses.is_empty():
-		var hint := "中央・縦1列・隣り合わせでボーナス"
-		var hint_rect := Rect2(0, top, size.x, LIST_CHIP_HEIGHT)
-		UiDraw.text_centered(self, hint_rect, hint, UiPalette.FONT_SMALL, UiPalette.INK_SOFT)
-		return
-	var x := 0.0
-	var y := top
-	for item in bonus.bonuses:
-		var label := item.display_name
-		var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + LIST_CHIP_PAD * 2.0
-		if x + width > size.x:
-			x = 0.0
-			y += LIST_LINE
-		var chip := Rect2(x, y, width, LIST_CHIP_HEIGHT)
-		UiDraw.panel(
-			self,
-			chip,
-			UiPalette.BONUS_COLORS[item.kind],
-			UiPalette.INK,
-			UiPalette.OUTLINE_THIN,
-			int(LIST_CHIP_HEIGHT * 0.5)
-		)
-		UiDraw.text_centered(
-			self, chip, label, UiPalette.FONT_SMALL, UiPalette.INK_ON_DARK, UiPalette.INK
-		)
-		x += width + LIST_CHIP_PAD * 0.5
 
 
 static func _bonus_kinds(bonuses: Array[ShelfBonus.Bonus]) -> Array[int]:
