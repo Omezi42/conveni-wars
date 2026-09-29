@@ -4,6 +4,8 @@ extends Resource
 
 @export var id: StringName
 @export var display_name: String
+## 棚のマスのような狭い場所に出す名前
+@export var short_name: String
 @export var category_id: StringName
 @export var list_price: int
 ## 発注するときに払う1個あたりの値段

@@ -6,6 +6,7 @@
 script = ExtResource("1_40yd3")
 id = &"potato_chips"
 display_name = "ポテトチップス"
+short_name = "ポテチ"
 category_id = &"sweets"
 list_price = 180
 cost = 110

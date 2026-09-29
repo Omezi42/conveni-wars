@@ -6,6 +6,7 @@
 script = ExtResource("1_xnb0q")
 id = &"karaage_bento"
 display_name = "唐揚げ弁当"
+short_name = "唐揚弁当"
 category_id = &"bento"
 list_price = 550
 cost = 350

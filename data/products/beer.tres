@@ -6,6 +6,7 @@
 script = ExtResource("1_ic2vr")
 id = &"beer"
 display_name = "缶ビール"
+short_name = "ビール"
 category_id = &"alcohol"
 list_price = 250
 cost = 150

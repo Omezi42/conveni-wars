@@ -6,6 +6,7 @@
 script = ExtResource("1_82h58")
 id = &"tunamayo_onigiri"
 display_name = "ツナマヨおにぎり"
+short_name = "ツナマヨ"
 category_id = &"onigiri"
 list_price = 160
 cost = 100

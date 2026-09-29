@@ -6,6 +6,7 @@
 script = ExtResource("1_ieqqc")
 id = &"tissue"
 display_name = "ティッシュ"
+short_name = "ティッシュ"
 category_id = &"daily"
 list_price = 300
 cost = 180

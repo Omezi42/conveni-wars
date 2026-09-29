@@ -6,6 +6,7 @@
 script = ExtResource("1_7r81c")
 id = &"cola"
 display_name = "コーラ"
+short_name = "コーラ"
 category_id = &"drink"
 list_price = 160
 cost = 100

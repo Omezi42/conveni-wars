@@ -6,6 +6,8 @@ enum Kind { CENTER, CORNER, COMBO }
 
 const CENTER_NAME := "目玉"
 const CORNER_SUFFIX := "コーナー"
+## 種類ごとの短い札(Kind の順)
+const KIND_LABELS: Array[String] = ["目玉", "コーナー", "セット"]
 
 
 class Bonus:

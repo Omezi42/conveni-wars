@@ -6,6 +6,7 @@
 script = ExtResource("1_ykfj0")
 id = &"karaage_stick"
 display_name = "からあげ棒"
+short_name = "からあげ"
 category_id = &"hot_snack"
 list_price = 200
 cost = 110

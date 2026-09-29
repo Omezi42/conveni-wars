@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/match/match_controller.gd" id="1_80q71"]
+
+[node name="Match" type="Control" unique_id=1430690976]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_80q71")

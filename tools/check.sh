@@ -17,6 +17,9 @@ else
   FILES=$( (git diff --name-only; git diff --cached --name-only; git ls-files --others --exclude-standard) | sort -u | grep '\.gd$' | while read -r f; do [ -f "$f" ] && echo "$f"; done)
 fi
 
+# headless-godot-skill-kit から写したパッチツールは手を入れないため対象から外す
+FILES=$(echo "$FILES" | grep -v '^tools/godot_apply_patch.gd$' || true)
+
 status=0
 if [ -n "$FILES" ]; then
   echo "== gdformat/gdlint ($(echo "$FILES" | wc -l) files)"

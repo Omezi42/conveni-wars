@@ -6,6 +6,7 @@
 script = ExtResource("1_j7fil")
 id = &"melon_pan"
 display_name = "メロンパン"
+short_name = "メロンパン"
 category_id = &"bread"
 list_price = 160
 cost = 100
