@@ -8,21 +8,21 @@ const RESULT_SCENE := "res://scenes/result.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
 const HUD_RECT := Rect2(0, 0, 1280, 80)
-const OWN_FRAME_RECT := Rect2(12, 86, 628, 454)
+const OWN_FRAME_RECT := Rect2(12, 86, 628, 514)
 const OWN_SHELF_POS := Vector2(30, 68)
-const OWN_CELL := Vector2(176, 116)
+const OWN_CELL := Vector2(176, 136)
 const OWN_GAP := Vector2(16, 12)
 ## 自店の看板の「?」(店の中の座標)と、押すと出るボーナスの見方(店の中の座標)
 const HELP_RECT := Rect2(583, 8, 30, 30)
 const HELP_LEGEND_RECT := Rect2(150, 72, 420, 200)
-const STREET_RECT := Rect2(640, 86, 120, 454)
+const STREET_RECT := Rect2(640, 86, 120, 514)
 const RIVAL_FRAME_RECT := Rect2(760, 86, 508, 226)
 const RIVAL_SHELF_POS := Vector2(100, 46)
 const RIVAL_CELL := Vector2(96, 52)
 const RIVAL_GAP := Vector2(10, 6)
-const FORECAST_RECT := Rect2(760, 322, 508, 218)
-const INVENTORY_RECT := Rect2(12, 548, 988, 164)
-const SKILL_RECT := Rect2(1010, 548, 258, 164)
+const FORECAST_RECT := Rect2(760, 322, 508, 278)
+const CATALOG_RECT := Rect2(12, 608, 988, 104)
+const SKILL_RECT := Rect2(1010, 608, 258, 104)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
@@ -44,7 +44,7 @@ var _rival_shelf: ShelfView
 var _own_frame: StoreFrame
 var _rival_frame: StoreFrame
 var _price_menu: PriceMenu
-var _inventory: InventoryView
+var _catalog: CatalogView
 var _flow: CustomerFlow
 var _fx: FxLayer
 ## "店番号:商品id" → [店番号, 商品id, 金額]
@@ -136,9 +136,9 @@ func _build() -> void:
 	_flow.door_points[CPU] = Vector2(STREET_RECT.size.x, rival_door)
 
 	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
-	_inventory = _part(InventoryView.new(), PLAYER)
-	_inventory.selection = _selection
-	_place(_inventory, INVENTORY_RECT)
+	_catalog = _part(CatalogView.new(), PLAYER)
+	_catalog.selection = _selection
+	_place(_catalog, CATALOG_RECT)
 	_place(_part(SkillButton.new(), PLAYER), SKILL_RECT)
 
 	_price_menu = PriceMenu.new()

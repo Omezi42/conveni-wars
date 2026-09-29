@@ -70,21 +70,44 @@ func _exercise_player_moves(controller: Control) -> void:
 	_check(not controller._price_menu.visible, "choosing a price closes the menu")
 	controller._on_product_dropped(&"hot_coffee", 1)
 	_check(state.stores[0].shelf[1] == &"hot_coffee", "dropping a card places it")
-	_exercise_inventory(controller, state)
+	_exercise_catalog(controller, state)
+	_exercise_shelf_order(controller, state)
 
 
-## 在庫一覧のカードの発注ボタンで発注し、カードのほかの所を押すと選べる
-func _exercise_inventory(controller: Control, state: MatchState) -> void:
-	var inventory = controller._inventory
+## 棚に出ていない商品は品ぞろえの札の発注ボタンで発注でき、札のほかの所を押すと選べる。
+## 棚に出ている商品の札には発注ボタンが無い
+func _exercise_catalog(controller: Control, state: MatchState) -> void:
+	var catalog = controller._catalog
 	var product := state.db.product(&"melon_pan")
 	var index := state.db.sorted_products().find(product)
+	_check(not state.stores[PLAYER].is_on_shelf(product.id), "melon pan starts off the shelf")
 	var before := state.stores[PLAYER].pending_count(product.id)
-	inventory._gui_input(_left_press(inventory.order_rect(index).get_center()))
+	catalog._gui_input(_left_press(catalog.order_rect(index).get_center()))
 	var after := state.stores[PLAYER].pending_count(product.id)
-	_check(after == before + state.balance.lot_size, "the order button on a card orders a lot")
-	inventory._gui_input(_left_press(inventory.card_rect(index).get_center()))
-	_check(controller._selection.product_id == product.id, "tapping a card selects it")
+	_check(after == before + state.balance.lot_size, "the order button on a tile orders a lot")
+	catalog._gui_input(_left_press(catalog.tile_rect(index).get_center()))
+	_check(controller._selection.product_id == product.id, "tapping a tile selects it")
 	controller._selection.clear()
+	var shelved: StringName = state.stores[PLAYER].shelf[4]
+	var shelved_index := state.db.sorted_products().find(state.db.product(shelved))
+	var pending := state.stores[PLAYER].pending_count(shelved)
+	catalog._gui_input(_left_press(catalog.order_rect(shelved_index).get_center()))
+	_check(
+		state.stores[PLAYER].pending_count(shelved) == pending,
+		"a tile on the shelf has no order button"
+	)
+	controller._selection.clear()
+
+
+## 棚のマスの発注ボタンはその商品を発注し、値段のメニューは開かない
+func _exercise_shelf_order(controller: Control, state: MatchState) -> void:
+	var shelf = controller._own_shelf
+	var product_id: StringName = state.stores[PLAYER].shelf[4]
+	var before := state.stores[PLAYER].pending_count(product_id)
+	shelf._gui_input(_left_press(shelf.order_rect(4).get_center()))
+	var after := state.stores[PLAYER].pending_count(product_id)
+	_check(after == before + state.balance.lot_size, "the order button on a slot orders a lot")
+	_check(not controller._price_menu.visible, "ordering from a slot does not open the price menu")
 
 
 func _left_press(pos: Vector2) -> InputEventMouseButton:

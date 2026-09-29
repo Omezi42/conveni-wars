@@ -5,15 +5,15 @@ extends MatchPart
 ## 説明文はカーソルを乗せると出る(ボタンには名前と状態だけを大きく出す)。
 
 const PAD := 12.0
-const FUNDS_HEIGHT := 44.0
-const GAP := 8.0
+const FUNDS_HEIGHT := 36.0
+const GAP := 6.0
 const COIN_RADIUS := 11.0
-const FUNDS_FONT := 24
-const TOKEN_RADIUS := 24.0
+const FUNDS_FONT := 22
+const TOKEN_RADIUS := 21.0
 const TOKEN_X := 36.0
 const TEXT_X := 70.0
-const NAME_Y := 0.42
-const STATE_Y := 0.76
+const NAME_Y := 0.48
+const STATE_Y := 0.84
 const GLOW_SIZE := 5.0
 const HOVER_LIGHTEN := 0.1
 const USED_GRAY := Color("#a9a59c")
@@ -99,11 +99,11 @@ func _draw() -> void:
 	_draw_token(rect, manager)
 	var white := UiPalette.INK_ON_DARK
 	var text_width := rect.size.x - TEXT_X - PAD
-	var name_size := UiDraw.fit_size(manager.active_name, UiPalette.FONT_HEAD, text_width)
+	var name_size := UiDraw.fit_size(manager.active_name, UiPalette.FONT_LARGE, text_width)
 	var name_pos := Vector2(rect.position.x + TEXT_X, rect.position.y + rect.size.y * NAME_Y)
 	UiDraw.text_outlined(self, name_pos, manager.active_name, name_size, white)
 	var state_pos := Vector2(rect.position.x + TEXT_X, rect.position.y + rect.size.y * STATE_Y)
-	UiDraw.text_outlined(self, state_pos, _state_text(), UiPalette.FONT_BODY, white)
+	UiDraw.text_outlined(self, state_pos, _state_text(), UiPalette.FONT_SMALL, white)
 
 
 ## 店長の顔(絵が無いうちは店長の色の丸に頭文字)

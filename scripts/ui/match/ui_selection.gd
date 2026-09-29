@@ -1,6 +1,6 @@
 class_name UiSelection
 extends RefCounted
-## 在庫一覧でタップして選んだ商品(次にタップした棚のマスへ置く。GameDesign.md 6.3節)。
+## 品ぞろえでタップして選んだ商品(次にタップした棚のマスへ置く。GameDesign.md 6.3節)。
 
 signal changed
 
