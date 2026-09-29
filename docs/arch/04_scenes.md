@@ -38,7 +38,9 @@ UIクロームはすべてコードで描く。色・文字の大きさ・線の
 | `PopButton` | 輪郭線と影のあるボタン。押すと沈み、`chosen` でチェックを付ける。`caption` で上に小さな1行 |
 | `SkyBackdrop` | 背景の空。試合中は `set_band()` で時間帯の空へ移る。空だけを描く `paint()` はタイトル・店長選択・結果も使う |
 
-- 商品・客層・店長の絵は `assets/icons/{products,customers,managers}/<データのid>.png`(いまは仮に Fluent Emoji 3D、MIT License。`LICENSE_FluentEmoji.txt` を同梱)。同じ名前で上書きすれば差し替わる。
+- 商品・客層・店長の絵は `assets/icons/{products,customers,managers}/<データのid>.png`(256px・背景は透明)。同じ名前で上書きすれば差し替わる
+- 生成AIで作った「無地の背景に絵を格子状に並べた1枚」は `python tools/slice_sheet.py` で切り分けて背景を抜く。
+  輪郭の外に白い縁が付いた画像は `--rim 14` を付ける。背景の色は絵に使わない色(絵が緑なら背景はピンク)にする
   データの `icon` / `portrait` に入れる。空なら仮アイコンを描く
 - 絵は256pxを小さく描くため、取り込みで mipmap を作り、画面の既定のフィルタを「Linear Mipmap」にしている(Pitfalls.md)
 - フォントに無い記号(✓ ⚠ など)は文字で書かず `UiDraw` で形を描く(Pitfalls.md)
