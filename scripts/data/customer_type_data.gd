@@ -19,7 +19,7 @@ func weight_of(category_id: StringName) -> int:
 	return int(wants.get(category_id, 0))
 
 
-## いちばん欲しがるカテゴリ(同じ重みならデータに書いた順で先のもの)
+## いちばん欲しがるカテゴリ(同じ重みならidの辞書順で先のもの。.tres は辞書のキーを並べ替えて保存するため)
 func top_category() -> StringName:
 	var best: StringName = &""
 	var best_weight := 0
