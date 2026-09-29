@@ -25,7 +25,20 @@
 | `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ・取り逃した客の吹き出し(1人ずつは描かない) |
 | `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットイン・「大口獲得!」・逆転の表示 |
 
-画面間の受け渡し(選んだ店長・試合結果)は autoload の `GameSession` が持つ。
+画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・ガイドを出すか)は autoload の `GameSession` が持つ。
+
+## 4.3 保存・音・ガイド(GameDesign.md 9.7節・9.8節)
+
+| 部品 | 内容 |
+|---|---|
+| `SaveData`(`scripts/save_data.gd`、RefCounted) | 戦績(勝ち・負け・引き分け・店長ごとの自己ベスト・最後のCPUの強さ)と設定(音量2つ)を `user://save.cfg` に `ConfigFile` で読み書きする。`GameSession` が1つ持つ |
+| `AudioDirector`(autoload) | BGMの再生と切り替え・速さ、効果音の再生。効果音は id → `AudioStream` の表を持ち、同じ音は0.1秒に1回までに間引く。Master・BGM・SE の3つのバスの音量を設定から反映する |
+| `MatchSounds`(`scripts/ui/match/match_sounds.gd`、Node) | 試合のシグナルを受けて `AudioDirector` に効果音を頼む。売上の音程の上がり方もここで持つ |
+| `GuideOverlay`(`scripts/ui/match/guide_overlay.gd`) | 初回ガイド。黒い幕と、指す部品の矩形の穴、説明の札と「次へ」「とばす」。出ている間は `MatchController` が開店準備の時計を止める |
+| `SettingsPanel`(`scripts/ui/settings_panel.gd`) | タイトルに重ねる設定の札(音量2つ・全画面) |
+
+- 音の素材は `assets/audio/{bgm,se}/`。出典は `assets/audio/CREDITS.md`
+- 効果音の id と素材の対応は `AudioDirector` の表の1か所にまとめる(素材を差し替えるときはファイルを上書きするだけで済むよう、ファイル名は id と同じにする)
 
 ## 4.2 見た目の部品(GameDesign.md 9.5節)
 
