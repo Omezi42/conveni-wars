@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ManagerData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/manager_data.gd" id="1_5h745"]
+
+[resource]
+script = ExtResource("1_5h745")
+id = &"analyst"
+display_name = "データ分析"
+order = 3
+passive_kind = 3
+passive_params = {
+"announce_lead_bonus": 5.0,
+"extra_forecast_bands": 1
+}
+passive_description = "客層予報がその次の時間帯まで出る。イベントの予告が5秒早い"
+active_kind = 3
+active_params = {
+"duration": 20.0
+}
+active_name = "値札ロック"
+active_description = "20秒間、相手は値段を変えられない"
+color = Color(0.23137255, 0.43529412, 0.7137255, 1)

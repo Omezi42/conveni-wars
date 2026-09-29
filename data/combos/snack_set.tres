@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ComboData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/combo_data.gd" id="1_nn70b"]
+
+[resource]
+script = ExtResource("1_nn70b")
+id = &"snack_set"
+display_name = "おやつセット"
+category_a = &"sweets"
+category_b = &"drink"

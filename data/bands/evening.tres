@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="TimeBandData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_r5rqo"]
+
+[resource]
+script = ExtResource("1_r5rqo")
+id = &"evening"
+display_name = "夕方"
+order = 2
+duration = 75.0
+customer_count = 500
+clock_start = 14
+clock_end = 19
+mix = {
+&"homemaker": 4,
+&"office": 2,
+&"student": 4
+}
+cutin_text = "夕方の帰り道!"

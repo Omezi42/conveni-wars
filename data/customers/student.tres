@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_ug531"]
+
+[resource]
+script = ExtResource("1_ug531")
+id = &"student"
+display_name = "学生"
+order = 1
+wants = {
+&"drink": 2,
+&"hot_snack": 3,
+&"sweets": 3
+}
+price_sensitivity = 0.9
+buy_count = 2
+color = Color(0.8784314, 0.627451, 0.1882353, 1)

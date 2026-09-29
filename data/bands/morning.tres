@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TimeBandData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_bohum"]
+
+[resource]
+script = ExtResource("1_bohum")
+id = &"morning"
+display_name = "朝"
+duration = 75.0
+customer_count = 550
+clock_start = 6
+clock_end = 10
+mix = {
+&"office": 5,
+&"senior": 2,
+&"student": 3
+}
+cutin_text = "朝の通勤ラッシュ!"

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ComboData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/combo_data.gd" id="1_rppiw"]
+
+[resource]
+script = ExtResource("1_rppiw")
+id = &"evening_drink_set"
+display_name = "晩酌セット"
+category_a = &"alcohol"
+category_b = &"hot_snack"

@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="TimeBandData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_qd1ox"]
+
+[resource]
+script = ExtResource("1_qd1ox")
+id = &"noon"
+display_name = "昼"
+order = 1
+duration = 75.0
+customer_count = 650
+clock_start = 10
+clock_end = 14
+mix = {
+&"homemaker": 2,
+&"office": 6,
+&"senior": 2
+}
+cutin_text = "昼ラッシュ!"

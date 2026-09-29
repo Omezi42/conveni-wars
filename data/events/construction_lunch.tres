@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1_2gou8"]
+
+[resource]
+script = ExtResource("1_2gou8")
+id = &"construction_lunch"
+display_name = "工事現場の昼休み"
+customer_type_id = &"worker"
+band_ids = Array[StringName]([&"noon"])

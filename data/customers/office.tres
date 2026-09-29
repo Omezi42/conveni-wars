@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_wbjud"]
+
+[resource]
+script = ExtResource("1_wbjud")
+id = &"office"
+display_name = "会社員"
+wants = {
+&"bento": 3,
+&"coffee": 3,
+&"onigiri": 2
+}
+price_sensitivity = 0.3
+buy_count = 2
+color = Color(0.23137255, 0.43529412, 0.7137255, 1)

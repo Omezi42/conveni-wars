@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="ManagerData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/manager_data.gd" id="1_flv2d"]
+
+[resource]
+script = ExtResource("1_flv2d")
+id = &"saver"
+display_name = "節約上手"
+order = 2
+passive_kind = 2
+passive_params = {
+"sale_effect_multiplier": 1.5
+}
+passive_description = "安売りの値段補正の効きが1.5倍"
+active_kind = 2
+active_params = {
+"duration": 15.0
+}
+active_name = "タイムセール"
+active_description = "15秒間、自店の全商品を「安売り」として客を呼ぶ(売値は変わらない)"
+color = Color(0.22745098, 0.6156863, 0.3647059, 1)

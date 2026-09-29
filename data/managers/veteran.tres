@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ManagerData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/manager_data.gd" id="1_4333p"]
+
+[resource]
+script = ExtResource("1_4333p")
+id = &"veteran"
+display_name = "ベテラン"
+passive_params = {
+"cost_multiplier": 0.9
+}
+passive_description = "発注の原価が−10%"
+active_params = {
+"lots": 1
+}
+active_name = "大量発注"
+active_description = "棚に割り当てた商品すべてに、1ロット(30個)ずつ無料で即座に届く"
+color = Color(0.70980394, 0.39607844, 0.11372549, 1)

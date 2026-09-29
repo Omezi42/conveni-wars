@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_7r81c"]
+
+[resource]
+script = ExtResource("1_7r81c")
+id = &"cola"
+display_name = "コーラ"
+category_id = &"drink"
+list_price = 160
+cost = 100

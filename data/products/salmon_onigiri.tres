@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_0t34r"]
+
+[resource]
+script = ExtResource("1_0t34r")
+id = &"salmon_onigiri"
+display_name = "鮭おにぎり"
+category_id = &"onigiri"
+list_price = 150
+cost = 90

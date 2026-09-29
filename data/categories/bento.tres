@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CategoryData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/category_data.gd" id="1_mk3mx"]
+
+[resource]
+script = ExtResource("1_mk3mx")
+id = &"bento"
+display_name = "弁当"
+order = 1
+color = Color(0.9098039, 0.5137255, 0.22745098, 1)
+perishable = true

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CategoryData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/category_data.gd" id="1_wrkrd"]
+
+[resource]
+script = ExtResource("1_wrkrd")
+id = &"bread"
+display_name = "パン"
+order = 2
+color = Color(0.8509804, 0.6431373, 0.25490198, 1)
+perishable = true

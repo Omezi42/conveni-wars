@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_xnb0q"]
+
+[resource]
+script = ExtResource("1_xnb0q")
+id = &"karaage_bento"
+display_name = "唐揚げ弁当"
+category_id = &"bento"
+list_price = 550
+cost = 350

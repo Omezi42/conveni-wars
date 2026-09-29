@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_82h58"]
+
+[resource]
+script = ExtResource("1_82h58")
+id = &"tunamayo_onigiri"
+display_name = "ツナマヨおにぎり"
+category_id = &"onigiri"
+list_price = 160
+cost = 100

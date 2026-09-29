@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="TimeBandData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/time_band_data.gd" id="1_ypsth"]
+
+[resource]
+script = ExtResource("1_ypsth")
+id = &"night"
+display_name = "夜"
+order = 3
+duration = 75.0
+customer_count = 300
+clock_start = 19
+clock_end = 24
+mix = {
+&"night_worker": 4,
+&"office": 2,
+&"youth": 4
+}
+cutin_text = "夜の部!"

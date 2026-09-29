@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="BalanceConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/balance_config.gd" id="1_2gprt"]
+
+[resource]
+script = ExtResource("1_2gprt")
+prep_seconds = 10.0
+starting_funds = 30000
+choice_exponent = 2.0
+center_slot = 4
+center_multiplier = 1.5
+corner_multiplier = 1.3
+combo_multiplier = 1.3
+price_step_rates = Array[float]([-0.2, 0.0, 0.2])
+price_step_names = Array[String](["安売り", "定価", "強気"])
+default_price_step = 1
+price_round_unit = 10
+price_cooldown = 10.0
+price_effect_factor = 2.5
+lot_size = 30
+delivery_seconds = 5.0
+waste_seconds = 60.0
+low_stock_threshold = 10
+event_interval_min = 15.0
+event_interval_max = 25.0
+event_announce_seconds = 10.0
+event_customer_count = 20
+event_arrival_seconds = 5.0
+event_buy_multiplier = 3
+event_per_product_limit = 3
+big_catch_ratio = 0.5

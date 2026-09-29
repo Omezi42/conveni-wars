@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_40yd3"]
+
+[resource]
+script = ExtResource("1_40yd3")
+id = &"potato_chips"
+display_name = "ポテトチップス"
+category_id = &"sweets"
+list_price = 180
+cost = 110

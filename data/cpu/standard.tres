@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CpuProfile" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/cpu_profile.gd" id="1_0h7di"]
+
+[resource]
+script = ExtResource("1_0h7di")
+id = &"standard"
+display_name = "ふつう"
+think_interval = 3.0
+event_reaction_delay = 2.0
+event_misread_chance = 0.2
+stock_horizon = 25.0
+assumed_share = 0.5
+skill_after_remaining = 150.0
+skill_end_margin = 20.0

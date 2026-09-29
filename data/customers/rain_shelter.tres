@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_j6q3k"]
+
+[resource]
+script = ExtResource("1_j6q3k")
+id = &"rain_shelter"
+display_name = "雨宿り客"
+order = 6
+wants = {
+&"daily": 3,
+&"drink": 2
+}
+price_sensitivity = 0.3
+buy_count = 2
+color = Color(0.2901961, 0.5647059, 0.78431374, 1)

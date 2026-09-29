@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_ic2vr"]
+
+[resource]
+script = ExtResource("1_ic2vr")
+id = &"beer"
+display_name = "缶ビール"
+category_id = &"alcohol"
+list_price = 250
+cost = 150

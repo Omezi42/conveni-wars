@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CategoryData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/category_data.gd" id="1_hgjpk"]
+
+[resource]
+script = ExtResource("1_hgjpk")
+id = &"alcohol"
+display_name = "酒"
+order = 8
+color = Color(0.60784316, 0.43529412, 0.81960785, 1)

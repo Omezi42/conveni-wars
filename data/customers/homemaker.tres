@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_ylx54"]
+
+[resource]
+script = ExtResource("1_ylx54")
+id = &"homemaker"
+display_name = "主婦"
+order = 2
+wants = {
+&"bread": 2,
+&"daily": 3,
+&"drink": 1
+}
+price_sensitivity = 0.8
+buy_count = 3
+color = Color(0.8156863, 0.39215687, 0.5411765, 1)

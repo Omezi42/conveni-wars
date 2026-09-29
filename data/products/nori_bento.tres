@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_vn0fs"]
+
+[resource]
+script = ExtResource("1_vn0fs")
+id = &"nori_bento"
+display_name = "のり弁当"
+category_id = &"bento"
+list_price = 450
+cost = 270

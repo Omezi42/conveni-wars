@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/event_data.gd" id="1_7oiii"]
+
+[resource]
+script = ExtResource("1_7oiii")
+id = &"club_return"
+display_name = "部活帰り"
+customer_type_id = &"club_student"
+band_ids = Array[StringName]([&"evening"])

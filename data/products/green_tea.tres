@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ProductData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_asqh2"]
+
+[resource]
+script = ExtResource("1_asqh2")
+id = &"green_tea"
+display_name = "お茶"
+category_id = &"drink"
+list_price = 140
+cost = 80
