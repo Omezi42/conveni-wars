@@ -12,7 +12,7 @@
 | 3章 | 商品とカテゴリ | [`design/03_products.md`](design/03_products.md) |
 | 4章 | 棚とボーナス | [`design/04_shelf.md`](design/04_shelf.md) |
 | 5章 | 値段 | [`design/05_price.md`](design/05_price.md) |
-| 6章 | 発注と倉庫 | [`design/06_order.md`](design/06_order.md) |
+| 6章 | 発注と在庫 | [`design/06_order.md`](design/06_order.md) |
 | 7章 | 店長キャラ | [`design/07_managers.md`](design/07_managers.md) |
 | 8章 | CPU戦 | [`design/08_cpu.md`](design/08_cpu.md) |
 | 9章 | 画面構成とUI | [`design/09_ui.md`](design/09_ui.md) |

@@ -13,13 +13,14 @@
 
 | 部品 | 内容 |
 |---|---|
-| `HudBar` | 残り時間・時間帯・両店の売上 |
+| `HudBar` | 店の時計・残り時間・時間帯・両店の売上 |
 | `ForecastPanel` | 次の時間帯の客層予報 |
 | `ShelfView` | 3×3の棚。自店は操作可、相手は表示だけ(同じ部品を使い分ける) |
 | `PriceMenu` | 値段の5段階メニュー |
 | `OrderPanel` | 発注 |
-| `WarehouseView` | 倉庫と発注中 |
+| `InventoryView` | 商品ごとの在庫数と発注中。ここから棚へドラッグする |
+| `VisitCounter` | 客層ごとの来店数(両店ぶん) |
 | `SkillButton` | アクティブスキル |
-| `CustomerLayer` | 客が歩いて店へ入る演出 |
+| `CustomerFlow` | 両店の入口へ流れ込む人の流れの演出(1人ずつは描かない) |
 
 画面間の受け渡し(選んだ店長・試合結果)は autoload の `GameSession` が持つ。
