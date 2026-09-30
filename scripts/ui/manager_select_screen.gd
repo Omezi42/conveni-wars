@@ -43,6 +43,7 @@ var _levels: Array[PopButton] = []
 
 
 func _ready() -> void:
+	AudioDirector.play_bgm(&"menu")
 	_start = PopButton.create("この店長で開店!", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
 	add_child(_start)
 	_start.position = BUTTON_RECT.position

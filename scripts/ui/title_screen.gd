@@ -1,6 +1,7 @@
 class_name TitleScreen
 extends Control
 ## タイトル(GameDesign.md 9.1節・9.5節)。夕暮れの通りに、看板を掲げた2軒のコンビニが向かい合う。
+## 「はじめる」「遊び方」(初回ガイドを出して始める。9.7節)「設定」を置く。
 
 const NEXT_SCENE := "res://scenes/manager_select.tscn"
 const LOGO_Y := 150.0
@@ -8,20 +9,22 @@ const LOGO_SHADOW := Vector2(0, 7)
 const LOGO_OUTLINE := 16
 const LOGO_HEAD := "コンビニ"
 const LOGO_TAIL := "ウォーズ"
-const TAGLINE := "CPUの店長と、1日の売上で勝負!"
+const TAGLINE := "CPUの店長と、1日の利益で勝負!"
 const TAGLINE_Y := 184.0
 const TAGLINE_HEIGHT := 38.0
 const TAGLINE_PAD := 22.0
-const RULES_RECT := Rect2(420, 250, 440, 172)
+const RULES_RECT := Rect2(420, 236, 440, 164)
 const RULE_LINE := 34.0
 const RULE_FONT := 17
 const RULES: Array[String] = [
 	"向かい合った2軒のコンビニで、同じ客を取り合う。",
 	"次に来る客層を読んで、先に発注する。",
 	"棚に並べて、値段で相手を出し抜く。",
-	"1試合5分。売上の多いほうが勝ち。",
+	"1試合5分。利益(売上−仕入れ)で勝負。",
 ]
-const BUTTON_RECT := Rect2(490, 452, 300, 80)
+const BUTTON_RECT := Rect2(490, 414, 300, 76)
+const HOW_TO_RECT := Rect2(490, 500, 146, 50)
+const SETTINGS_RECT := Rect2(644, 500, 146, 50)
 const GROUND_Y := 560.0
 const CURB_HEIGHT := 40.0
 const ROAD_LINE_Y := 650.0
@@ -49,6 +52,30 @@ func _ready() -> void:
 	start.position = BUTTON_RECT.position
 	start.size = BUTTON_RECT.size
 	start.pressed.connect(func() -> void: get_tree().change_scene_to_file(NEXT_SCENE))
+	var how_to := _add_small_button("遊び方", HOW_TO_RECT)
+	how_to.pressed.connect(_on_how_to)
+	var settings := _add_small_button("設定", SETTINGS_RECT)
+	settings.pressed.connect(_on_settings)
+	AudioDirector.play_bgm(&"menu")
+
+
+func _add_small_button(label: String, rect: Rect2) -> PopButton:
+	var button := PopButton.create(label, UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_LARGE)
+	add_child(button)
+	button.position = rect.position
+	button.size = rect.size
+	return button
+
+
+func _on_how_to() -> void:
+	GameSession.guide_requested = true
+	get_tree().change_scene_to_file(NEXT_SCENE)
+
+
+func _on_settings() -> void:
+	var panel := SettingsPanel.new()
+	add_child(panel)
+	panel.size = size
 
 
 func _draw() -> void:

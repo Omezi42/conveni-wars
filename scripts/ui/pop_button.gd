@@ -51,6 +51,7 @@ static func create(
 func _init() -> void:
 	focus_mode = Control.FOCUS_NONE
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	pressed.connect(func() -> void: AudioDirector.play_se(&"click"))
 
 
 func _draw() -> void:

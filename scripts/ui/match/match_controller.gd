@@ -149,6 +149,10 @@ func _build() -> void:
 	_fx = FxLayer.new()
 	_place(_fx, Rect2(Vector2.ZERO, SCREEN_SIZE))
 
+	var sounds := MatchSounds.new()
+	add_child(sounds)
+	sounds.setup(match_state)
+
 
 func _part(part: MatchPart, index: int) -> MatchPart:
 	part.setup(match_state, index)
@@ -224,6 +228,7 @@ func _on_event_ended(_event_id: StringName, store_counts: Array[int]) -> void:
 	var balance := match_state.balance
 	if store_counts[PLAYER] >= ceili(balance.event_customer_count * balance.big_catch_ratio):
 		_fx.big("大口獲得!", UiPalette.MONEY, true)
+		AudioDirector.play_se(&"big_catch")
 
 
 func _on_skill_used(store_index: int) -> void:
@@ -245,5 +250,6 @@ func _check_reversal(delta: float) -> void:
 	if leading and not _player_leading and match_state.elapsed > REVERSAL_GRACE:
 		if _reversal_cooldown <= 0.0:
 			_fx.big("客数で逆転!", UiPalette.STORE_COLORS[PLAYER], true)
+			AudioDirector.play_se(&"reversal")
 			_reversal_cooldown = REVERSAL_COOLDOWN
 	_player_leading = leading

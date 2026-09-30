@@ -53,6 +53,11 @@ var _result: MatchResult
 
 func _ready() -> void:
 	_result = GameSession.last_result
+	AudioDirector.play_bgm(&"menu")
+	if _result != null and _result.winner == MatchController.PLAYER:
+		AudioDirector.play_se(&"win")
+	elif _result != null and _result.winner == MatchController.CPU:
+		AudioDirector.play_se(&"lose")
 	var again := PopButton.create("もう一度", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
 	var title := PopButton.create("タイトルへ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
 	var buttons: Array[PopButton] = [again, title]
