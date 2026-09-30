@@ -1,7 +1,8 @@
 extends SceneTree
 ## CPU対CPUを多数回まわし、店長ごとの勝率・利益の分布・突発イベントが売上に占める割合と、
 ## 偏った戦い方のCPUの勝率を出して GameDesign.md 1.5節の調整の目標を判定する(Architecture.md 6章)。
-## godot --headless --path . --script res://tools/simulate.gd -- [試合数]
+## godot --headless --path . --script res://tools/simulate.gd -- [試合数] [managers]
+## managers を付けると、店長の勝率だけを出す(偏った戦い方のCPUを回さない)
 
 const Strategies := preload("res://tools/sim_strategies.gd")
 
@@ -27,7 +28,8 @@ func _initialize() -> void:
 	_managers = _db.sorted_managers()
 	var started := Time.get_ticks_msec()
 	var ok := _run_managers(count)
-	for kind in Strategies.NAMES.size():
+	var managers_only := args.size() > 1 and args[1] == "managers"
+	for kind in 0 if managers_only else Strategies.NAMES.size():
 		var limit := FIXED_SHELF_WIN_MAX if kind == 0 else FIXED_PRICE_WIN_MAX
 		ok = _run_strategy(kind, count, limit) and ok
 	print("== %s" % ("ALL TARGETS OK" if ok else "SOME TARGETS NG"))

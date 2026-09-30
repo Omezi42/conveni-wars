@@ -31,8 +31,8 @@ func _test_bulk_order_delivers_a_free_lot_per_shelf_product() -> void:
 	T.open(m)
 	var funds := m.stores[0].funds
 	m.use_active(0)
-	_assert.call(m.stores[0].stock(&"nori_bento") == 30, "bento +30")
-	_assert.call(m.stores[0].stock(&"green_tea") == 30, "tea +30 once, not per slot")
+	_assert.call(m.stores[0].stock(&"nori_bento") == 10, "bento +10")
+	_assert.call(m.stores[0].stock(&"green_tea") == 10, "tea +10 once, not per slot")
 	_assert.call(m.stores[0].stock(&"cola") == 0, "products off the shelf get nothing")
 	_assert.call(m.stores[0].funds == funds, "free")
 
@@ -68,11 +68,11 @@ func _test_time_sale_prices_everything_as_sale_while_running() -> void:
 	var sold_price := m.stores[0].sell_price(&"potato_chips")
 	m.use_active(0)
 	_assert.call(
-		T.near(m.stores[0].evaluation(student).score, 3.0 * 1.675), "scored as a (boosted) sale"
+		T.near(m.stores[0].evaluation(student).score, 3.0 * 1.9), "scored as a (boosted) sale"
 	)
 	_assert.call(m.stores[0].sell_price(&"potato_chips") == sold_price, "the price is unchanged")
-	m.advance(15.1)
-	_assert.call(T.near(m.stores[0].evaluation(student).score, 3.0 * 0.55), "back after 15s")
+	m.advance(20.1)
+	_assert.call(T.near(m.stores[0].evaluation(student).score, 3.0 * 0.55), "back after 20s")
 
 
 func _test_price_lock_blocks_only_the_opponent() -> void:
@@ -81,5 +81,5 @@ func _test_price_lock_blocks_only_the_opponent() -> void:
 	m.use_active(1)
 	_assert.call(not m.set_price_step(0, &"cola", 0), "the opponent cannot change prices")
 	_assert.call(m.set_price_step(1, &"cola", 0), "the analyst still can")
-	m.advance(20.1)
-	_assert.call(m.set_price_step(0, &"cola", 0), "unlocked after 20s")
+	m.advance(30.1)
+	_assert.call(m.set_price_step(0, &"cola", 0), "unlocked after 30s")

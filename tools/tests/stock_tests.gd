@@ -43,7 +43,7 @@ func _test_order_fails_without_funds() -> void:
 
 func _test_veteran_pays_less() -> void:
 	var m := T.new_match(&"veteran", &"idol")
-	_assert.call(m.lot_cost(0, &"salmon_onigiri") == 2430, "veteran lot is 10% off")
+	_assert.call(m.lot_cost(0, &"salmon_onigiri") == 2646, "veteran lot is 2% off")
 	_assert.call(m.lot_cost(1, &"salmon_onigiri") == 2700, "others pay the full cost")
 
 

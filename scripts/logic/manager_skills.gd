@@ -50,7 +50,7 @@ static func activate(match_state: MatchState, store_index: int) -> void:
 	store.active_remaining = active_duration(store.manager)
 	match store.manager.active_kind:
 		SkillKinds.Active.BULK_ORDER:
-			var count := int(store.manager.active_params["lots"]) * match_state.balance.lot_size
+			var count := int(store.manager.active_params["count"])
 			for product_id in store.shelf_product_ids():
 				match_state.deliver(store_index, product_id, count)
 		SkillKinds.Active.TIME_SALE:

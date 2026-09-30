@@ -16,7 +16,7 @@ passive_params = {
 passive_description = "客層予報がその次の時間帯まで出る。イベントの予告が5秒早い"
 active_kind = 3
 active_params = {
-"duration": 20.0
+"duration": 30.0
 }
 active_name = "値札ロック"
 active_description = "20秒間、相手は値段を変えられない"

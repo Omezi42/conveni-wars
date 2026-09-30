@@ -10,12 +10,12 @@ display_name = "節約上手"
 order = 2
 passive_kind = 2
 passive_params = {
-"sale_effect_multiplier": 1.5
+"sale_effect_multiplier": 2.0
 }
 passive_description = "安売りの値段補正の効きが1.5倍"
 active_kind = 2
 active_params = {
-"duration": 15.0
+"duration": 20.0
 }
 active_name = "タイムセール"
 active_description = "15秒間、自店の全商品を「安売り」として客を呼ぶ(売値は変わらない)"

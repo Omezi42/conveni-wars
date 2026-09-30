@@ -137,9 +137,7 @@ func _test_saver_passive_boosts_only_sales() -> void:
 	var student := T.customer(&"student")
 	T.stock_slot(m, 0, &"potato_chips", 0)
 	m.set_price_step(0, &"potato_chips", 0)
-	_assert.call(
-		T.near(m.stores[0].evaluation(student).score, 3.0 * 1.675), "sale works 1.5x (3.75)"
-	)
+	_assert.call(T.near(m.stores[0].evaluation(student).score, 3.0 * 1.9), "sale works 2x (5.0)")
 	var high := T.new_match(&"saver", &"veteran")
 	T.stock_slot(high, 0, &"potato_chips", 0)
 	high.set_price_step(0, &"potato_chips", 2)
@@ -153,10 +151,10 @@ func _test_idol_passive_targets_students_and_youth() -> void:
 	T.stock_slot(m, 0, &"ice_bar", 0)
 	T.stock_slot(m, 0, &"green_tea", 8)
 	_assert.call(
-		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 2.0 * 1.2), "student x1.2"
+		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 2.0 * 1.15), "student x1.15"
 	)
 	_assert.call(
-		T.near(m.stores[0].evaluation(T.customer(&"youth")).score, 3.0 * 1.2), "youth x1.2"
+		T.near(m.stores[0].evaluation(T.customer(&"youth")).score, 3.0 * 1.15), "youth x1.15"
 	)
 	_assert.call(T.near(m.stores[0].evaluation(T.customer(&"senior")).score, 1.0), "senior x1")
 

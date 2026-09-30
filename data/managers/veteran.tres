@@ -8,11 +8,11 @@ script = ExtResource("1_4333p")
 id = &"veteran"
 display_name = "ベテラン"
 passive_params = {
-"cost_multiplier": 0.9
+"cost_multiplier": 0.98
 }
 passive_description = "発注の原価が−10%"
 active_params = {
-"lots": 1
+"count": 10
 }
 active_name = "大量発注"
 active_description = "棚に割り当てた商品すべてに、1ロット(30個)ずつ無料で即座に届く"
