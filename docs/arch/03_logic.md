@@ -14,6 +14,8 @@
 - 在庫はマスではなく `StoreState` が商品ごとに持つ(GameDesign.md 6.2節)。マスは商品idだけを持つ
 - 商品ごとの在庫は、届いた時刻の古い順に並べたロットの列(個数と廃棄時刻)で持つ。売るときは先頭から減らし、
   廃棄時刻を過ぎたロットを捨てる(6.4節)。日持ちしない商品でなければ廃棄時刻は持たない
+- 値段補正は相手の店の同じカテゴリの値段と比べる(GameDesign.md 5.2節)。`StoreState.rival` で相手を持ち、
+  どちらかの店のキャッシュを捨てるときは相手のキャッシュも捨てる
 - 棚の倍率と客層ごとの魅力度は、棚・在庫の有無・値段・スキルの効果が変わったときだけ計算し直してキャッシュする
   (1秒に最大9人来るため、客ごとに棚全体を計算し直さない)
 
@@ -41,8 +43,10 @@
 
 ## 3.4 シグナル
 
-`band_changed` `delivery_arrived` `customer_arrived(type_id, store_index)` `customer_lost(store_index, category_id)`
-`purchased(store_index, product_id, price)` `wasted(store_index, product_id, count)` `price_changed`
-`event_announced(event_id)` `event_started(event_id)` `event_ended(event_id, store_counts)` `skill_used` `match_ended(result)`。
+`opened`(開店準備が終わった) `band_changed(band_id)` `delivery_arrived(store_index, product_id, count)`
+`customer_arrived(type_id, store_index, is_event)`(帰った客は store_index が -1) `customer_lost(store_index, category_id)`
+`purchased(store_index, product_id, count, amount)` `wasted(store_index, product_id, count)` `ordered(store_index, product_id)`
+`price_changed(store_index, product_id, step)` `event_announced(event_id, store_index)`(店長によって予告の早さが違うため店ごと)
+`event_started(event_id)` `event_ended(event_id, store_counts)` `skill_used(store_index)` `skill_ended(store_index)` `match_ended(result)`。
 画面はこれを受けて表示を更新し、演出を出す。
 `customer_arrived` などは1秒に最大9回出るため、画面側は受けたものを溜めて、人の流れの演出にまとめて反映する。
