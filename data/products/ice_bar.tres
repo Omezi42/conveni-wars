@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="ProductData" format=3]
 
 [ext_resource type="Script" path="res://scripts/data/product_data.gd" id="1_prod"]
+[ext_resource type="Texture2D" path="res://assets/icons/products/ice_bar.png" id="2_icon"]
 
 [resource]
 script = ExtResource("1_prod")
@@ -10,3 +11,4 @@ short_name = "アイス"
 category_id = &"ice"
 list_price = 150
 cost = 90
+icon = ExtResource("2_icon")
