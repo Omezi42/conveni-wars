@@ -31,6 +31,8 @@ func _run() -> void:
 
 	var title := await _show("res://scenes/title.tscn")
 	await _shot("01_title")
+	title._on_settings()
+	await _shot("01_title_settings")
 	title.queue_free()
 
 	var select := await _show("res://scenes/manager_select.tscn")
@@ -39,6 +41,16 @@ func _run() -> void:
 	select.queue_redraw()
 	await _shot("02_manager_select")
 	select.queue_free()
+
+	_session.guide_requested = true
+	_session.prepare_match(&"idol")
+	var guided := await _show("res://scenes/match.tscn")
+	for step in 3:
+		await _shot("02_guide_%d" % (step + 1))
+		guided._guide._advance()
+	_session.guide_requested = false
+	guided.queue_free()
+	await process_frame
 
 	_session.prepare_match(&"idol")
 	_session.match_seed = SEED

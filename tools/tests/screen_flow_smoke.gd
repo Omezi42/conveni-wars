@@ -33,6 +33,8 @@ func _run() -> void:
 	_check(_class_of(select) == &"ManagerSelectScreen", "manager select scene")
 	select.queue_free()
 
+	await _check_guide()
+
 	_session.prepare_match(&"idol")
 	_check(_session.cpu_manager_id != &"idol", "cpu picks a manager the player did not")
 	var controller: Control = await _show("res://scenes/match.tscn")
@@ -51,6 +53,25 @@ func _run() -> void:
 			printerr("screen flow FAILED: ", failure)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit(0 if _failures.is_empty() else 1)
+
+
+## 初回ガイドの間は開店準備の時計が止まり、とばすと動き出す(GameDesign.md 9.7節)
+func _check_guide() -> void:
+	_session.guide_requested = true
+	_session.prepare_match(&"veteran")
+	var controller: Control = await _show("res://scenes/match.tscn")
+	var state: MatchState = controller.match_state
+	var before := state.elapsed
+	controller._physics_process(1.0)
+	_check(is_equal_approx(state.elapsed, before), "the guide stops the prep clock")
+	controller._guide._advance()
+	controller._guide._advance()
+	controller._guide._advance()
+	controller._physics_process(1.0)
+	_check(state.elapsed > before, "the clock runs after the guide")
+	_session.guide_requested = false
+	controller.queue_free()
+	await process_frame
 
 
 func _show(path: String) -> Control:
