@@ -19,6 +19,6 @@ active_params = {
 "duration": 30.0
 }
 active_name = "値札ロック"
-active_description = "20秒間、相手は値段を変えられない"
+active_description = "30秒間、相手は値段を変えられない"
 color = Color(0.23137255, 0.43529412, 0.7137255, 1)
 portrait = ExtResource("2_icon")

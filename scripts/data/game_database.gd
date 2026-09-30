@@ -24,6 +24,7 @@ var _sorted_managers: Array[ManagerData] = []
 var _sorted_customer_types: Array[CustomerTypeData] = []
 var _sorted_categories: Array[CategoryData] = []
 var _sorted_events: Array[EventData] = []
+var _sorted_cpu_profiles: Array[CpuProfile] = []
 
 
 static func get_default() -> GameDatabase:
@@ -104,6 +105,11 @@ func sorted_events() -> Array[EventData]:
 	return _sorted_events
 
 
+## CPUの強さ(弱い順。GameDesign.md 8.3節)
+func sorted_cpu_profiles() -> Array[CpuProfile]:
+	return _sorted_cpu_profiles
+
+
 func products_in_category(category_id: StringName) -> Array[ProductData]:
 	var result: Array[ProductData] = []
 	for data in _sorted_products:
@@ -180,6 +186,10 @@ func _sort_all() -> void:
 	_sorted_events.assign(events.values())
 	_sorted_events.sort_custom(
 		func(a: EventData, b: EventData) -> bool: return String(a.id) < String(b.id)
+	)
+	_sorted_cpu_profiles.assign(cpu_profiles.values())
+	_sorted_cpu_profiles.sort_custom(
+		func(a: CpuProfile, b: CpuProfile) -> bool: return a.order < b.order
 	)
 	_sorted_customer_types.assign(customer_types.values())
 	_sorted_customer_types.sort_custom(

@@ -7,6 +7,9 @@ extends SceneTree
 
 const PLAYER := 0
 const STEP := 1.0 / 30.0
+const CPU_PROFILE_ID := &"standard"
+## 本物の戦績を書き換えないよう、テストの間はこのファイルへ保存する
+const TEST_SAVE_PATH := "user://test_save.cfg"
 const STEPS_PER_FRAME := 200
 const MAX_FRAMES := 400
 
@@ -21,6 +24,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_session = root.get_node("GameSession")
+	_session.save = _test_save()
 	var title: Control = await _show("res://scenes/title.tscn")
 	_check(_class_of(title) == &"TitleScreen", "title scene")
 	title.queue_free()
@@ -36,6 +40,7 @@ func _run() -> void:
 	_exercise_player_moves(controller)
 	await _play_to_the_end(controller)
 	_check(_session.last_result != null, "the match hands its result to the session")
+	_check(_session.save.games_played() == 2, "the result is added to the record")
 	var result_screen := _find_result()
 	_check(result_screen != null, "the result scene opens after the match")
 
@@ -44,6 +49,7 @@ func _run() -> void:
 	else:
 		for failure in _failures:
 			printerr("screen flow FAILED: ", failure)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit(0 if _failures.is_empty() else 1)
 
 
@@ -120,7 +126,7 @@ func _left_press(pos: Vector2) -> InputEventMouseButton:
 
 func _play_to_the_end(controller: Control) -> void:
 	var state: MatchState = controller.match_state
-	var profile := state.db.cpu_profile(_session.CPU_PROFILE_ID)
+	var profile := state.db.cpu_profile(CPU_PROFILE_ID)
 	var player_cpu := CpuPlayer.new(state, PLAYER, profile)
 	var frames := 0
 	while _find_result() == null and frames < MAX_FRAMES:
@@ -153,3 +159,10 @@ func _class_of(node: Node) -> StringName:
 func _check(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+
+## 1試合遊んだことのある戦績(初回ガイドを出さない)
+func _test_save() -> SaveData:
+	var save := SaveData.new(TEST_SAVE_PATH)
+	save.wins = 1
+	return save

@@ -4,6 +4,8 @@ extends Resource
 
 @export var id: StringName
 @export var display_name: String
+## 店長選択の画面に並べる順番(弱い順)
+@export var order: int
 ## 判断の間隔(秒)
 @export var think_interval: float
 ## 突発イベントの予告を見てから、発注に反映するまでの秒数

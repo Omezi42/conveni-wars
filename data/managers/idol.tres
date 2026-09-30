@@ -13,7 +13,7 @@ passive_params = {
 "customer_types": [&"student", &"youth"],
 "multiplier": 1.15
 }
-passive_description = "学生・若者から見た自店の魅力度が×1.2"
+passive_description = "学生・若者から見た自店の魅力度が×1.15"
 active_kind = 1
 active_params = {
 "duration": 10.0

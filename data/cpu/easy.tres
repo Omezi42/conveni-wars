@@ -4,12 +4,12 @@
 
 [resource]
 script = ExtResource("1_0h7di")
-id = &"standard"
-display_name = "ふつう"
-order = 1
-think_interval = 3.0
-event_reaction_delay = 2.0
-event_misread_chance = 0.2
+id = &"easy"
+display_name = "やさしい"
+order = 0
+think_interval = 5.0
+event_reaction_delay = 6.0
+event_misread_chance = 0.4
 stock_horizon = 25.0
 assumed_share = 0.5
 skill_after_remaining = 150.0

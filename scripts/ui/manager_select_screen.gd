@@ -2,6 +2,7 @@ class_name ManagerSelectScreen
 extends Control
 ## 店長の選択(GameDesign.md 7章・9.5節)。店長は社員証の形のカードで並べる。
 ## カードをタップして選び(浮き上がって黄色い枠が付く)、開店する。CPUは残りから選ばれる(8.1節)。
+## 左下でCPUの強さ(8.3節)を選ぶ。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const HEADER_RECT := Rect2(490, 22, 300, 52)
@@ -31,10 +32,14 @@ const SELECT_RING := 5.0
 const RIBBON_SIZE := Vector2(96, 28)
 const BUTTON_RECT := Rect2(460, 582, 360, 78)
 const GROUND_Y := 680.0
+const LEVEL_LEFT := 60.0
+const LEVEL_SIZE := Vector2(120, 70)
+const LEVEL_GAP := 12.0
 
 var _selected := -1
 var _hover := -1
 var _start: PopButton
+var _levels: Array[PopButton] = []
 
 
 func _ready() -> void:
@@ -44,6 +49,33 @@ func _ready() -> void:
 	_start.size = BUTTON_RECT.size
 	_start.disabled = true
 	_start.pressed.connect(_on_start)
+	var profiles := GameDatabase.get_default().sorted_cpu_profiles()
+	for i in profiles.size():
+		var button := PopButton.create(
+			profiles[i].display_name, UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_LARGE
+		)
+		button.caption = "CPU"
+		add_child(button)
+		button.size = LEVEL_SIZE
+		button.position = Vector2(
+			LEVEL_LEFT + i * (LEVEL_SIZE.x + LEVEL_GAP),
+			BUTTON_RECT.get_center().y - LEVEL_SIZE.y / 2.0
+		)
+		button.pressed.connect(_on_level_pressed.bind(profiles[i].id))
+		_levels.append(button)
+	_show_level()
+
+
+func _show_level() -> void:
+	var current := GameSession.cpu_profile_id()
+	var profiles := GameDatabase.get_default().sorted_cpu_profiles()
+	for i in _levels.size():
+		_levels[i].chosen = profiles[i].id == current
+
+
+func _on_level_pressed(id: StringName) -> void:
+	GameSession.set_cpu_profile_id(id)
+	_show_level()
 
 
 func _managers() -> Array[ManagerData]:

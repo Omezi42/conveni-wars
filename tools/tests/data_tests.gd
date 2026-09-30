@@ -24,7 +24,8 @@ func _test_counts() -> void:
 	_assert.call(db.combos.size() == 5, "5 combos")
 	_assert.call(db.events.size() == 4, "4 events")
 	_assert.call(db.managers.size() == 4, "4 managers")
-	_assert.call(db.cpu_profile(&"standard") != null, "standard cpu profile")
+	var levels := db.sorted_cpu_profiles().map(func(p: CpuProfile) -> StringName: return p.id)
+	_assert.call(levels == [&"easy", &"standard", &"hard"], "3 cpu levels, weakest first")
 
 
 func _test_references_resolve() -> void:

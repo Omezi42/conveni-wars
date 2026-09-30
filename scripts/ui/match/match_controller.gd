@@ -59,7 +59,7 @@ var _leaving := false
 func _ready() -> void:
 	var db := GameDatabase.get_default()
 	match_state = MatchState.new(db, GameSession.manager_ids(), GameSession.match_seed)
-	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.CPU_PROFILE_ID))
+	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.cpu_profile_id()))
 	_build()
 	_connect_signals()
 
@@ -69,7 +69,7 @@ func _physics_process(delta: float) -> void:
 		_end_timer -= delta
 		if _end_timer <= 0.0 and not _leaving:
 			_leaving = true
-			GameSession.last_result = match_state.result
+			GameSession.finish_match(match_state.result)
 			get_tree().change_scene_to_file(RESULT_SCENE)
 		return
 	match_state.advance(delta)

@@ -42,6 +42,9 @@ const STAMP_SEGMENTS := 48
 ## 内側の細い輪の太さ(外側の輪に対する割合)
 const STAMP_INNER_RING := 0.4
 const BUTTON_SIZE := Vector2(250, 70)
+## 自店のレシートの左上に掛ける「自己ベスト更新!」の札
+const BEST_SIZE := Vector2(190, 36)
+const BEST_OFFSET := Vector2(-18, -16)
 const BUTTON_Y := 622.0
 const BUTTON_GAP := 28.0
 
@@ -89,6 +92,8 @@ func _draw() -> void:
 		_draw_receipt(rect, _result.stores[i])
 		if _result.winner == i:
 			_draw_stamp(Vector2(rect.end.x, rect.position.y) + STAMP_OFFSET)
+		if i == MatchController.PLAYER and GameSession.last_new_best:
+			_draw_new_best(rect.position + BEST_OFFSET)
 
 
 func _draw_verdict(label: String, color: Color, burst: bool) -> void:
@@ -234,6 +239,12 @@ func _draw_types(x: float, width: float, top: float, store: StoreState) -> void:
 			value_width
 		)
 		index += 1
+
+
+func _draw_new_best(at: Vector2) -> void:
+	var badge := Rect2(at, BEST_SIZE)
+	UiDraw.card(self, badge, UiPalette.MONEY, int(BEST_SIZE.y * 0.5), UiPalette.OUTLINE_THIN)
+	UiDraw.text_centered(self, badge, "自己ベスト更新!", UiPalette.FONT_BODY, UiPalette.INK)
 
 
 ## 勝った店のレシートに押す赤い判

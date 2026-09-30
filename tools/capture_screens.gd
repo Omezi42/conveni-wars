@@ -6,6 +6,9 @@ extends SceneTree
 
 const PLAYER := 0
 const STEP := 1.0 / 30.0
+const CPU_PROFILE_ID := &"standard"
+## 本物の戦績を書き換えないよう、テストの間はこのファイルへ保存する
+const TEST_SAVE_PATH := "user://test_save.cfg"
 const SETTLE_FRAMES := 6
 ## 試合のどの時刻(開店からの秒)で撮るか
 const MATCH_SHOTS: Array[float] = [-5.0, 12.0, 70.0, 160.0, 245.0]
@@ -24,6 +27,7 @@ func _run() -> void:
 	_out_dir = args[0] if args.size() > 0 else ProjectSettings.globalize_path("res://logs/shots")
 	DirAccess.make_dir_recursive_absolute(_out_dir)
 	_session = root.get_node("GameSession")
+	_session.save = _test_save()
 
 	var title := await _show("res://scenes/title.tscn")
 	await _shot("01_title")
@@ -47,12 +51,13 @@ func _run() -> void:
 		result = await _show("res://scenes/result.tscn")
 	await _shot("99_result")
 	print("captured to ", _out_dir)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit()
 
 
 func _capture_match(controller: Control) -> void:
 	var state: MatchState = controller.match_state
-	var profile := state.db.cpu_profile(_session.CPU_PROFILE_ID)
+	var profile := state.db.cpu_profile(CPU_PROFILE_ID)
 	var player_cpu := CpuPlayer.new(state, PLAYER, profile)
 	var index := 3
 	for at in MATCH_SHOTS:
@@ -108,3 +113,10 @@ func _find(class_id: StringName) -> Node:
 		if script != null and script.get_global_name() == class_id:
 			return child
 	return null
+
+
+## 1試合遊んだことのある戦績(初回ガイドを出さない)
+func _test_save() -> SaveData:
+	var save := SaveData.new(TEST_SAVE_PATH)
+	save.wins = 1
+	return save

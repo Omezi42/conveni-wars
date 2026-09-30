@@ -8,6 +8,7 @@ const CustomerTests = preload("res://tools/tests/customer_tests.gd")
 const EventTests = preload("res://tools/tests/event_tests.gd")
 const SkillTests = preload("res://tools/tests/skill_tests.gd")
 const CpuTests = preload("res://tools/tests/cpu_tests.gd")
+const SaveTests = preload("res://tools/tests/save_tests.gd")
 
 var _failures := 0
 var _checks := 0
@@ -25,6 +26,7 @@ func _run() -> void:
 	EventTests.new().run(_assert_true)
 	SkillTests.new().run(_assert_true)
 	CpuTests.new().run(_assert_true)
+	SaveTests.new().run(_assert_true)
 	if _failures == 0:
 		print("tests passed (%d checks)" % _checks)
 		quit(0)
