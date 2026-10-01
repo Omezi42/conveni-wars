@@ -59,7 +59,21 @@ class FixedPrice:
 				_match.set_price_step(_index, id, step)
 
 
-const NAMES: Array[String] = ["fixed shelf", "always bold", "always cheap"]
+## ふつうのCPUの見込みを何倍かにして発注し、在庫を買い溜める(日持ちしない商品の上限はふつうのまま)
+class Hoarder:
+	extends CpuPlayer
+
+	const FACTOR := 2.0
+
+	func _order(demand: Dictionary, keep_limit: Dictionary) -> void:
+		var scaled := {}
+		for category_id: StringName in demand:
+			scaled[category_id] = float(demand[category_id]) * FACTOR
+		super(scaled, keep_limit)
+
+
+const NAMES: Array[String] = ["fixed shelf", "always bold", "always cheap", "hoarder"]
+const HOARDER := 3
 
 
 ## 戦略の番号から、その戦い方のCPUを作る
@@ -68,6 +82,8 @@ static func create(
 ) -> CpuPlayer:
 	if kind == 0:
 		return FixedShelf.new(match_state, index, profile)
+	if kind == HOARDER:
+		return Hoarder.new(match_state, index, profile)
 	var cpu := FixedPrice.new(match_state, index, profile)
 	var balance := match_state.balance
 	cpu.step = balance.price_step_count() - 1 if kind == 1 else balance.sale_price_step
