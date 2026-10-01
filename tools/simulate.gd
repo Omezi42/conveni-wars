@@ -1,6 +1,6 @@
 extends SceneTree
 ## CPU対CPUを多数回まわし、店長ごとの勝率・利益の分布・突発イベントが売上に占める割合と、
-## 偏った戦い方のCPUの勝率を出して GameDesign.md 1.5節の調整の目標を判定する(Architecture.md 6章)。
+## 偏った戦い方(固定の棚・値段の固定・買い溜め)のCPUの勝率を出して GameDesign.md 1.5節の調整の目標を判定する(Architecture.md 6章)。
 ## godot --headless --path . --script res://tools/simulate.gd -- [試合数] [managers]
 ## managers を付けると、店長の勝率だけを出す(偏った戦い方のCPUを回さない)
 
@@ -13,7 +13,10 @@ const PROFILE_ID := &"standard"
 const MANAGER_WIN_MIN := 0.4
 const MANAGER_WIN_MAX := 0.6
 const FIXED_SHELF_WIN_MAX := 0.4
-const FIXED_PRICE_WIN_MAX := 0.5
+const BIASED_WIN_MAX := 0.5
+## 11.1節の目標
+const EVENT_SHARE_MIN := 0.2
+const EVENT_SHARE_MAX := 0.3
 
 var _db: GameDatabase
 var _profile: CpuProfile
@@ -30,7 +33,7 @@ func _initialize() -> void:
 	var ok := _run_managers(count)
 	var managers_only := args.size() > 1 and args[1] == "managers"
 	for kind in 0 if managers_only else Strategies.NAMES.size():
-		var limit := FIXED_SHELF_WIN_MAX if kind == 0 else FIXED_PRICE_WIN_MAX
+		var limit := FIXED_SHELF_WIN_MAX if kind == 0 else BIASED_WIN_MAX
 		ok = _run_strategy(kind, count, limit) and ok
 	print("== %s" % ("ALL TARGETS OK" if ok else "SOME TARGETS NG"))
 	print("elapsed %.1fs" % ((Time.get_ticks_msec() - started) / 1000.0))
@@ -80,8 +83,7 @@ func _run_managers(count: int) -> bool:
 				row["wins"] += 1
 			elif m.result.winner == MatchResult.DRAW:
 				row["draws"] += 1
-	_report_totals(count, profits, totals)
-	var ok := true
+	var ok := _report_totals(count, profits, totals)
 	print("-- managers (mirror matches excluded) target %d-%d%%" % _percent_range())
 	for manager in _managers:
 		var row: Dictionary = per_manager[manager.id]
@@ -139,7 +141,7 @@ func _run_strategy(kind: int, count: int, max_rate: float) -> bool:
 	return good
 
 
-func _report_totals(count: int, profits: Array[int], totals: Dictionary) -> void:
+func _report_totals(count: int, profits: Array[int], totals: Dictionary) -> bool:
 	var stores := float(profits.size())
 	profits.sort()
 	var mean := 0.0
@@ -154,12 +156,20 @@ func _report_totals(count: int, profits: Array[int], totals: Dictionary) -> void
 		)
 	)
 	print("sales per store: mean %.0f" % (totals["sales"] / stores))
-	print("event share of sales: %.1f%%" % (totals["event"] / stores * 100.0))
+	var share: float = totals["event"] / stores
+	var share_ok := share >= EVENT_SHARE_MIN and share <= EVENT_SHARE_MAX
+	print(
+		(
+			"%s event share of sales: %.1f%% (target %.0f-%.0f%%)"
+			% [_mark(share_ok), share * 100.0, EVENT_SHARE_MIN * 100.0, EVENT_SHARE_MAX * 100.0]
+		)
+	)
 	print("visitors per store: %.0f" % (totals["visitors"] / stores))
 	print("lost customers per store: %.0f" % (totals["lost"] / stores))
 	print("wasted units per store: %.0f" % (totals["wasted"] / stores))
 	print("orders per store: %.1f" % (totals["orders"] / stores))
 	print("funds left per store: %.0f" % (totals["funds"] / stores))
+	return share_ok
 
 
 func _percent_range() -> Array:
