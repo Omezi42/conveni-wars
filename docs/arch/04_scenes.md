@@ -2,7 +2,7 @@
 
 | シーン | スクリプト | 責務 |
 |---|---|---|
-| `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル |
+| `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
 | `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節) |
@@ -16,7 +16,7 @@
 | 部品 | 内容 |
 |---|---|
 | `HudBar` | 左=時計・時間帯・1日の進み・残り時間の1枚の札、右=両店の利益の綱引きと客数の細いバー |
-| `ForecastPanel` | 次の時間帯に欲しがられるカテゴリ(客層の割合×欲しい重みの合計の大きい順)と来る客層。突発イベントの予告中は枠全体を予告に切り替える |
+| `ForecastPanel` | 次の時間帯に欲しがられるカテゴリ(客層の割合×欲しい重みの合計の大きい順)と来る客層。自店の棚に在庫ありで並ぶカテゴリにチェック。突発イベントの予告中は枠全体を予告に切り替える |
 | `ShelfView` | 3×3の棚。自店は操作可で名前・ボーナスの札と、右の列に在庫数・廃棄バー・入荷待ち・発注ボタンまで出す。相手は表示だけ(同じ部品を使い分ける) |
 | `PriceMenu` | 値段の3段階のボタン |
 | `CatalogView` | 品ぞろえの帯。全商品の小さな札をカテゴリ順に並べる。棚に出ていない商品は在庫数・廃棄バー・入荷待ち・発注ボタン、出ている商品は「陳列中」と薄く。札から棚へドラッグする(またはタップで選ぶ) |
@@ -24,19 +24,20 @@
 | `BonusHelp` | 自店の看板の「?」。乗せるか押すと棚の上にボーナスの見方を重ねる |
 | `SkillButton` | アクティブスキルと、その左の資金の硬貨 |
 | `StoreFrame` | 店の建物(看板と帯・床・入口)。棚はこの上に重ねる。自店は看板に取り逃した客の数の札を出す。相手の店は `compact` で小さく描く |
-| `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ・取り逃した客の吹き出し(1人ずつは描かない) |
-| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットイン・「大口獲得!」・逆転の表示 |
+| `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ。`customer_arrived` を間引いて「見える客」(客層の絵と欲しい物の吹き出し)を歩かせ、自店へ入ったら `ShelfView` のそのマスを光らせる。自店が取り逃した客は優先して見える客にする |
+| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績・「大口獲得!」・逆転の表示 |
 
-画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・ガイドを出すか)は autoload の `GameSession` が持つ。
+画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・ヒントを出し直すか)は autoload の `GameSession` が持つ。
+戦績が無いときのタイトルの「はじめる」は、`GameSession` が既定の店長(`FIRST_MANAGER_ID`)で試合を用意して、店長選択を飛ばす。
 
-## 4.3 保存・音・ガイド(GameDesign.md 9.7節・9.8節)
+## 4.3 保存・音・ヒント(GameDesign.md 9.7節・9.8節)
 
 | 部品 | 内容 |
 |---|---|
-| `SaveData`(`scripts/save_data.gd`、RefCounted) | 戦績(勝ち・負け・引き分け・店長ごとの自己ベスト・最後のCPUの強さ)と設定(音量2つ)を `user://save.cfg` に `ConfigFile` で読み書きする。`GameSession` が1つ持つ |
+| `SaveData`(`scripts/save_data.gd`、RefCounted) | 戦績(勝ち・負け・引き分け・店長ごとの自己ベスト・最後のCPUの強さ・出したヒントのid)と設定(音量2つ)を `user://save.cfg` に `ConfigFile` で読み書きする。`GameSession` が1つ持つ |
 | `AudioDirector`(autoload) | BGMの再生と切り替え・速さ、効果音の再生。効果音は id → `AudioStream` の表を持ち、同じ音は0.1秒に1回までに間引く。Master・BGM・SE の3つのバスの音量を設定から反映する |
 | `MatchSounds`(`scripts/ui/match/match_sounds.gd`、Node) | 試合のシグナルを受けて `AudioDirector` に効果音を頼む。売上の音程の上がり方もここで持つ |
-| `GuideOverlay`(`scripts/ui/match/guide_overlay.gd`) | 初回ガイド。黒い幕と、指す部品の矩形の穴、説明の札と「次へ」「とばす」。出ている間は `MatchController` が開店準備の時計を止める |
+| `HintLayer`(`scripts/ui/match/hint_layer.gd`) | ヒント。試合のシグナルからきっかけを判定し、まだ出していないヒントを1つずつ、指す部品の矩形へ向けた吹き出しで出す。試合も入力も止めない(`mouse_filter` は IGNORE)。出したら `SaveData` に記録する |
 | `SettingsPanel`(`scripts/ui/settings_panel.gd`) | タイトルに重ねる設定の札(音量2つ・全画面) |
 
 - 音の素材は `assets/audio/{bgm,se}/`。出典は `assets/audio/CREDITS.md`

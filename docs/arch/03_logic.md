@@ -11,6 +11,9 @@
 | `EventScheduler` | 突発イベントの抽選・予告・客の到着(GameDesign.md 11章)。`MatchState` が持つ |
 | `ManagerSkills` | パッシブの補正値の問い合わせ(発注の原価・魅力度・安売りの効き・予報・配送の秒数)と、アクティブの発動・効果時間の管理(7章)。値札ロック中の強気の売値は `StoreState.sell_price()` が問い合わせる |
 
+- 試合の開始時に、両店へ `BalanceConfig.opening_shelf` を割り当て、その商品の在庫を無料のロットとして入れる(1.6節)。
+  `spent` に数えないので利益は0から始まる
+- `StoreState` は時間帯ごとの来店数と、時間帯ごと・カテゴリごとの取り逃した客の数を持つ(9.3節の時間帯の成績)
 - 在庫はマスではなく `StoreState` が商品ごとに持つ(GameDesign.md 6.2節)。マスは商品idだけを持つ
 - 商品ごとの在庫は、届いた時刻の古い順に並べたロットの列(個数と廃棄時刻)で持つ。売るときは先頭から減らし、
   廃棄時刻を過ぎたロットを捨てる(6.4節)。日持ちしない商品でなければ廃棄時刻は持たない
@@ -27,7 +30,7 @@
 - `assign(store_index, product_id, slot_index)` マスへ商品を割り当てる(入れ替えを含む)
 - `unassign(store_index, slot_index)` マスの割り当てを外す
 - `set_price_step(store_index, product_id, step)` 値段(冷却中・値札ロック中なら失敗)
-- `use_active(store_index)` アクティブスキル(使用済み・開店準備中なら失敗)
+- `use_active(store_index)` アクティブスキル(使用済みなら失敗)
 
 ## 3.3 進行
 
@@ -43,8 +46,9 @@
 
 ## 3.4 シグナル
 
-`opened`(開店準備が終わった) `band_changed(band_id)` `delivery_arrived(store_index, product_id, count)`
-`customer_arrived(type_id, store_index, is_event)`(帰った客は store_index が -1) `customer_lost(store_index, category_id)`
+`band_changed(band_id)` `delivery_arrived(store_index, product_id, count)`
+`customer_arrived(type_id, store_index, is_event, first_product_id)`(帰った客は store_index が -1。
+`first_product_id` は最初に買った商品で、買わなかったら `&""`。見える客の吹き出しに使う) `customer_lost(store_index, category_id)`
 `purchased(store_index, product_id, count, amount)` `wasted(store_index, product_id, count)` `ordered(store_index, product_id)`
 `price_changed(store_index, product_id, step)` `event_announced(event_id, store_index)`(店長によって予告の早さが違うため店ごと)
 `event_started(event_id)` `event_ended(event_id, store_counts)` `skill_used(store_index)` `skill_ended(store_index)` `match_ended(result)`。
