@@ -81,9 +81,8 @@ func order(store_index: int, product_id: StringName) -> bool:
 	store.funds -= cost
 	store.spent += cost
 	store.order_count += 1
-	store.pending.append(
-		StoreState.PendingOrder.new(product_id, balance.lot_size, balance.delivery_seconds)
-	)
+	var seconds := ManagerSkills.delivery_seconds(store.manager, balance)
+	store.pending.append(StoreState.PendingOrder.new(product_id, balance.lot_size, seconds))
 	ordered.emit(store_index, product_id)
 	return true
 
@@ -346,7 +345,7 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 
 
 func _choose_store(scores: Array[float]) -> int:
-	# 握手会:魅力度が0でなければ、発動した店を選ぶ(両店が同時に発動していれば通常どおり)
+	# 握手会:自店の魅力度が0でなければ、発動した店を選ぶ(自店が0の客・両店が同時に発動していれば通常どおり)
 	var handshake := -1
 	for store in stores:
 		if store.is_active_running(SkillKinds.Active.HANDSHAKE) and scores[store.index] > 0.0:

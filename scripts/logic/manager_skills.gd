@@ -40,6 +40,20 @@ static func announce_lead_bonus(manager: ManagerData) -> float:
 	return 0.0
 
 
+## 発注が届くまでの秒数
+static func delivery_seconds(manager: ManagerData, balance: BalanceConfig) -> float:
+	if manager.passive_kind == SkillKinds.Passive.FORECAST:
+		return float(manager.passive_params["delivery_seconds"])
+	return balance.delivery_seconds
+
+
+## 売値に使う値段の段階。値札ロック中は自店の全商品を決まった段階で売る(値段補正は変わらない)
+static func sell_price_step(store: StoreState, step: int) -> int:
+	if store.is_active_running(SkillKinds.Active.PRICE_LOCK):
+		return int(store.manager.active_params["sell_price_step"])
+	return step
+
+
 ## 効果の続く秒数。すぐに終わる効果は 0
 static func active_duration(manager: ManagerData) -> float:
 	return float(manager.active_params.get("duration", 0.0))

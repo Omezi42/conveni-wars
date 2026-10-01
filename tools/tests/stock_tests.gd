@@ -9,6 +9,7 @@ var _assert: Callable
 func run(assert_true: Callable) -> void:
 	_assert = assert_true
 	_test_order_pays_and_arrives_after_delivery_time()
+	_test_analyst_orders_arrive_sooner()
 	_test_order_fails_without_funds()
 	_test_veteran_pays_less()
 	_test_perishable_lot_is_wasted_after_waste_time()
@@ -32,6 +33,15 @@ func _test_order_pays_and_arrives_after_delivery_time() -> void:
 	m.advance(0.2)
 	_assert.call(store.stock(&"salmon_onigiri") == 30, "delivered after 5s")
 	_assert.call(store.pending.is_empty(), "no longer pending")
+
+
+func _test_analyst_orders_arrive_sooner() -> void:
+	var m := T.new_match(&"analyst", &"idol")
+	m.order(0, &"salmon_onigiri")
+	m.order(1, &"salmon_onigiri")
+	m.advance(2.1)
+	_assert.call(m.stores[0].stock(&"salmon_onigiri") == 30, "the analyst's lot arrives after 2s")
+	_assert.call(m.stores[1].stock(&"salmon_onigiri") == 0, "others still wait")
 
 
 func _test_order_fails_without_funds() -> void:

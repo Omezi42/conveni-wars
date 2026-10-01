@@ -118,7 +118,7 @@ func price_cooldown(product_id: StringName) -> float:
 
 
 func sell_price(product_id: StringName) -> int:
-	return price_for_step(product_id, price_step(product_id))
+	return price_for_step(product_id, ManagerSkills.sell_price_step(self, price_step(product_id)))
 
 
 func price_for_step(product_id: StringName, step: int) -> int:

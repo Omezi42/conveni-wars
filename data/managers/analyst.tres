@@ -11,14 +11,16 @@ order = 3
 passive_kind = 3
 passive_params = {
 "announce_lead_bonus": 5.0,
+"delivery_seconds": 2.0,
 "extra_forecast_bands": 1
 }
-passive_description = "客層予報がその次の時間帯まで出る。イベントの予告が5秒早い"
+passive_description = "客層予報がその次の時間帯まで出る。イベントの予告が5秒早い。発注が2秒で届く"
 active_kind = 3
 active_params = {
-"duration": 30.0
+"duration": 45.0,
+"sell_price_step": 2
 }
 active_name = "値札ロック"
-active_description = "30秒間、相手は値段を変えられない"
+active_description = "45秒間、相手は値段を変えられない。自店の全商品を強気の売値で売る(客の呼び込みは変わらない)"
 color = Color(0.23137255, 0.43529412, 0.7137255, 1)
 portrait = ExtResource("2_icon")

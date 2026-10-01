@@ -19,6 +19,6 @@ active_params = {
 "duration": 10.0
 }
 active_name = "握手会"
-active_description = "10秒間、来店する客はすべて自店を選ぶ"
+active_description = "10秒間、自店に欲しい物がある客はすべて自店を選ぶ"
 color = Color(0.8784314, 0.3529412, 0.6039216, 1)
 portrait = ExtResource("2_icon")
