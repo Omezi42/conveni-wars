@@ -13,6 +13,8 @@ const SETTLE_FRAMES := 6
 ## 試合のどの時刻(開店からの秒)で撮るか
 const MATCH_SHOTS: Array[float] = [-5.0, 12.0, 70.0, 160.0, 245.0]
 const SEED := 20260929
+## 予報が2段の時刻と、突発イベントの予告が出ている時刻
+const ANALYST_SHOTS: Array[float] = [3.0, 30.0]
 
 var _out_dir := ""
 var _session: Node
@@ -56,6 +58,20 @@ func _run() -> void:
 		guided._guide._advance()
 	_session.guide_requested = false
 	guided.queue_free()
+	await process_frame
+
+	## データ分析は予報が2つ先まで出て、予報の段が低くなる(GameDesign.md 7章)
+	_session.prepare_match(&"analyst")
+	_session.match_seed = SEED
+	var analyst := await _show("res://scenes/match.tscn")
+	var analyst_cpu := CpuPlayer.new(
+		analyst.match_state, PLAYER, analyst.match_state.db.cpu_profile(CPU_PROFILE_ID)
+	)
+	for at in ANALYST_SHOTS:
+		while analyst.match_state.elapsed < at:
+			_step(analyst, analyst_cpu)
+		await _shot("02_match_analyst_%ds" % int(at))
+	analyst.queue_free()
 	await process_frame
 
 	_session.prepare_match(&"idol")

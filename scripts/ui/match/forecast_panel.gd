@@ -11,6 +11,7 @@ const BLOCKS_TOP := 44.0
 const BLOCK_GAP := 6.0
 const INFO_WIDTH := 130.0
 const SKY_ICON_SIZE := 48.0
+const SKY_ICON_SIZE_ROW := 40.0
 ## 並べるカテゴリの数(名前を読める幅を保つため)と、絵の大きさ(ブロックの高さに対する割合。欲しがられる度合いで変える)
 const MAX_CATEGORIES := 3
 const MIN_ICON := 0.36
@@ -29,7 +30,7 @@ const EVENT_CUSTOMER_RADIUS := 26.0
 const EVENT_ROW_Y := 88.0
 const EVENT_ICON_SIDE := 52.0
 const EVENT_ICONS_Y := 150.0
-const EVENT_ICON_GAP := 24.0
+const EVENT_ICON_GAP := 64.0
 const EVENT_NAME_GAP := 18.0
 
 
@@ -58,37 +59,70 @@ func _draw() -> void:
 func _draw_band(rect: Rect2, band: TimeBandData) -> void:
 	UiDraw.panel(self, rect, UiPalette.PAPER_DIM, Color.TRANSPARENT, 0, UiPalette.RADIUS_SMALL)
 	var info := Rect2(rect.position, Vector2(INFO_WIDTH, rect.size.y))
-	var lines := SKY_ICON_SIZE + PAD + UiPalette.FONT_HEAD + PAD + UiPalette.FONT_BODY
-	var top := info.position.y + maxf((info.size.y - lines) * 0.5, PAD)
-	var icon := Rect2(
-		Vector2(info.get_center().x - SKY_ICON_SIZE * 0.5, top), Vector2.ONE * SKY_ICON_SIZE
-	)
-	UiDraw.sky_icon(self, icon, band)
-	var center := HORIZONTAL_ALIGNMENT_CENTER
-	var name_base := icon.end.y + PAD + UiPalette.FONT_HEAD
-	UiDraw.text(
-		self,
-		Vector2(info.position.x, name_base),
-		band.display_name,
-		UiPalette.FONT_HEAD,
-		UiPalette.INK,
-		center,
-		info.size.x
-	)
 	var when := "あと%d秒" % int(ceil(_seconds_until(band)))
-	UiDraw.text(
-		self,
-		Vector2(info.position.x, name_base + PAD + UiPalette.FONT_BODY),
-		when,
-		UiPalette.FONT_BODY,
-		UiPalette.INK_SOFT,
-		center,
-		info.size.x
-	)
+	var stacked := SKY_ICON_SIZE + PAD + UiPalette.FONT_HEAD + PAD + UiPalette.FONT_BODY
+	if stacked + PAD * 2.0 <= info.size.y:
+		_draw_band_info_stacked(info, band, when, stacked)
+	else:
+		_draw_band_info_row(info, band, when)
 	var shelf := Rect2(
 		rect.position.x + INFO_WIDTH, rect.position.y, rect.size.x - INFO_WIDTH, rect.size.y
 	)
 	_draw_demand(shelf, _demand(band))
+
+
+## 段が高いとき:空の小窓・名前・秒数を縦に積む
+func _draw_band_info_stacked(info: Rect2, band: TimeBandData, when: String, lines: float) -> void:
+	var top := info.position.y + (info.size.y - lines) * 0.5
+	var icon := Rect2(
+		Vector2(info.get_center().x - SKY_ICON_SIZE * 0.5, top), Vector2.ONE * SKY_ICON_SIZE
+	)
+	UiDraw.sky_icon(self, icon, band)
+	var name_base := icon.end.y + PAD + UiPalette.FONT_HEAD
+	var when_base := name_base + PAD + UiPalette.FONT_BODY
+	_draw_band_texts(Rect2(info.position.x, 0, info.size.x, 0), band, when, name_base, when_base)
+
+
+## 段が低いとき(予報が2つ先まで出るとき):左に空の小窓、右に名前と秒数
+func _draw_band_info_row(info: Rect2, band: TimeBandData, when: String) -> void:
+	var side := SKY_ICON_SIZE_ROW
+	var icon := Rect2(
+		Vector2(info.position.x + PAD, info.get_center().y - side * 0.5), Vector2.ONE * side
+	)
+	UiDraw.sky_icon(self, icon, band)
+	var left := icon.end.x + PAD
+	var column := Rect2(left, 0, info.end.x - left, 0)
+	var lines := UiPalette.FONT_HEAD + PAD + UiPalette.FONT_BODY
+	var name_base := info.get_center().y - lines * 0.5 + UiPalette.FONT_HEAD
+	var when_base := name_base + PAD + UiPalette.FONT_BODY
+	_draw_band_texts(column, band, when, name_base, when_base)
+
+
+## column は横の位置と幅だけを使う
+func _draw_band_texts(
+	column: Rect2, band: TimeBandData, when: String, name_base: float, when_base: float
+) -> void:
+	var center := HORIZONTAL_ALIGNMENT_CENTER
+	var width := column.size.x
+	var name_size := UiDraw.fit_size(band.display_name, UiPalette.FONT_HEAD, width)
+	UiDraw.text(
+		self,
+		Vector2(column.position.x, name_base),
+		band.display_name,
+		name_size,
+		UiPalette.INK,
+		center,
+		width
+	)
+	UiDraw.text(
+		self,
+		Vector2(column.position.x, when_base),
+		when,
+		UiDraw.fit_size(when, UiPalette.FONT_BODY, width),
+		UiPalette.INK_SOFT,
+		center,
+		width
+	)
 
 
 ## 欲しがられるカテゴリを大きい順に、商品の絵と名前で並べる
@@ -184,22 +218,23 @@ func _draw_event_wants(inner: Rect2, customer: CustomerTypeData) -> void:
 		func(a: StringName, b: StringName) -> bool:
 			return customer.weight_of(a) > customer.weight_of(b)
 	)
-	var x := inner.position.x + PAD + EVENT_ICON_SIDE * 0.5
+	var slot := EVENT_ICON_SIDE + EVENT_ICON_GAP
+	var x := inner.position.x + PAD + slot * 0.5
 	var y := inner.position.y + EVENT_ICONS_Y - EVENT_NAME_GAP
 	for category_id: StringName in wants:
 		UiDraw.category_icon(self, Vector2(x, y), EVENT_ICON_SIDE, category_id)
 		var name := db().category(category_id).display_name
-		var name_x := x - EVENT_ICON_SIDE * 0.5 - EVENT_ICON_GAP * 0.5
+		var name_x := x - slot * 0.5
 		UiDraw.text(
 			self,
 			Vector2(name_x, y + EVENT_ICON_SIDE * 0.5 + EVENT_NAME_GAP),
 			name,
-			UiPalette.FONT_BODY,
+			UiDraw.fit_size(name, UiPalette.FONT_BODY, slot),
 			UiPalette.INK,
 			HORIZONTAL_ALIGNMENT_CENTER,
-			EVENT_ICON_SIDE + EVENT_ICON_GAP
+			slot
 		)
-		x += EVENT_ICON_SIDE + EVENT_ICON_GAP
+		x += slot
 
 
 ## 発生中のイベントの客が両店へ入った数(店の色で並べる)

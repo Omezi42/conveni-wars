@@ -7,7 +7,7 @@ extends Control
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const HEADER_RECT := Rect2(490, 22, 300, 52)
-const CARD_SIZE := Vector2(272, 438)
+const CARD_SIZE := Vector2(272, 448)
 const CARD_GAP := 18.0
 const CARD_Y := 104.0
 const CARD_RADIUS := 16
@@ -17,16 +17,16 @@ const PAD := 16.0
 const STRAP := Vector2(44, 9)
 const STRAP_Y := 12.0
 const BADGE_TOP := 30.0
-const BADGE_HEIGHT := 118.0
+const BADGE_HEIGHT := 106.0
 const PORTRAIT_RADIUS := 44.0
 const PORTRAIT_RING := 5.0
 const PORTRAIT_TEXT := 40
 const PORTRAIT_DARKEN := 0.2
-const NAME_Y := 182.0
-const SECTION_Y := 202.0
+const NAME_Y := 172.0
+const SECTION_Y := 190.0
 const LABEL_HEIGHT := 26.0
 const BODY_GAP := 8.0
-const SECTION_GAP := 14.0
+const SECTION_GAP := 10.0
 const PASSIVE_LINES := 3
 const ACTIVE_LINES := 4
 ## 勝ち星(店長の色の地の右下からの位置)
