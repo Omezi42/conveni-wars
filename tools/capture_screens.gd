@@ -12,8 +12,8 @@ const TEST_SAVE_PATH := "user://test_save.cfg"
 const SETTLE_FRAMES := 6
 ## タイトルの背景の試合を、見える客が何人か歩くまで進める秒数
 const TITLE_WARMUP := 6.0
-## 試合のどの時刻(開店からの秒)で撮るか
-const MATCH_SHOTS: Array[float] = [1.0, 12.0, 70.0, 160.0, 245.0]
+## 試合のどの時刻(開店からの秒)で撮るか。時間帯の境目(75秒ごと)の直後は成績のカットインと「読み的中!」
+const MATCH_SHOTS: Array[float] = [1.0, 12.0, 70.0, 75.8, 77.6, 150.8, 152.6, 160.0, 225.8, 245.0]
 const SEED := 20260929
 ## 予報が2段の時刻と、突発イベントの予告が出ている時刻
 const ANALYST_SHOTS: Array[float] = [3.0, 30.0]

@@ -47,6 +47,8 @@ var lost_total := 0
 var visitors_by_band: Dictionary = {}
 ## 時間帯id → 取り逃した客の数
 var lost_by_band: Dictionary = {}
+## 時間帯id → { 取り逃した客がいちばん欲しがったカテゴリid → 人数 }
+var lost_categories_by_band: Dictionary = {}
 var wasted_count := 0
 var order_count := 0
 ## マスごとの商品id。空は EMPTY
@@ -148,6 +150,14 @@ func is_slot_stocked(slot: int) -> bool:
 	return shelf[slot] != EMPTY and stock(shelf[slot]) > 0
 
 
+## 棚に在庫ありで並んでいる商品のカテゴリか
+func is_category_stocked(category_id: StringName) -> bool:
+	for slot in shelf.size():
+		if is_slot_stocked(slot) and category_of(shelf[slot]) == category_id:
+			return true
+	return false
+
+
 func category_of(product_id: StringName) -> StringName:
 	return _db.product(product_id).category_id
 
@@ -173,6 +183,25 @@ func is_active_running(kind: SkillKinds.Active) -> bool:
 
 func lost_in_band(band_id: StringName) -> int:
 	return int(lost_by_band.get(band_id, 0))
+
+
+## その時間帯にいちばん多く取り逃したカテゴリ。取り逃していなければ &""
+func most_lost_category(band_id: StringName) -> StringName:
+	var counts: Dictionary = lost_categories_by_band.get(band_id, {})
+	var best: StringName = &""
+	for category_id: StringName in counts:
+		if best == &"" or counts[category_id] > counts[best]:
+			best = category_id
+	return best
+
+
+## 時間帯の客(突発イベントの客を除く)のうち、両店に入った客に占めるこの店の割合。どちらにも入っていなければ -1
+func band_share(band_id: StringName) -> float:
+	var own := visitors_in_band(band_id)
+	var total := own + rival.visitors_in_band(band_id)
+	if total == 0:
+		return -1.0
+	return float(own) / total
 
 
 func shelf_bonus() -> ShelfBonus.Result:
@@ -272,8 +301,10 @@ func visitors_in_band(band_id: StringName) -> int:
 	return int(visitors_by_band.get(band_id, 0))
 
 
-func record_lost(band_id: StringName) -> void:
+func record_lost(band_id: StringName, category_id: StringName) -> void:
 	lost_by_band[band_id] = lost_in_band(band_id) + 1
+	var counts: Dictionary = lost_categories_by_band.get_or_add(band_id, {})
+	counts[category_id] = int(counts.get(category_id, 0)) + 1
 	lost_total += 1
 
 

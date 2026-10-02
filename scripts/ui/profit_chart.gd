@@ -211,13 +211,8 @@ func _draw_bands(plot: Rect2) -> void:
 	)
 
 
-## 時間帯の客のうち自店に入った割合。どちらにも入っていなければ -1
 func _share(band_id: StringName) -> float:
-	var own := _result.stores[MatchController.PLAYER].visitors_in_band(band_id)
-	var rival := _result.stores[MatchController.CPU].visitors_in_band(band_id)
-	if own + rival == 0:
-		return -1.0
-	return float(own) / (own + rival)
+	return _result.stores[MatchController.PLAYER].band_share(band_id)
 
 
 func _share_color(share: float) -> Color:

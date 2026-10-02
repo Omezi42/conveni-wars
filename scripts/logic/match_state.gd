@@ -345,7 +345,7 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 	var band_id := db.sorted_bands()[maxi(_band_index, 0)].id
 	for store in stores:
 		if scores[store.index] <= 0.0 and chosen != store.index:
-			store.record_lost(band_id)
+			store.record_lost(band_id, customer_type.top_category())
 			customer_lost.emit(store.index, customer_type.top_category())
 	var first_product := &""
 	if chosen >= 0:

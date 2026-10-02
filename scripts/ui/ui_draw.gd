@@ -52,6 +52,9 @@ const PILL_PAD_RATIO := 0.7
 const HALF := 0.5
 const STAR_POINTS := 5
 const STAR_INNER := 0.45
+## 緑の丸い札のチェック(フォントに ✓ が無いため線で描く)。折れ線と線の太さは半径に対する割合
+const CHECK_POINTS: Array[Vector2] = [Vector2(-0.5, 0.0), Vector2(-0.12, 0.38), Vector2(0.5, -0.35)]
+const CHECK_WIDTH_RATIO := 0.25
 
 static var _font: Font
 static var _boxes: Dictionary = {}
@@ -407,6 +410,16 @@ static func star(
 	item.draw_colored_polygon(points, fill)
 	points.append(points[0])
 	item.draw_polyline(points, edge, UiPalette.OUTLINE_THIN, true)
+
+
+## 緑の丸い札に白いチェック(選ばれている・揃っている印)
+static func check(item: CanvasItem, center: Vector2, radius: float) -> void:
+	item.draw_circle(center, radius + UiPalette.OUTLINE_THIN, UiPalette.INK)
+	item.draw_circle(center, radius, UiPalette.GOOD)
+	var points := PackedVector2Array()
+	for point in CHECK_POINTS:
+		points.append(center + point * radius)
+	item.draw_polyline(points, UiPalette.INK_ON_DARK, radius * CHECK_WIDTH_RATIO, true)
 
 
 ## ¥の硬貨

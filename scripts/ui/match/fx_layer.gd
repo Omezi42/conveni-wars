@@ -22,6 +22,8 @@ const BIG_EASE := 0.5
 const CUTIN_STRIPE := 18.0
 const CUTIN_STRIPE_COLOR := Color(1, 1, 1, 0.12)
 const CUTIN_EDGE := 4.0
+## 帯の下に添える1行(終わった時間帯の成績)の、帯の下端からの間
+const CUTIN_SUB_GAP := 12.0
 const BIG_SECONDS := 1.8
 const BIG_POP_SECONDS := 0.2
 const BIG_START_SCALE := 1.8
@@ -47,14 +49,14 @@ func pop(pos: Vector2, label: String, color: Color, font_size: int) -> void:
 	_pops.append({"pos": pos, "text": label, "color": color, "size": font_size, "t": 0.0})
 
 
-## 画面を横切る斜めの帯。重なったら順に出す。striped は注意を引く縞を重ねる
-func cutin(label: String, color: Color, striped := false) -> void:
-	_cutins.append({"text": label, "color": color, "striped": striped, "t": 0.0})
+## 画面を横切る斜めの帯。重なったら順に出す。striped は注意を引く縞を重ねる。sub は帯の下に添える1行
+func cutin(label: String, color: Color, striped := false, sub := "") -> void:
+	_cutins.append({"text": label, "color": color, "striped": striped, "sub": sub, "t": 0.0})
 
 
-## 画面中央の大きな文字。burst は後ろに回る光の筋を出す
-func big(label: String, color: Color, burst := false) -> void:
-	_bigs.append({"text": label, "color": color, "burst": burst, "t": 0.0})
+## 画面中央の大きな文字。burst は後ろに回る光の筋を出す。delay 秒だけ待ってから出す
+func big(label: String, color: Color, burst := false, delay := 0.0) -> void:
+	_bigs.append({"text": label, "color": color, "burst": burst, "t": -delay / BIG_SECONDS})
 
 
 func is_idle() -> bool:
@@ -81,7 +83,7 @@ func _draw() -> void:
 		_draw_pop(item)
 	if not _cutins.is_empty():
 		_draw_cutin(_cutins[0])
-	if not _bigs.is_empty():
+	if not _bigs.is_empty() and _bigs[0]["t"] >= 0.0:
 		_draw_big(_bigs[0])
 
 
@@ -134,6 +136,11 @@ func _draw_cutin(item: Dictionary) -> void:
 	UiDraw.text_centered(
 		self, text_rect, item["text"], UiPalette.FONT_HUGE, UiPalette.INK_ON_DARK, UiPalette.INK
 	)
+	if item["sub"] != "":
+		var sub_rect := Rect2(offset, bottom + CUTIN_SUB_GAP, size.x, UiPalette.FONT_HEAD)
+		UiDraw.text_centered(
+			self, sub_rect, item["sub"], UiPalette.FONT_HEAD, UiPalette.INK_ON_DARK, UiPalette.INK
+		)
 
 
 func _draw_big(item: Dictionary) -> void:

@@ -259,7 +259,26 @@ func _on_product_dropped(product_id: StringName, slot: int) -> void:
 func _on_band_changed(band_id: StringName) -> void:
 	var band := match_state.db.band(band_id)
 	_sky.set_band(band)
-	_fx.cutin(band.cutin_text, band.sky_top.darkened(BAND_CUTIN_DARKEN))
+	var bands := match_state.db.sorted_bands()
+	var index := bands.find(band)
+	var report := "" if index <= 0 else _band_report(bands[index - 1].id)
+	_fx.cutin(band.cutin_text, band.sky_top.darkened(BAND_CUTIN_DARKEN), false, report)
+
+
+## 終わった時間帯の成績の1行(GameDesign.md 9.3節)。読みが当たれば、カットインのあとに「読み的中!」を出す
+func _band_report(band_id: StringName) -> String:
+	var store := match_state.stores[PLAYER]
+	var share := store.band_share(band_id)
+	if share < 0.0:
+		return ""
+	var balance := match_state.balance
+	var report := "%sの客 %d%%" % [match_state.db.band(band_id).display_name, roundi(share * 100.0)]
+	if share >= balance.read_hit_share:
+		_fx.big("読み的中!", UiPalette.GOOD, true, FxLayer.CUTIN_SECONDS)
+	elif share <= balance.read_miss_share and store.most_lost_category(band_id) != &"":
+		var category := match_state.db.category(store.most_lost_category(band_id))
+		report += "  次は%sを並べよう" % category.display_name
+	return report
 
 
 ## 「+¥」は自店の棚からだけ出す(相手の売上は上端のバーで分かる。9.2節)

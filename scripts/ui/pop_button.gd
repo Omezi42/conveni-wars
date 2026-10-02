@@ -7,12 +7,9 @@ const HOVER_LIGHTEN := 0.12
 const DISABLED_FADE := 0.55
 const DISABLED_GRAY := Color("#b7b4ad")
 const CAPTION_GAP := 2.0
-## 選ばれている印(右上の丸い札の中のチェック。フォントに ✓ が無いため線で描く)
+## 選ばれている印(右上の丸い札の中のチェック)
 const CHECK_RADIUS := 10.0
 const CHECK_INSET := 4.0
-## チェックの折れ線(半径に対する割合)
-const CHECK_POINTS: Array[Vector2] = [Vector2(-0.5, 0.0), Vector2(-0.12, 0.38), Vector2(0.5, -0.35)]
-const CHECK_WIDTH := 2.5
 
 var text := "":
 	set(value):
@@ -94,9 +91,4 @@ func _draw_label(face: Rect2, label_ink: Color) -> void:
 
 func _draw_check(face: Rect2) -> void:
 	var center := Vector2(face.end.x - CHECK_INSET, face.position.y + CHECK_INSET)
-	draw_circle(center, CHECK_RADIUS + UiPalette.OUTLINE_THIN, UiPalette.INK)
-	draw_circle(center, CHECK_RADIUS, UiPalette.GOOD)
-	var points := PackedVector2Array()
-	for point in CHECK_POINTS:
-		points.append(center + point * CHECK_RADIUS)
-	draw_polyline(points, UiPalette.INK_ON_DARK, CHECK_WIDTH, true)
+	UiDraw.check(self, center, CHECK_RADIUS)

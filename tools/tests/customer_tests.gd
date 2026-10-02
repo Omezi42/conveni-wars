@@ -17,6 +17,7 @@ func run(assert_true: Callable) -> void:
 	_test_store_clock()
 	_test_winner_by_profit_then_visitors()
 	_test_forecast_shows_the_next_band()
+	_test_band_report_numbers()
 
 
 func _test_shopping_follows_weight_then_score() -> void:
@@ -154,3 +155,23 @@ func _test_forecast_shows_the_next_band() -> void:
 	)
 	m.advance(299.0)
 	_assert.call(m.forecast_bands(1).is_empty(), "nothing after the night")
+
+
+func _test_band_report_numbers() -> void:
+	var m := T.new_match()
+	var store := m.stores[0]
+	_assert.call(store.band_share(&"morning") < 0.0, "no visitors yet: no share")
+	store.record_visit(&"office", &"morning")
+	store.record_visit(&"office", &"morning")
+	store.record_visit(&"office", &"morning")
+	m.stores[1].record_visit(&"office", &"morning")
+	_assert.call(is_equal_approx(store.band_share(&"morning"), 0.75), "3 of 4 visitors is 75%")
+	_assert.call(store.most_lost_category(&"morning") == &"", "nothing lost: no category")
+	store.record_lost(&"morning", &"bento")
+	store.record_lost(&"morning", &"coffee")
+	store.record_lost(&"morning", &"coffee")
+	_assert.call(store.most_lost_category(&"morning") == &"coffee", "the most lost category")
+	_assert.call(store.lost_in_band(&"morning") == 3, "lost customers are still counted")
+	T.stock_slot(m, 0, &"hot_coffee", 0)
+	_assert.call(store.is_category_stocked(&"coffee"), "coffee on the shelf with stock")
+	_assert.call(not store.is_category_stocked(&"bento"), "bento not on the shelf")
