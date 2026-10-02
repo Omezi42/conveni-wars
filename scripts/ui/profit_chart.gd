@@ -99,7 +99,7 @@ func _draw_grid(plot: Rect2, span: Vector2) -> void:
 	_dashed(plot.position.x, plot.end.x, plot.position.y)
 	var label_width := plot.position.x - VALUE_GAP
 	var right := HORIZONTAL_ALIGNMENT_RIGHT
-	var font_size := UiPalette.FONT_TINY
+	var font_size := UiPalette.FONT_SMALL
 	var top_label := UiDraw.yen(int(span.y))
 	var half := font_size * TEXT_MID
 	UiDraw.text(
@@ -204,7 +204,7 @@ func _draw_bands(plot: Rect2) -> void:
 		self,
 		Vector2(0, strip_y + STRIP_HEIGHT + NOTE_Y),
 		"時間帯の客のうち自店に入った割合   ▼ 突発イベント   ★ 大口獲得",
-		UiPalette.FONT_TINY,
+		UiPalette.FONT_SMALL,
 		UiPalette.INK_SOFT,
 		HORIZONTAL_ALIGNMENT_CENTER,
 		size.x

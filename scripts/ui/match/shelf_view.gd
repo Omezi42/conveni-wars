@@ -1,10 +1,12 @@
 class_name ShelfView
 extends MatchPart
 ## 3×3の棚(GameDesign.md 4章・6章・9.2節・9.5節)。自店は操作でき、相手は表示だけ(同じ部品を大きさを変えて使う)。
-## 各段の手前に棚板があり、値札は棚板に掛かる。マスには商品・在庫数・売値を出し、
+## 各段の手前に棚板があり、値札は棚板に掛かる。マスには商品の絵と売値を出し、
 ## 成立しているボーナスを枠の色と、マスの左上に縦に並べた名前の札で示す(自店だけ。相手は枠の色だけ)。
-## 自店のマスは左に絵と名前、右の列に在庫数・廃棄までの残りのバー・入荷待ち・発注ボタンを置く。
-## 発注ボタンを押すとその商品を発注し、ほかの所を押すと値段のメニューを開く(slot_pressed)。
+## 自店のマスは左に絵、右の列に在庫数・廃棄までの残りのバー・入荷待ち・発注ボタンを置く。
+## 相手のマスは絵と値札だけで、在庫が切れたマスを赤くする。
+## 発注ボタンを押すとその商品を発注し、ほかの所をタップすると値段のメニューを開く(slot_pressed)。
+## 自店のマスを別のマスへドラッグすると、同じ商品をそのマスにも置く(product_dropped。6.3節)。
 
 signal slot_pressed(slot: int)
 signal product_dropped(product_id: StringName, slot: int)
@@ -17,35 +19,32 @@ const BOARD_RADIUS := 4
 ## マスの中の配置(アイコンの辺は棚板より上の幅と高さの短いほう、縦の位置はその高さに対する割合)
 const ICON_SIZE := 0.6
 const COMPACT_ICON_Y := 0.44
-## 自店のマス:左の絵の列の幅(マスの幅に対する割合)・絵の辺と縦の位置・名前のベースライン(割合)
-const ART_WIDTH := 0.54
-const ART_ICON_SIZE := 0.72
-const ART_ICON_Y := 0.42
-const NAME_Y := 0.9
+## 自店のマス:左の絵の列の幅(マスの幅に対する割合)・絵の辺と縦の位置(割合)
+const ART_WIDTH := 0.5
+const ART_ICON_SIZE := 0.82
+const ART_ICON_Y := 0.52
 ## 自店のマス:右の列の余白・在庫数のベースライン・廃棄バー・入荷待ちの札・発注ボタン(マスの中の座標)
 const COLUMN_PAD := 6.0
-const STOCK_BASELINE := 30.0
-const STOCK_FONT := 26
-const WASTE_BAR_Y := 38.0
-const WASTE_BAR_HEIGHT := 6.0
-const DELIVERY_Y := 58.0
-const DELIVERY_HEIGHT := 17.0
-const ORDER_HEIGHT := 30.0
-const BADGE_HEIGHT := 22.0
-const COMPACT_BADGE_HEIGHT := 16.0
+const STOCK_BASELINE := 32.0
+const STOCK_FONT := 32
+const WASTE_BAR_Y := 40.0
+const WASTE_BAR_HEIGHT := 7.0
+const DELIVERY_Y := 62.0
+const DELIVERY_HEIGHT := 22.0
+const ORDER_HEIGHT := 44.0
+const BADGE_HEIGHT := 26.0
 ## 値札の幅(マスの幅に対する割合)と高さ
 const TAG_WIDTH := 0.72
-const TAG_HEIGHT := 24.0
-const COMPACT_TAG_WIDTH := 0.9
-const COMPACT_TAG_HEIGHT := 17.0
+const TAG_HEIGHT := 30.0
+const COMPACT_TAG_WIDTH := 0.86
+const COMPACT_TAG_HEIGHT := 24.0
 const FRAME_WIDTH := 3.0
 const FRAME_STEP := 3.5
 const BONUS_TAG_POS := Vector2(6, 6)
-const BONUS_TAG_HEIGHT := 18.0
+const BONUS_TAG_HEIGHT := 22.0
 const BONUS_TAG_GAP := 3.0
 const SOLD_OUT_ALPHA := 0.35
-## 在庫が少ない札の点滅で明るくする量
-const LOW_STOCK_FLASH := 0.45
+const DRAG_TOKEN_SIDE := 56.0
 const SOLD_OUT_FILL := Color("#f8d3cf")
 const EMPTY_INK := Color(0.36, 0.4, 0.51, 0.55)
 const DROP_HIGHLIGHT := Color(0.18, 0.44, 0.91, 0.25)
@@ -59,6 +58,8 @@ var selection: UiSelection
 var open_slot := -1
 
 var _drop_slot := -1
+## 押して、まだ離していないマス(離したときに値段のメニューを開く。ドラッグしたら取り消す)
+var _press_slot := -1
 var _gauge: StockGauge
 
 
@@ -94,9 +95,7 @@ func order_rect(slot: int) -> Rect2:
 	var space := _space_rect(slot_rect(slot))
 	var left := space.position.x + space.size.x * ART_WIDTH
 	var bottom := space.end.y - COLUMN_PAD - StockGauge.ORDER_DROP
-	return Rect2(
-		left, bottom - ORDER_HEIGHT, space.end.x - COLUMN_PAD - left, ORDER_HEIGHT
-	)
+	return Rect2(left, bottom - ORDER_HEIGHT, space.end.x - COLUMN_PAD - left, ORDER_HEIGHT)
 
 
 ## 商品の入っている自店のマスのうち、発注ボタンの上にある番号(無ければ -1)
@@ -154,29 +153,52 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	if not press.pressed:
 		_gauge.release()
+		var released := slot_at(press.position)
+		if released >= 0 and released == _press_slot:
+			slot_pressed.emit(released)
+			accept_event()
+		_press_slot = -1
 		return
 	var order_slot := order_slot_at(press.position)
 	if order_slot >= 0:
 		_gauge.press(store().shelf[order_slot])
 		accept_event()
 		return
-	var slot := slot_at(press.position)
-	if slot >= 0:
-		slot_pressed.emit(slot)
+	_press_slot = slot_at(press.position)
+	if _press_slot >= 0:
 		accept_event()
+
+
+func _get_drag_data(at_position: Vector2) -> Variant:
+	if not interactive or order_slot_at(at_position) >= 0:
+		return null
+	var slot := slot_at(at_position)
+	if slot < 0 or store().shelf[slot] == StoreState.EMPTY:
+		return null
+	_press_slot = -1
+	var product := db().product(store().shelf[slot])
+	var token := Control.new()
+	token.size = Vector2.ONE * DRAG_TOKEN_SIDE
+	token.draw.connect(
+		func() -> void: UiDraw.product_icon(token, Vector2.ZERO, DRAG_TOKEN_SIDE, product)
+	)
+	set_drag_preview(token)
+	return {"product_id": product.id, "from_slot": slot}
 
 
 func _can_drop_data(at_position: Vector2, data: Variant) -> bool:
 	if not interactive or not (data is Dictionary and (data as Dictionary).has("product_id")):
 		return false
 	_drop_slot = slot_at(at_position)
+	if _drop_slot >= 0 and (data as Dictionary).get("from_slot", -1) == _drop_slot:
+		_drop_slot = -1
 	return _drop_slot >= 0
 
 
 func _drop_data(at_position: Vector2, data: Variant) -> void:
 	_drop_slot = -1
 	var slot := slot_at(at_position)
-	if slot >= 0:
+	if slot >= 0 and (data as Dictionary).get("from_slot", -1) != slot:
 		product_dropped.emit(StringName((data as Dictionary)["product_id"]), slot)
 
 
@@ -187,7 +209,7 @@ func _notification(what: int) -> void:
 		_gauge.release()
 
 
-## 名前・ボーナスの札まで出すか(操作する自店の棚だけ)
+## ボーナスの札と右の列まで出すか(操作する自店の棚だけ)
 func _detailed() -> bool:
 	return interactive
 
@@ -272,9 +294,10 @@ func _draw_product(
 	var alpha := 1.0 if stock > 0 else SOLD_OUT_ALPHA
 	if not detailed:
 		var icon_side := minf(space.size.x, space.size.y) * ICON_SIZE
-		var icon_center := space.position + Vector2(space.size.x * 0.5, space.size.y * COMPACT_ICON_Y)
+		var icon_center := (
+			space.position + Vector2(space.size.x * 0.5, space.size.y * COMPACT_ICON_Y)
+		)
 		UiDraw.product_icon(self, icon_center, icon_side, product, alpha)
-		_draw_stock_badge(icon_center, icon_side, product_id, stock)
 		return
 	var art := Rect2(space.position, Vector2(space.size.x * ART_WIDTH, space.size.y))
 	var art_side := minf(art.size.x, art.size.y) * ART_ICON_SIZE
@@ -290,17 +313,6 @@ func _draw_product(
 			UiPalette.INK_ON_DARK,
 			BADGE_HEIGHT
 		)
-	var name_pos := Vector2(art.position.x, art.position.y + art.size.y * NAME_Y)
-	var name_size := UiDraw.fit_size(product.short_name, UiPalette.FONT_SMALL, art.size.x)
-	UiDraw.text(
-		self,
-		name_pos,
-		product.short_name,
-		name_size,
-		UiPalette.INK_SOFT,
-		HORIZONTAL_ALIGNMENT_CENTER,
-		art.size.x
-	)
 	_draw_bonus_tags(space, kinds)
 	_draw_stock_column(slot, space, product_id, stock)
 
@@ -319,46 +331,18 @@ func _draw_stock_column(slot: int, space: Rect2, product_id: StringName, stock: 
 	_gauge.draw_order_button(self, order_rect(slot), product_id, true)
 
 
-## 相手の棚の在庫数の札。アイコンの右上に出し、少ないと赤く点滅する。
-## 切れたらアイコンの上に、入荷までの秒数か「品切れ」を出す
-func _draw_stock_badge(
-	icon_center: Vector2, icon_side: float, product_id: StringName, stock: int
-) -> void:
-	var height := COMPACT_BADGE_HEIGHT
-	var font_size := UiPalette.FONT_TINY
-	var center := icon_center + Vector2(icon_side, -icon_side) * 0.5
-	var fill := UiPalette.PAPER
-	var ink := UiPalette.INK
-	var label := str(stock)
-	if stock <= 0:
-		center = icon_center
-		ink = UiPalette.INK_ON_DARK
-		var arriving := store().next_delivery_seconds(product_id)
-		if arriving >= 0.0:
-			fill = UiPalette.DELIVERY
-			var seconds := int(ceil(arriving))
-			label = "%d秒" % seconds
-		else:
-			fill = UiPalette.BAD
-			label = "品切れ"
-	elif stock <= match_state.balance.low_stock_threshold:
-		fill = UiPalette.BAD.lightened(LOW_STOCK_FLASH * blink())
-		ink = UiPalette.INK_ON_DARK
-	UiDraw.pill(self, center, label, font_size, fill, ink, height)
-
-
 func _draw_bonus_tags(space: Rect2, kinds: Array[int]) -> void:
 	var pos := space.position + BONUS_TAG_POS
 	for kind in kinds:
 		var label: String = ShelfBonus.KIND_LABELS[kind]
 		var pad := BONUS_TAG_HEIGHT * UiDraw.PILL_PAD_RATIO
-		var width := UiDraw.text_width(label, UiPalette.FONT_TINY) + pad
+		var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + pad
 		var center := pos + Vector2(width, BONUS_TAG_HEIGHT) * 0.5
 		UiDraw.pill(
 			self,
 			center,
 			label,
-			UiPalette.FONT_TINY,
+			UiPalette.FONT_SMALL,
 			UiPalette.BONUS_COLORS[kind],
 			UiPalette.INK,
 			BONUS_TAG_HEIGHT
@@ -386,7 +370,7 @@ func _draw_tag(slot: int) -> void:
 		UiPalette.OUTLINE_THIN,
 		UiPalette.RADIUS_SMALL
 	)
-	var font_size := UiPalette.FONT_BODY if detailed else UiPalette.FONT_TINY
+	var font_size := UiPalette.FONT_LARGE if detailed else UiPalette.FONT_BODY
 	var price := UiDraw.yen(store().sell_price(product_id))
 	UiDraw.text_centered(self, tag, price, font_size, UiPalette.PRICE_INKS[step])
 

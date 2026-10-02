@@ -12,26 +12,26 @@ const SCREEN_SIZE := Vector2(1280, 720)
 const HUD_RECT := Rect2(0, 0, 1280, 80)
 ## 上端の右端の一時停止のボタン(GameDesign.md 9.9節)
 const PAUSE_BUTTON_RECT := Rect2(1220, 8, 48, 50)
-const OWN_FRAME_RECT := Rect2(12, 86, 628, 514)
+const OWN_FRAME_RECT := Rect2(12, 86, 628, 506)
 const OWN_SHELF_POS := Vector2(30, 68)
-const OWN_CELL := Vector2(176, 136)
+const OWN_CELL := Vector2(176, 134)
 const OWN_GAP := Vector2(16, 12)
 ## 自店の看板の「?」(店の中の座標)と、押すと出るボーナスの見方(店の中の座標)
 const HELP_RECT := Rect2(583, 8, 30, 30)
 const HELP_LEGEND_RECT := Rect2(150, 72, 420, 200)
-const STREET_RECT := Rect2(640, 86, 120, 514)
+const STREET_RECT := Rect2(640, 86, 120, 506)
 const RIVAL_FRAME_RECT := Rect2(760, 86, 508, 226)
 const RIVAL_SHELF_POS := Vector2(100, 46)
 const RIVAL_CELL := Vector2(96, 52)
 const RIVAL_GAP := Vector2(10, 6)
-const FORECAST_RECT := Rect2(760, 322, 508, 278)
-const CATALOG_RECT := Rect2(12, 608, 988, 104)
-const SKILL_RECT := Rect2(1010, 608, 258, 104)
+const FORECAST_RECT := Rect2(760, 322, 508, 270)
+const CATALOG_RECT := Rect2(12, 600, 988, 112)
+const SKILL_RECT := Rect2(1010, 600, 258, 112)
 
 ## 「+¥」をまとめて出す間隔(1秒に十数個売れるため、商品ごとに束ねる)
 const SALE_POP_INTERVAL := 0.25
 const POP_SIZE := UiPalette.FONT_HEAD
-## 開店直後は客数の差が小さく入れ替わりやすいため、逆転の表示を出さない秒数
+## 開店直後は利益の差が小さく入れ替わりやすいため、逆転の表示を出さない秒数
 const REVERSAL_GRACE := 15.0
 const REVERSAL_COOLDOWN := 12.0
 const RESULT_DELAY := 2.5
@@ -316,12 +316,12 @@ func _on_match_ended(_result: MatchResult) -> void:
 
 func _check_reversal(delta: float) -> void:
 	_reversal_cooldown = maxf(_reversal_cooldown - delta, 0.0)
-	var own := match_state.stores[PLAYER].visitor_total
-	var rival := match_state.stores[CPU].visitor_total
+	var own := match_state.stores[PLAYER].profit()
+	var rival := match_state.stores[CPU].profit()
 	var leading := own > rival
 	if leading and not _player_leading and match_state.elapsed > REVERSAL_GRACE:
 		if _reversal_cooldown <= 0.0:
-			_fx.big("客数で逆転!", UiPalette.STORE_COLORS[PLAYER], true)
+			_fx.big("利益で逆転!", UiPalette.STORE_COLORS[PLAYER], true)
 			AudioDirector.play_se(&"reversal")
 			_reversal_cooldown = REVERSAL_COOLDOWN
 	_player_leading = leading

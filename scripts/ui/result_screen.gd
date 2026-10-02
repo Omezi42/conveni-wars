@@ -1,7 +1,7 @@
 class_name ResultScreen
 extends Control
 ## 結果(GameDesign.md 9.4節・9.5節)。閉店後の夜空の下に、両店の成績をレシートの形で並べ、勝った店に「勝」の判を押す。
-## 利益・売上・仕入れ・来店した客の数・取り逃した客・廃棄した個数・客層ごとの来店数を出す。
+## 利益・売上・仕入れ・来店した客の数・取り逃した客・廃棄した個数を出す。
 ## 2枚のレシートのあいだに、ふりかえりの利益の折れ線(ProfitChart)を置く。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
@@ -29,13 +29,7 @@ const DASH := Vector2(8, 5)
 const DASH_WIDTH := 1.5
 const SALES_LABEL_Y := 22.0
 const SALES_Y := 66.0
-const LINE := 30.0
-const TYPE_LINE := 24.0
-const TYPE_COLUMNS := 2
-const TYPE_ICON_RADIUS := 8.0
-const TYPE_ICON_GAP := 6.0
-## 客層アイコンを文字の中ほどへ上げる量(半径に対する割合)
-const TYPE_ICON_RAISE := 0.6
+const LINE := 52.0
 const STAMP_OFFSET := Vector2(-58, 62)
 const STAMP_RADIUS := 46.0
 const STAMP_RING := 5.0
@@ -47,7 +41,7 @@ const STAMP_INNER_RING := 0.4
 const BUTTON_SIZE := Vector2(250, 70)
 ## 自店のレシートの左上に掛ける「自己ベスト更新!」の札
 ## 勝ち星が増えたときの札は、自己ベストの札の右に並べる
-const BEST_SIZE := Vector2(170, 36)
+const BEST_SIZE := Vector2(196, 38)
 const BEST_OFFSET := Vector2(-18, -16)
 const BADGE_GAP := 6.0
 const BUTTON_Y := 622.0
@@ -186,11 +180,7 @@ func _draw_receipt(rect: Rect2, store: StoreState) -> void:
 	y = _row(inner_x, width, y, "仕入れ", UiDraw.yen(-store.spent))
 	y = _row(inner_x, width, y, "来店した客", "%d人" % store.visitor_total)
 	y = _row(inner_x, width, y, "取り逃した客", "%d人" % store.lost_total)
-	y = _row(inner_x, width, y, "廃棄した個数", "%d個" % store.wasted_count)
-	y += RULE_GAP - LINE + UiPalette.FONT_LARGE * 0.5
-	_dashed(inner_x, y, width)
-	y += TYPE_LINE
-	_draw_types(inner_x, width, y, store)
+	_row(inner_x, width, y, "廃棄した個数", "%d個" % store.wasted_count)
 
 
 ## 上端はまっすぐ、下端はぎざぎざの外周
@@ -215,48 +205,17 @@ func _dashed(x: float, y: float, width: float) -> void:
 
 
 func _row(x: float, width: float, y: float, label: String, value: String) -> float:
-	UiDraw.text(self, Vector2(x, y), label, UiPalette.FONT_BODY, UiPalette.INK_SOFT)
+	UiDraw.text(self, Vector2(x, y), label, UiPalette.FONT_LARGE, UiPalette.INK_SOFT)
 	UiDraw.text(
 		self,
 		Vector2(x, y),
 		value,
-		UiPalette.FONT_LARGE,
+		UiPalette.FONT_HEAD,
 		UiPalette.INK,
 		HORIZONTAL_ALIGNMENT_RIGHT,
 		width
 	)
 	return y + LINE
-
-
-## 客層ごとの来店数(2列)
-func _draw_types(x: float, width: float, top: float, store: StoreState) -> void:
-	var column_width := width / TYPE_COLUMNS
-	var index := 0
-	for customer in GameDatabase.get_default().sorted_customer_types():
-		var count := int(store.visitors.get(customer.id, 0))
-		if count == 0:
-			continue
-		@warning_ignore("integer_division")
-		var row := index / TYPE_COLUMNS
-		var column_x := x + column_width * (index % TYPE_COLUMNS)
-		var y := top + row * TYPE_LINE
-		var icon := Vector2(column_x + TYPE_ICON_RADIUS, y - TYPE_ICON_RADIUS * TYPE_ICON_RAISE)
-		UiDraw.customer_icon(self, icon, TYPE_ICON_RADIUS, customer)
-		var name_x := column_x + TYPE_ICON_RADIUS * 2.0 + TYPE_ICON_GAP
-		UiDraw.text(
-			self, Vector2(name_x, y), customer.display_name, UiPalette.FONT_SMALL, UiPalette.INK
-		)
-		var value_width := column_width - TYPE_ICON_GAP * 2.0
-		UiDraw.text(
-			self,
-			Vector2(column_x, y),
-			"%d人" % count,
-			UiPalette.FONT_SMALL,
-			UiPalette.INK,
-			HORIZONTAL_ALIGNMENT_RIGHT,
-			value_width
-		)
-		index += 1
 
 
 ## 自己ベスト更新と、増えた勝ち星(9.4節)の札

@@ -1,7 +1,7 @@
 class_name HudBar
 extends MatchPart
-## 上端(GameDesign.md 9.2節・9.5節)。左=時計・時間帯・1日の進み・残り時間を1枚の札に、
-## 右=両店の売上と綱引きのバー、その下に両店の客数の細いバー。
+## 上端(GameDesign.md 9.2節・9.5節)。左=時間帯・1日の進み・残り時間を1枚の札に、
+## 右=両店の利益と綱引きのバー。
 ## 売上は数字が回って追いつき、増えた瞬間に少し大きくなる。
 
 const ROLL_SPEED := 6.0
@@ -11,36 +11,29 @@ const HURRY_SECONDS := 30.0
 const HURRY_PULSE := 0.25
 const PAD := 12.0
 
-const CLOCK_RECT := Rect2(12, 8, 380, 56)
-const SKY_ICON_SIZE := 40.0
-const CLOCK_TEXT_X := 62.0
-const CLOCK_FONT := 30
-const DAY_BAR_X := 150.0
-const DAY_BAR_WIDTH := 112.0
-const DAY_BAR_Y := 34.0
-const DAY_BAR_HEIGHT := 10.0
-const DAY_LABEL_Y := 26.0
-const DAY_MARKER := Vector2(5, 6)
+const CLOCK_RECT := Rect2(12, 6, 380, 66)
+const SKY_ICON_SIZE := 50.0
+## 時間帯の名前と、その下の1日の帯
+const DAY_X := 74.0
+const DAY_LABEL_Y := 30.0
+const DAY_BAR_Y := 42.0
+const DAY_BAR_HEIGHT := 12.0
+const DAY_MARKER := Vector2(6, 7)
 const FUTURE_FADE := 0.55
-## 残り時間の札(時計の札の右端に入れる)
-const REMAIN_WIDTH := 100.0
+## 残り時間の札(時間帯の札の右端に入れる)
+const REMAIN_WIDTH := 116.0
 const REMAIN_INSET := 6.0
-const REMAIN_FONT := 26
-const REMAIN_LABEL_BASE := 13.0
-const REMAIN_VALUE_TOP := 12.0
+const REMAIN_FONT := 32
+const REMAIN_LABEL_BASE := 18.0
+const REMAIN_VALUE_TOP := 16.0
 
 ## 右端は一時停止のボタンのために空ける(MatchController.PAUSE_BUTTON_RECT)
-const SCORE_RECT := Rect2(412, 6, 796, 42)
-const VS_RADIUS := 19.0
-const SALES_FONT := 28
+const SCORE_RECT := Rect2(412, 6, 796, 52)
+const VS_RADIUS := 22.0
+const SALES_FONT := 36
 const PROFIT_LABEL := "の利益"
-const TUG_Y := 52.0
-const TUG_HEIGHT := 10.0
-## 客数の細いバーと、その両端の数
-const VISIT_Y := 68.0
-const VISIT_HEIGHT := 6.0
-const VISIT_LABEL_WIDTH := 110.0
-const VISIT_TRACK := Color(1, 1, 1, 0.5)
+const TUG_Y := 62.0
+const TUG_HEIGHT := 12.0
 
 var _shown_profit: Array[float] = [0.0, 0.0]
 var _bump: Array[float] = [0.0, 0.0]
@@ -63,7 +56,6 @@ func _draw() -> void:
 		return
 	_draw_clock()
 	_draw_scoreboard()
-	_draw_visitors()
 
 
 func _draw_clock() -> void:
@@ -72,21 +64,18 @@ func _draw_clock() -> void:
 	var icon_y := CLOCK_RECT.position.y + (CLOCK_RECT.size.y - SKY_ICON_SIZE) / 2.0
 	var icon := Rect2(CLOCK_RECT.position.x + PAD * 0.75, icon_y, SKY_ICON_SIZE, SKY_ICON_SIZE)
 	UiDraw.sky_icon(self, icon, band)
-	var clock := UiDraw.clock(match_state.clock_minutes())
-	var baseline := UiDraw.baseline_in(CLOCK_RECT, CLOCK_FONT)
-	var clock_pos := Vector2(CLOCK_RECT.position.x + CLOCK_TEXT_X, baseline)
-	UiDraw.text(self, clock_pos, clock, CLOCK_FONT, UiPalette.INK)
 	var label := "開店準備" if match_state.is_preparing() else band.display_name
-	var label_pos := Vector2(CLOCK_RECT.position.x + DAY_BAR_X, CLOCK_RECT.position.y + DAY_LABEL_Y)
-	UiDraw.text(self, label_pos, label, UiPalette.FONT_BODY, UiPalette.INK)
+	var label_pos := Vector2(CLOCK_RECT.position.x + DAY_X, CLOCK_RECT.position.y + DAY_LABEL_Y)
+	UiDraw.text(self, label_pos, label, UiPalette.FONT_LARGE, UiPalette.INK)
 	_draw_day_bar()
 	_draw_remaining()
 
 
 ## 1日の帯。時間帯ごとに空の色で塗り分け、まだ来ていない時間帯は薄くし、いまの位置に印を置く
 func _draw_day_bar() -> void:
+	var width := CLOCK_RECT.size.x - DAY_X - REMAIN_WIDTH - REMAIN_INSET - PAD
 	var bar := Rect2(
-		CLOCK_RECT.position + Vector2(DAY_BAR_X, DAY_BAR_Y), Vector2(DAY_BAR_WIDTH, DAY_BAR_HEIGHT)
+		CLOCK_RECT.position + Vector2(DAY_X, DAY_BAR_Y), Vector2(width, DAY_BAR_HEIGHT)
 	)
 	var bands := db().sorted_bands()
 	var total := match_state.duration()
@@ -139,7 +128,7 @@ func _draw_scoreboard() -> void:
 	_draw_tug()
 
 
-## 店名は札の端に小さく、利益は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
+## 店名は札の外側の端に、利益は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
 func _draw_profit(plate: Rect2, index: int) -> void:
 	var white := UiPalette.INK_ON_DARK
 	var name := UiPalette.STORE_NAMES[index] + PROFIT_LABEL
@@ -218,41 +207,6 @@ func _draw_remaining() -> void:
 	var white := UiPalette.INK_ON_DARK
 	var center := HORIZONTAL_ALIGNMENT_CENTER
 	var label_pos := Vector2(rect.position.x, rect.position.y + REMAIN_LABEL_BASE)
-	UiDraw.text(self, label_pos, label, UiPalette.FONT_TINY, white, center, rect.size.x)
+	UiDraw.text(self, label_pos, label, UiPalette.FONT_SMALL, white, center, rect.size.x)
 	var value_rect := rect.grow_individual(0, -REMAIN_VALUE_TOP, 0, 0)
 	UiDraw.text_centered(self, value_rect, value, REMAIN_FONT, white)
-
-
-## 両店の客数:細いバーの両端に「来店 N人」
-func _draw_visitors() -> void:
-	var counts: Array[int] = [
-		match_state.stores[0].visitor_total, match_state.stores[1].visitor_total
-	]
-	var bar := Rect2(
-		SCORE_RECT.position.x + VISIT_LABEL_WIDTH,
-		VISIT_Y,
-		SCORE_RECT.size.x - VISIT_LABEL_WIDTH * 2.0,
-		VISIT_HEIGHT
-	)
-	var total := counts[0] + counts[1]
-	var share := 0.5 if total <= 0 else float(counts[0]) / total
-	var radius := int(VISIT_HEIGHT / 2.0)
-	UiDraw.panel(self, bar, UiPalette.STORE_COLORS[1], UiPalette.INK, 1, radius)
-	var own := Rect2(bar.position, Vector2(bar.size.x * share, bar.size.y))
-	UiDraw.panel(self, own, UiPalette.STORE_COLORS[0], Color.TRANSPARENT, 0, radius)
-	UiDraw.panel(self, bar, Color.TRANSPARENT, UiPalette.INK, 1, radius)
-	var baseline := bar.get_center().y + UiPalette.FONT_SMALL * 0.4
-	for i in counts.size():
-		var label := "来店 %d人" % counts[i]
-		var x := SCORE_RECT.position.x if i == 0 else bar.end.x
-		var align := HORIZONTAL_ALIGNMENT_LEFT if i == 0 else HORIZONTAL_ALIGNMENT_RIGHT
-		UiDraw.text_outlined(
-			self,
-			Vector2(x, baseline),
-			label,
-			UiPalette.FONT_SMALL,
-			UiPalette.INK_ON_DARK,
-			UiPalette.STORE_COLORS[i].darkened(HURRY_PULSE),
-			align,
-			VISIT_LABEL_WIDTH
-		)

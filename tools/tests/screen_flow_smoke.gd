@@ -125,28 +125,24 @@ func _exercise_player_moves(controller: Control) -> void:
 
 
 ## 棚に出ていない商品は品ぞろえの札の発注ボタンで発注でき、札のほかの所を押すと選べる。
-## 棚に出ている商品の札には発注ボタンが無い
+## 棚に出ている商品は品ぞろえに出ない
 func _exercise_catalog(controller: Control, state: MatchState) -> void:
 	var catalog = controller._catalog
 	var product := state.db.product(&"melon_pan")
-	var index := state.db.sorted_products().find(product)
 	_check(not state.stores[PLAYER].is_on_shelf(product.id), "melon pan starts off the shelf")
+	catalog._layout()
+	var index: int = catalog.tile_index(product.id)
+	_check(index >= 0, "a product off the shelf has a tile")
 	var before := state.stores[PLAYER].pending_count(product.id)
 	catalog._gui_input(_left_press(catalog.order_rect(index).get_center()))
 	var after := state.stores[PLAYER].pending_count(product.id)
 	_check(after == before + state.balance.lot_size, "the order button on a tile orders a lot")
-	catalog._gui_input(_left_press(catalog.tile_rect(index).get_center()))
+	var icon_point: Vector2 = catalog.tile_rect(index).position + Vector2.ONE * catalog.PAD * 2.0
+	catalog._gui_input(_left_press(icon_point))
 	_check(controller._selection.product_id == product.id, "tapping a tile selects it")
 	controller._selection.clear()
 	var shelved: StringName = state.stores[PLAYER].shelf[4]
-	var shelved_index := state.db.sorted_products().find(state.db.product(shelved))
-	var pending := state.stores[PLAYER].pending_count(shelved)
-	catalog._gui_input(_left_press(catalog.order_rect(shelved_index).get_center()))
-	_check(
-		state.stores[PLAYER].pending_count(shelved) == pending,
-		"a tile on the shelf has no order button"
-	)
-	controller._selection.clear()
+	_check(catalog.tile_index(shelved) < 0, "a product on the shelf has no tile")
 
 
 ## 棚のマスの発注ボタンはその商品を発注し、値段のメニューは開かない
@@ -158,6 +154,10 @@ func _exercise_shelf_order(controller: Control, state: MatchState) -> void:
 	var after := state.stores[PLAYER].pending_count(product_id)
 	_check(after == before + state.balance.lot_size, "the order button on a slot orders a lot")
 	_check(not controller._price_menu.visible, "ordering from a slot does not open the price menu")
+	var copy := {"product_id": product_id, "from_slot": 4}
+	shelf._drop_data(shelf.slot_rect(0).get_center(), copy)
+	_check(state.stores[PLAYER].shelf[0] == product_id, "dragging a slot copies it to another slot")
+	_check(state.stores[PLAYER].shelf[4] == product_id, "the dragged slot keeps its product")
 
 
 ## 一時停止の間は試合が進まず、続けると動き出す(GameDesign.md 9.9節)

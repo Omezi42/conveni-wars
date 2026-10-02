@@ -56,12 +56,12 @@ const MENU_SKY_BOTTOM := Color("#ffd08f")
 const RESULT_SKY_TOP := Color("#121a40")
 const RESULT_SKY_BOTTOM := Color("#343a74")
 
-const FONT_TINY := 12
-const FONT_SMALL := 13
-const FONT_BODY := 15
-const FONT_LARGE := 19
-const FONT_HEAD := 26
-const FONT_HUGE := 44
+## 最小の文字(GameDesign.md 9.5節:1280×720 基準で16px未満にしない)
+const FONT_SMALL := 16
+const FONT_BODY := 18
+const FONT_LARGE := 22
+const FONT_HEAD := 28
+const FONT_HUGE := 48
 const FONT_TITLE := 80
 
 const RADIUS := 12

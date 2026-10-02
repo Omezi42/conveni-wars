@@ -148,10 +148,10 @@ static func text_width(value: String, size: int) -> float:
 	return font().get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 
 
-## 幅に収まる文字の大きさ(size から小さくしていく。FONT_TINY より小さくはしない)
+## 幅に収まる文字の大きさ(size から小さくしていく。FONT_SMALL より小さくはしない)
 static func fit_size(value: String, size: int, width: float) -> int:
 	var fitted := size
-	while fitted > UiPalette.FONT_TINY and text_width(value, fitted) > width:
+	while fitted > UiPalette.FONT_SMALL and text_width(value, fitted) > width:
 		fitted -= 1
 	return fitted
 
@@ -437,11 +437,6 @@ static func yen(value: int) -> String:
 		grouped = "," + digits.right(3) + grouped
 		digits = digits.left(digits.length() - 3)
 	return ("-" if value < 0 else "") + "¥" + digits + grouped
-
-
-@warning_ignore("integer_division")
-static func clock(minutes: int) -> String:
-	return "%d:%02d" % [minutes / 60, minutes % 60]
 
 
 ## 残り時間の「分:秒」

@@ -5,9 +5,11 @@ extends RefCounted
 ## (描く部品ごとに1つ持つ)。発注ボタンは押すと沈み、成否の色が一瞬光る。資金が足りないと灰色。
 
 const ORDER_DROP := 2.0
-const ORDER_CAPTION_Y := 12.0
-const ORDER_COST_Y := 26.0
+## この高さ以上の発注ボタンは「発注」と代金を2行に分ける
+const TWO_LINE_HEIGHT := 40.0
 const TEXT_PAD := 4.0
+## 入荷待ちの札の、まだ届くまでの残りぶんの地の色
+const DELIVERY_TRACK := Color("#a9c6f5")
 ## 廃棄が近いとみなす残り秒数
 const WASTE_WARN_SECONDS := 15.0
 const WASTE_DANGER_SECONDS := 5.0
@@ -61,7 +63,7 @@ func release() -> void:
 	hover_id = &""
 
 
-## with_caption なら1行目に「発注」、2行目に1ロットの代金。そうでなければ代金だけ
+## with_caption なら「発注」と1ロットの代金(ボタンが高ければ2行)。そうでなければ代金だけ
 func draw_order_button(
 	item: CanvasItem, rect: Rect2, product_id: StringName, with_caption: bool
 ) -> void:
@@ -84,15 +86,19 @@ func draw_order_button(
 		UiDraw.panel(item, rect, color, Color.TRANSPARENT, 0, radius)
 	var ink := UiPalette.INK if affordable else FADED_INK
 	var price := UiDraw.yen(cost)
+	var inner := rect.grow(-TEXT_PAD)
 	if not with_caption:
-		UiDraw.text_centered(item, rect.grow(-TEXT_PAD), price, UiPalette.FONT_SMALL, ink)
+		UiDraw.text_centered(item, inner, price, UiPalette.FONT_BODY, ink)
 		return
-	var center := HORIZONTAL_ALIGNMENT_CENTER
-	var caption_pos := Vector2(rect.position.x, rect.position.y + ORDER_CAPTION_Y)
-	UiDraw.text(item, caption_pos, "発注", UiPalette.FONT_TINY, ink, center, rect.size.x)
-	var price_size := UiDraw.fit_size(price, UiPalette.FONT_SMALL, rect.size.x - TEXT_PAD)
-	var price_pos := Vector2(rect.position.x, rect.position.y + ORDER_COST_Y)
-	UiDraw.text(item, price_pos, price, price_size, ink, center, rect.size.x)
+	if rect.size.y < TWO_LINE_HEIGHT:
+		UiDraw.text_centered(item, inner, "発注 " + price, UiPalette.FONT_BODY, ink)
+		return
+	var halves := [
+		Rect2(inner.position, Vector2(inner.size.x, inner.size.y * 0.5)),
+		Rect2(inner.get_center() - Vector2(inner.size.x * 0.5, 0), inner.size * Vector2(1, 0.5)),
+	]
+	UiDraw.text_centered(item, halves[0], "発注", UiPalette.FONT_SMALL, ink)
+	UiDraw.text_centered(item, halves[1], price, UiPalette.FONT_BODY, ink)
 
 
 ## いちばん古いロットが廃棄されるまでの残りを、減っていくバーで出す(残りが少ないと赤く点滅する)。
@@ -115,16 +121,25 @@ func draw_waste_bar(item: CanvasItem, bar: Rect2, product_id: StringName, blink:
 	UiDraw.panel(item, bar, Color.TRANSPARENT, UiPalette.INK, 1, radius)
 
 
-## 入荷待ち:届く個数と秒数の札。入荷待ちが無ければ描かずに false を返す
+## 入荷待ち:届く個数の札。届くまでの残りは、左から満ちていく塗りで見せる。
+## 入荷待ちが無ければ描かずに false を返す
 func draw_delivery(
 	item: CanvasItem, center: Vector2, product_id: StringName, height: float
 ) -> bool:
 	var arriving := store().next_delivery_seconds(product_id)
 	if arriving < 0.0:
 		return false
-	var label := "+%d %d秒" % [store().pending_count(product_id), int(ceil(arriving))]
-	UiDraw.pill(
-		item, center, label, UiPalette.FONT_TINY, UiPalette.DELIVERY, UiPalette.INK_ON_DARK, height
+	var label := "+%d" % store().pending_count(product_id)
+	var rect := UiDraw.pill(
+		item, center, label, UiPalette.FONT_SMALL, DELIVERY_TRACK, UiPalette.INK, height
+	)
+	var ratio := clampf(1.0 - arriving / match_state.balance.delivery_seconds, 0.0, 1.0)
+	var radius := int(height * 0.5)
+	var filled := Rect2(rect.position, Vector2(maxf(rect.size.x * ratio, height), rect.size.y))
+	UiDraw.panel(item, filled, UiPalette.DELIVERY, Color.TRANSPARENT, 0, radius)
+	UiDraw.panel(item, rect, Color.TRANSPARENT, UiPalette.INK, UiPalette.OUTLINE_THIN, radius)
+	UiDraw.text_centered(
+		item, rect, label, UiPalette.FONT_SMALL, UiPalette.INK_ON_DARK, UiPalette.INK
 	)
 	return true
 

@@ -1,7 +1,7 @@
 class_name ForecastPanel
 extends MatchPart
 ## 次の時間帯の予報と、突発イベントの予告(GameDesign.md 1.2節・9.2節・9.5節・11章)。
-## 時間帯ごとに、左に空の小窓・名前・始まるまでの秒数と来る客層、右に欲しがられるカテゴリを商品の絵で
+## 時間帯ごとに、左に空の小窓・名前・始まるまでの秒数、右に欲しがられるカテゴリを商品の絵と名前で
 ## 大きい順に並べる(客層→欲しい物を覚えなくても発注を決められるように)。
 ## 突発イベントの予告が出ている間は、枠全体を黄色と紺の縞の予告に切り替える。
 
@@ -9,20 +9,14 @@ const PAD := 10.0
 const TAB_POS := Vector2(10, 10)
 const BLOCKS_TOP := 44.0
 const BLOCK_GAP := 6.0
-const INFO_WIDTH := 150.0
-const SKY_ICON_SIZE := 40.0
-const NAME_X := 50.0
-const NAME_Y := 22.0
-const WHEN_Y := 42.0
-const CUSTOMER_RADIUS := 11.0
-const CUSTOMER_GAP := 4.0
-const CUSTOMER_Y := 0.78
-## 並べるカテゴリの数と、絵の大きさ(ブロックの高さに対する割合。欲しがられる度合いで変える)
-const MAX_CATEGORIES := 4
-const MIN_ICON := 0.3
-const MAX_ICON := 0.5
-const ICON_Y := 0.44
-const CATEGORY_NAME_Y := 0.92
+const INFO_WIDTH := 130.0
+const SKY_ICON_SIZE := 48.0
+## 並べるカテゴリの数(名前を読める幅を保つため)と、絵の大きさ(ブロックの高さに対する割合。欲しがられる度合いで変える)
+const MAX_CATEGORIES := 3
+const MIN_ICON := 0.36
+const MAX_ICON := 0.56
+const ICON_Y := 0.42
+const CATEGORY_NAME_Y := 0.9
 const RANK_FADE := 0.25
 
 const HAZARD_WIDTH := 8.0
@@ -63,42 +57,38 @@ func _draw() -> void:
 
 func _draw_band(rect: Rect2, band: TimeBandData) -> void:
 	UiDraw.panel(self, rect, UiPalette.PAPER_DIM, Color.TRANSPARENT, 0, UiPalette.RADIUS_SMALL)
-	var icon := Rect2(rect.position + Vector2(PAD, PAD), Vector2.ONE * SKY_ICON_SIZE)
+	var info := Rect2(rect.position, Vector2(INFO_WIDTH, rect.size.y))
+	var lines := SKY_ICON_SIZE + PAD + UiPalette.FONT_HEAD + PAD + UiPalette.FONT_BODY
+	var top := info.position.y + maxf((info.size.y - lines) * 0.5, PAD)
+	var icon := Rect2(
+		Vector2(info.get_center().x - SKY_ICON_SIZE * 0.5, top), Vector2.ONE * SKY_ICON_SIZE
+	)
 	UiDraw.sky_icon(self, icon, band)
-	var x := rect.position.x + NAME_X + PAD
+	var center := HORIZONTAL_ALIGNMENT_CENTER
+	var name_base := icon.end.y + PAD + UiPalette.FONT_HEAD
 	UiDraw.text(
 		self,
-		Vector2(x, rect.position.y + NAME_Y + PAD * 0.5),
+		Vector2(info.position.x, name_base),
 		band.display_name,
-		UiPalette.FONT_LARGE,
-		UiPalette.INK
+		UiPalette.FONT_HEAD,
+		UiPalette.INK,
+		center,
+		info.size.x
 	)
 	var when := "あと%d秒" % int(ceil(_seconds_until(band)))
 	UiDraw.text(
 		self,
-		Vector2(x, rect.position.y + WHEN_Y + PAD * 0.5),
+		Vector2(info.position.x, name_base + PAD + UiPalette.FONT_BODY),
 		when,
-		UiPalette.FONT_SMALL,
-		UiPalette.INK_SOFT
+		UiPalette.FONT_BODY,
+		UiPalette.INK_SOFT,
+		center,
+		info.size.x
 	)
-	_draw_customers(rect, band)
 	var shelf := Rect2(
 		rect.position.x + INFO_WIDTH, rect.position.y, rect.size.x - INFO_WIDTH, rect.size.y
 	)
 	_draw_demand(shelf, _demand(band))
-
-
-## 来る客層を多い順に小さく並べる
-func _draw_customers(rect: Rect2, band: TimeBandData) -> void:
-	var types: Array = band.mix.keys()
-	types.sort_custom(func(a: StringName, b: StringName) -> bool: return band.mix[a] > band.mix[b])
-	var y := rect.position.y + rect.size.y * CUSTOMER_Y
-	var x := rect.position.x + PAD + CUSTOMER_RADIUS
-	for type_id in types:
-		if x + CUSTOMER_RADIUS > rect.position.x + INFO_WIDTH:
-			return
-		UiDraw.customer_icon(self, Vector2(x, y), CUSTOMER_RADIUS, db().customer_type(type_id))
-		x += CUSTOMER_RADIUS * 2.0 + CUSTOMER_GAP
 
 
 ## 欲しがられるカテゴリを大きい順に、商品の絵と名前で並べる
@@ -122,7 +112,7 @@ func _draw_demand(rect: Rect2, demand: Dictionary) -> void:
 			rect.position.x + slot * i, rect.position.y + rect.size.y * CATEGORY_NAME_Y
 		)
 		var name := db().category(categories[i]).display_name
-		var name_size := UiDraw.fit_size(name, UiPalette.FONT_SMALL, slot)
+		var name_size := UiDraw.fit_size(name, UiPalette.FONT_BODY, slot)
 		UiDraw.text(self, name_pos, name, name_size, ink, HORIZONTAL_ALIGNMENT_CENTER, slot)
 
 
@@ -204,7 +194,7 @@ func _draw_event_wants(inner: Rect2, customer: CustomerTypeData) -> void:
 			self,
 			Vector2(name_x, y + EVENT_ICON_SIDE * 0.5 + EVENT_NAME_GAP),
 			name,
-			UiPalette.FONT_SMALL,
+			UiPalette.FONT_BODY,
 			UiPalette.INK,
 			HORIZONTAL_ALIGNMENT_CENTER,
 			EVENT_ICON_SIDE + EVENT_ICON_GAP

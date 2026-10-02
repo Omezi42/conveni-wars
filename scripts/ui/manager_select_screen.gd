@@ -24,7 +24,7 @@ const PORTRAIT_TEXT := 40
 const PORTRAIT_DARKEN := 0.2
 const NAME_Y := 182.0
 const SECTION_Y := 202.0
-const LABEL_HEIGHT := 22.0
+const LABEL_HEIGHT := 26.0
 const BODY_GAP := 8.0
 const SECTION_GAP := 14.0
 const PASSIVE_LINES := 3
@@ -38,8 +38,11 @@ const RIBBON_SIZE := Vector2(96, 28)
 const BUTTON_RECT := Rect2(460, 582, 360, 78)
 const GROUND_Y := 680.0
 const LEVEL_LEFT := 60.0
-const LEVEL_SIZE := Vector2(120, 70)
+const LEVEL_SIZE := Vector2(120, 58)
 const LEVEL_GAP := 12.0
+## CPUの強さのボタンの上の見出し(ボタンの上端からベースラインまで)
+const LEVEL_HEADING_GAP := 10.0
+const LEVEL_HEADING := "CPUの強さ"
 
 var _selected := -1
 var _hover := -1
@@ -60,12 +63,10 @@ func _ready() -> void:
 		var button := PopButton.create(
 			profiles[i].display_name, UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_LARGE
 		)
-		button.caption = "CPU"
 		add_child(button)
 		button.size = LEVEL_SIZE
 		button.position = Vector2(
-			LEVEL_LEFT + i * (LEVEL_SIZE.x + LEVEL_GAP),
-			BUTTON_RECT.get_center().y - LEVEL_SIZE.y / 2.0
+			LEVEL_LEFT + i * (LEVEL_SIZE.x + LEVEL_GAP), BUTTON_RECT.end.y - LEVEL_SIZE.y
 		)
 		button.pressed.connect(_on_level_pressed.bind(profiles[i].id))
 		_levels.append(button)
@@ -130,6 +131,15 @@ func _draw() -> void:
 		self, HEADER_RECT, UiPalette.INK, Color.TRANSPARENT, 0, int(HEADER_RECT.size.y * 0.5)
 	)
 	UiDraw.text_centered(self, HEADER_RECT, "店長を選ぶ", UiPalette.FONT_HEAD, UiPalette.INK_ON_DARK)
+	var heading_y := BUTTON_RECT.end.y - LEVEL_SIZE.y - LEVEL_HEADING_GAP
+	UiDraw.text_outlined(
+		self,
+		Vector2(LEVEL_LEFT, heading_y),
+		LEVEL_HEADING,
+		UiPalette.FONT_LARGE,
+		UiPalette.INK_ON_DARK,
+		UiPalette.INK
+	)
 	var managers := _managers()
 	for i in managers.size():
 		var rect := _card_rect(i)
@@ -242,11 +252,11 @@ func _draw_section(
 ) -> float:
 	var x := rect.position.x + PAD
 	var width := rect.size.x - PAD * 2.0
-	var label_width := UiDraw.text_width(label, UiPalette.FONT_TINY) + PAD
+	var label_width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + PAD
 	var chip := Rect2(x, y, label_width, LABEL_HEIGHT)
 	UiDraw.panel(self, chip, color, UiPalette.INK, UiPalette.OUTLINE_THIN, int(LABEL_HEIGHT * 0.5))
 	UiDraw.text_centered(
-		self, chip, label, UiPalette.FONT_TINY, UiPalette.INK_ON_DARK, UiPalette.INK
+		self, chip, label, UiPalette.FONT_SMALL, UiPalette.INK_ON_DARK, UiPalette.INK
 	)
 	if not title.is_empty():
 		var title_pos := Vector2(
