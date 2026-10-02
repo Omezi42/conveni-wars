@@ -29,6 +29,7 @@ var rng := RandomNumberGenerator.new()
 var elapsed: float
 var stores: Array[StoreState] = []
 var events: EventScheduler
+var history: MatchHistory
 var finished := false
 var result: MatchResult
 
@@ -48,6 +49,7 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 	for i in STORE_COUNT:
 		stores[i].rival = opponent(i)
 	events = EventScheduler.new(database, rng, STORE_COUNT)
+	history = MatchHistory.new(balance.history_interval)
 
 
 # --- 進行 ---
@@ -66,6 +68,7 @@ func advance(delta: float) -> void:
 	if not is_preparing():
 		_update_band_customers()
 		_update_events()
+		history.record(minf(elapsed, _duration), stores)
 	if elapsed >= _duration:
 		_finish()
 
@@ -278,6 +281,7 @@ func _update_events() -> void:
 		if events.take_announcement(store.index, announce_lead(store.index), elapsed):
 			event_announced.emit(events.next_event.id, store.index)
 	if events.try_start(elapsed):
+		history.add_event(events.active_event.id, elapsed)
 		event_started.emit(events.active_event.id)
 	var due := events.customers_due(elapsed)
 	if due <= 0:
@@ -288,6 +292,7 @@ func _update_events() -> void:
 	if events.is_active_done():
 		var finished_event := events.active_event
 		events.finish_active()
+		history.finish_event(events.active_counts)
 		event_ended.emit(finished_event.id, events.active_counts.duplicate())
 
 
@@ -339,7 +344,7 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 			customer_lost.emit(store.index, customer_type.top_category())
 	customer_arrived.emit(customer_type.id, chosen, is_event)
 	if chosen >= 0:
-		stores[chosen].record_visit(customer_type.id)
+		stores[chosen].record_visit(customer_type.id, &"" if is_event else band_id)
 		_shop(stores[chosen], evaluations[chosen], customer_type, is_event)
 	return chosen
 
@@ -386,6 +391,8 @@ func _finish() -> void:
 	result = MatchResult.new()
 	result.stores = stores
 	result.winner = _decide_winner()
+	history.record_final(_duration, stores)
+	result.history = history
 	match_ended.emit(result)
 
 

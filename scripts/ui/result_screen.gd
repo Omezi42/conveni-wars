@@ -2,6 +2,7 @@ class_name ResultScreen
 extends Control
 ## 結果(GameDesign.md 9.4節・9.5節)。閉店後の夜空の下に、両店の成績をレシートの形で並べ、勝った店に「勝」の判を押す。
 ## 利益・売上・仕入れ・来店した客の数・取り逃した客・廃棄した個数・客層ごとの来店数を出す。
+## 2枚のレシートのあいだに、ふりかえりの利益の折れ線(ProfitChart)を置く。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -14,8 +15,9 @@ const VERDICT_BURST_ALPHA := 0.22
 ## ベースラインから文字の見た目の中央までの高さ(文字の大きさに対する割合)
 const VERDICT_MID := 0.35
 const LOSE_LIGHTEN := 0.2
-const RECEIPT_SIZE := Vector2(400, 484)
-const RECEIPT_GAP := 60.0
+const RECEIPT_SIZE := Vector2(340, 484)
+const RECEIPT_GAP := 20.0
+const CHART_SIZE := Vector2(500, 476)
 const RECEIPT_Y := 128.0
 const RECEIPT_PAPER := Color("#ffffff")
 const TOOTH := Vector2(16, 9)
@@ -69,6 +71,12 @@ func _ready() -> void:
 		buttons[i].size = BUTTON_SIZE
 		var x := (size.x - total) / 2.0 + i * (BUTTON_SIZE.x + BUTTON_GAP)
 		buttons[i].position = Vector2(x, BUTTON_Y)
+	if _result != null:
+		var chart := ProfitChart.new()
+		add_child(chart)
+		chart.size = CHART_SIZE
+		chart.position = Vector2((size.x - CHART_SIZE.x) / 2.0, RECEIPT_Y)
+		chart.setup(_result)
 	again.pressed.connect(_on_again)
 	select.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
 	title.pressed.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
@@ -93,9 +101,9 @@ func _draw() -> void:
 		verdict = "負け…"
 		color = UiPalette.STORE_COLORS[MatchController.CPU].lightened(LOSE_LIGHTEN)
 	_draw_verdict(verdict, color, _result.winner == MatchController.PLAYER)
-	var total := RECEIPT_SIZE.x * _result.stores.size() + RECEIPT_GAP * (_result.stores.size() - 1)
+	var total := RECEIPT_SIZE.x * 2.0 + CHART_SIZE.x + RECEIPT_GAP * 2.0
 	for i in _result.stores.size():
-		var x := (size.x - total) / 2.0 + i * (RECEIPT_SIZE.x + RECEIPT_GAP)
+		var x := (size.x - total) / 2.0 + i * (total - RECEIPT_SIZE.x)
 		var rect := Rect2(Vector2(x, RECEIPT_Y), RECEIPT_SIZE)
 		_draw_receipt(rect, _result.stores[i])
 		if _result.winner == i:

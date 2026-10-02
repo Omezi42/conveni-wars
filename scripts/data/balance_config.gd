@@ -35,6 +35,13 @@ extends Resource
 @export var waste_seconds: float
 @export var low_stock_threshold: int
 
+@export_group("結果と演出(9章)")
+## ふりかえりの利益を記録する間隔(秒)
+@export var history_interval: float
+## 時間帯の客のうち自店に入った割合がこれ以上なら「読み的中!」、これ以下なら外れ(9.3節)
+@export var read_hit_share: float
+@export var read_miss_share: float
+
 @export_group("突発イベント(11章)")
 @export var event_interval_min: float
 @export var event_interval_max: float

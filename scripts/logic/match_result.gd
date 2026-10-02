@@ -7,3 +7,4 @@ const DRAW := -1
 ## 勝った店の番号。引き分けは DRAW
 var winner: int = DRAW
 var stores: Array[StoreState] = []
+var history: MatchHistory

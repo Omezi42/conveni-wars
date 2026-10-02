@@ -43,6 +43,8 @@ var event_sales := 0
 var visitors: Dictionary = {}
 var visitor_total := 0
 var lost_total := 0
+## 時間帯id → その時間帯の客(突発イベントの客を除く)のうち、この店に入った数
+var visitors_by_band: Dictionary = {}
 ## 時間帯id → 取り逃した客の数
 var lost_by_band: Dictionary = {}
 var wasted_count := 0
@@ -258,9 +260,16 @@ func remove_expired(now: float) -> Dictionary:
 	return removed
 
 
-func record_visit(type_id: StringName) -> void:
+## band_id は時間帯の客なら入った時間帯、突発イベントの客なら &""
+func record_visit(type_id: StringName, band_id: StringName) -> void:
 	visitors[type_id] = int(visitors.get(type_id, 0)) + 1
 	visitor_total += 1
+	if band_id != &"":
+		visitors_by_band[band_id] = visitors_in_band(band_id) + 1
+
+
+func visitors_in_band(band_id: StringName) -> int:
+	return int(visitors_by_band.get(band_id, 0))
 
 
 func record_lost(band_id: StringName) -> void:

@@ -50,6 +50,8 @@ const TAB_PAD := 10.0
 ## 丸い札の左右の余白(高さに対する割合)
 const PILL_PAD_RATIO := 0.7
 const HALF := 0.5
+const STAR_POINTS := 5
+const STAR_INNER := 0.45
 
 static var _font: Font
 static var _boxes: Dictionary = {}
@@ -391,6 +393,20 @@ static func burst(
 			]
 		)
 		item.draw_colored_polygon(ray, color)
+
+
+## 5つの角の星(内側の半径は外側に対する割合 STAR_INNER)。edge の輪郭線を付ける
+static func star(
+	item: CanvasItem, center: Vector2, radius: float, fill: Color, edge: Color
+) -> void:
+	var points := PackedVector2Array()
+	for i in STAR_POINTS * 2:
+		var length := radius if i % 2 == 0 else radius * STAR_INNER
+		var angle := -PI / 2.0 + PI * i / STAR_POINTS
+		points.append(center + Vector2.from_angle(angle) * length)
+	item.draw_colored_polygon(points, fill)
+	points.append(points[0])
+	item.draw_polyline(points, edge, UiPalette.OUTLINE_THIN, true)
 
 
 ## ¥の硬貨
