@@ -1,6 +1,6 @@
 # 6章 テストと検証
 
-- `bash tools/check.sh` で gdformat → gdlint → ヘッドレステスト → 起動スモーク を順に回す
+- `bash tools/check.sh` で gdformat → gdlint → フォントの字の確認 → ヘッドレステスト → 起動スモーク を順に回す
 - ヘッドレステストは `tools/tests/run_tests.gd`。ロジック層(3章)を種固定の乱数で動かし、魅力度・ボーナス・
   買い物・発注・スキルの結果を確かめる
 - `tools/simulate.gd` で CPU 対 CPU を多数回まわし、店長ごとの勝率・利益の分布・イベントの売上の割合・戦略ごとの勝率を出し、
@@ -13,5 +13,9 @@
   差し替え、終わったら消す
 - Web版は `bash tools/export_web.sh` で `build/web/` へ書き出し、書き出したpckでヘッドレステストを回してから、
   ファイルごとの大きさ(そのまま / gzip)を出す
+- フォント(GameDesign.md 10章)は、元の `tools/font_src/ZenKakuGothicNew-Bold.ttf`(`.gdignore` で書き出しから外す)を
+  `python tools/subset_font.py` で絞り、`assets/fonts/` の同じ名前へ書く。残す字は ASCII・かな・全角英数・記号の一揃いと、
+  `scripts/` `data/` `scenes/` の文字列に出てくる字。check.sh はその字がフォントにあるかを確かめ、足りなければ NG にする
+  (文言を足して NG が出たら `subset_font.py` を回し直す)
 - Webの読み込み中の絵(GameDesign.md 10章)は `application/boot_splash/image` の `assets/boot_splash.png`。
   タイトルからボタンと歩く客を除いて `godot --path . --script res://tools/capture_boot_splash.gd` で撮る。タイトルの絵を変えたら撮り直す

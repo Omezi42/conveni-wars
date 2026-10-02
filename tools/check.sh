@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 変更後の検証を1コマンドにまとめる: gdformat → gdlint → ヘッドレステスト → 画面の通し → 起動スモーク。
+# 変更後の検証を1コマンドにまとめる: gdformat → gdlint → フォントの字 → ヘッドレステスト → 画面の通し → 起動スモーク。
 # 引数なし: git で変更のある .gd だけを整形・lint する。 --all: scripts/ と tools/ の全 .gd。
 # 出力は要点だけに絞る(ログ全文は logs/check_*.log)。
 set -u
@@ -28,6 +28,10 @@ if [ -n "$FILES" ]; then
 else
   echo "== gdformat/gdlint: 変更された .gd なし"
 fi
+
+# Web版にはOSのフォントが無く、絞ったフォントに無い字は豆腐になる(Architecture.md 6章)
+echo "== font glyphs"
+python tools/subset_font.py --check || status=1
 
 # class_name の登録(.godot はgit管理外)が古いと、テストはコンパイルに失敗したまま固まる。
 # 足りなければ登録し直す(Pitfalls.md)。
