@@ -1,9 +1,8 @@
 class_name MatchState
 extends RefCounted
 ## 試合の唯一の状態(Architecture.md 3章)。画面とCPUはコマンドだけで操作し、シグナルで結果を受け取る。
-## 時刻 elapsed は開店からの経過秒で、開店準備の間は負。乱数はこのクラスの rng だけを使う。
+## 時刻 elapsed は開店からの経過秒。乱数はこのクラスの rng だけを使う。
 
-signal opened
 signal band_changed(band_id: StringName)
 signal delivery_arrived(store_index: int, product_id: StringName, count: int)
 ## store_index は入った店。どちらにも入らず帰った客は -1
@@ -42,7 +41,7 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 	db = database
 	balance = database.balance
 	rng.seed = seed_value
-	elapsed = -balance.prep_seconds
+	elapsed = 0.0
 	_duration = database.match_duration()
 	for i in STORE_COUNT:
 		stores.append(StoreState.new(database, i, database.manager(manager_ids[i])))
@@ -50,6 +49,8 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 		stores[i].rival = opponent(i)
 	events = EventScheduler.new(database, rng, STORE_COUNT)
 	history = MatchHistory.new(balance.history_interval)
+	for store in stores:
+		_open_store(store)
 
 
 # --- 進行 ---
@@ -58,17 +59,13 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 func advance(delta: float) -> void:
 	if finished:
 		return
-	var was_preparing := is_preparing()
 	elapsed += delta
-	if was_preparing and not is_preparing():
-		opened.emit()
 	for store in stores:
 		_update_stock(store, delta)
 		_update_timers(store, delta)
-	if not is_preparing():
-		_update_band_customers()
-		_update_events()
-		history.record(minf(elapsed, _duration), stores)
+	_update_band_customers()
+	_update_events()
+	history.record(minf(elapsed, _duration), stores)
 	if elapsed >= _duration:
 		_finish()
 
@@ -136,14 +133,6 @@ func use_active(store_index: int) -> bool:
 # --- 問い合わせ ---
 
 
-func is_preparing() -> bool:
-	return elapsed < 0.0
-
-
-func prep_remaining() -> float:
-	return maxf(-elapsed, 0.0)
-
-
 func duration() -> float:
 	return _duration
 
@@ -184,7 +173,7 @@ func forecast_bands(store_index: int) -> Array[TimeBandData]:
 	var result_bands: Array[TimeBandData] = []
 	var count := 1 + ManagerSkills.extra_forecast_bands(stores[store_index].manager)
 	var sorted := db.sorted_bands()
-	var start := current_band_index() + 1 if not is_preparing() else 0
+	var start := current_band_index() + 1
 	for i in range(start, mini(start + count, sorted.size())):
 		result_bands.append(sorted[i])
 	return result_bands
@@ -230,7 +219,7 @@ func is_price_locked(store_index: int) -> bool:
 
 
 func can_use_active(store_index: int) -> bool:
-	return not finished and not is_preparing() and not stores[store_index].active_used
+	return not finished and not stores[store_index].active_used
 
 
 ## 在庫へすぐに加える(配送の到着とスキルから呼ぶ)
@@ -245,11 +234,25 @@ func _is_slot(slot: int) -> bool:
 	return slot >= 0 and slot < StoreState.SLOT_COUNT
 
 
-func _deliver_at(store: StoreState, product_id: StringName, count: int, arrived_at: float) -> void:
-	var expires := INF
+## 開店時の棚を置き、その商品の在庫を無料で入れる(spent に数えない)
+func _open_store(store: StoreState) -> void:
+	for slot in balance.opening_shelf.size():
+		var product_id := balance.opening_shelf[slot]
+		if product_id == StoreState.EMPTY:
+			continue
+		store.shelf[slot] = product_id
+		store.add_lot(product_id, balance.lot_size * balance.opening_lots, _expiry(product_id, 0.0))
+	store.mark_dirty()
+
+
+func _expiry(product_id: StringName, arrived_at: float) -> float:
 	if db.product_category(product_id).perishable:
-		expires = arrived_at + balance.waste_seconds
-	store.add_lot(product_id, count, expires)
+		return arrived_at + balance.waste_seconds
+	return INF
+
+
+func _deliver_at(store: StoreState, product_id: StringName, count: int, arrived_at: float) -> void:
+	store.add_lot(product_id, count, _expiry(product_id, arrived_at))
 	delivery_arrived.emit(store.index, product_id, count)
 
 

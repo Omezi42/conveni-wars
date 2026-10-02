@@ -4,7 +4,8 @@
 
 [resource]
 script = ExtResource("1_2gprt")
-prep_seconds = 10.0
+opening_shelf = Array[StringName]([&"green_tea", &"salmon_onigiri", &"karaage_stick", &"hot_coffee", &"karaage_bento", &"potato_chips", &"", &"", &""])
+opening_lots = 1
 starting_funds = 30000
 choice_exponent = 2.0
 center_slot = 4

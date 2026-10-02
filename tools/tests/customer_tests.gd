@@ -102,8 +102,7 @@ func _test_same_seed_gives_the_same_match() -> void:
 
 func _test_store_clock() -> void:
 	var m := T.new_match()
-	_assert.call(m.clock_minutes() == 6 * 60, "prep shows 6:00")
-	T.open(m)
+	_assert.call(m.clock_minutes() == 6 * 60, "the match starts at 6:00")
 	m.advance(37.5)
 	_assert.call(m.clock_minutes() == 8 * 60, "halfway through the morning is 8:00")
 	m.advance(37.5 + 37.5)
@@ -126,7 +125,6 @@ func _test_winner_by_profit_then_visitors() -> void:
 
 func _test_forecast_shows_the_next_band() -> void:
 	var m := T.new_match(&"veteran", &"analyst")
-	T.open(m)
 	var normal := m.forecast_bands(0)
 	var analyst := m.forecast_bands(1)
 	_assert.call(normal.size() == 1 and normal[0].id == &"noon", "morning forecasts noon")

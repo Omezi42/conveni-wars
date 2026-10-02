@@ -90,7 +90,7 @@ func _draw_sign_text(sign_rect: Rect2) -> void:
 
 func _draw_lost(sign_rect: Rect2) -> void:
 	var lost := store().lost_in_band(match_state.current_band().id)
-	if lost <= 0 or match_state.is_preparing():
+	if lost <= 0:
 		return
 	var label := "取り逃し %d人" % lost
 	var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + LOST_HEIGHT

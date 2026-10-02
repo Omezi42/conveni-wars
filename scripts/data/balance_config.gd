@@ -3,7 +3,10 @@ extends Resource
 ## 試合の数値の設定(`data/balance.tres` の1つだけ)。仕様の数値は GameDesign.md が正。
 
 @export_group("試合(1章)")
-@export var prep_seconds: float
+## 開店時の棚(マス9つぶんの商品id。空きは &"")。両店ともこの棚で開店する(1.6節)
+@export var opening_shelf: Array[StringName]
+## 開店時の棚の商品ごとの在庫のロット数(無料)
+@export var opening_lots: int
 @export var starting_funds: int
 
 @export_group("来店(2章)")

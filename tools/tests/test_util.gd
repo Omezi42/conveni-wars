@@ -10,12 +10,18 @@ static func new_match(
 	manager_a: StringName = &"veteran", manager_b: StringName = &"veteran", seed_value := 1
 ) -> MatchState:
 	var ids: Array[StringName] = [manager_a, manager_b]
-	return MatchState.new(db(), ids, seed_value)
+	var match_state := MatchState.new(db(), ids, seed_value)
+	for store in match_state.stores:
+		clear_store(match_state, store.index)
+	return match_state
 
 
-## 開店準備を飛ばして開店した直後にする
-static func open(match_state: MatchState) -> void:
-	match_state.advance(match_state.prep_remaining())
+## 開店時の棚と在庫を外し、空の店にする(棚と在庫を自分で組むテスト用)
+static func clear_store(match_state: MatchState, store_index: int) -> void:
+	for slot in StoreState.SLOT_COUNT:
+		match_state.unassign(store_index, slot)
+	match_state.stores[store_index]._lots.clear()
+	match_state.stores[store_index].mark_dirty()
 
 
 ## 在庫を入れてマスへ置く

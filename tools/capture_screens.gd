@@ -11,7 +11,7 @@ const CPU_PROFILE_ID := &"standard"
 const TEST_SAVE_PATH := "user://test_save.cfg"
 const SETTLE_FRAMES := 6
 ## 試合のどの時刻(開店からの秒)で撮るか
-const MATCH_SHOTS: Array[float] = [-5.0, 12.0, 70.0, 160.0, 245.0]
+const MATCH_SHOTS: Array[float] = [1.0, 12.0, 70.0, 160.0, 245.0]
 const SEED := 20260929
 ## 予報が2段の時刻と、突発イベントの予告が出ている時刻
 const ANALYST_SHOTS: Array[float] = [3.0, 30.0]

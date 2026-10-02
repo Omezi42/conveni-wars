@@ -71,6 +71,7 @@ func _ready() -> void:
 	_connect_signals()
 	_build_hints()
 	_build_pause()
+	_fx.cutin("開店!", UiPalette.STORE_COLORS[PLAYER])
 
 
 func _physics_process(delta: float) -> void:
@@ -227,7 +228,6 @@ func _place(control: Control, rect: Rect2) -> void:
 func _connect_signals() -> void:
 	_own_shelf.slot_pressed.connect(_on_own_slot_pressed)
 	_own_shelf.product_dropped.connect(_on_product_dropped)
-	match_state.opened.connect(func() -> void: _fx.cutin("開店!", UiPalette.STORE_COLORS[PLAYER]))
 	match_state.band_changed.connect(_on_band_changed)
 	match_state.purchased.connect(_on_purchased)
 	match_state.customer_arrived.connect(_flow.push_arrival)

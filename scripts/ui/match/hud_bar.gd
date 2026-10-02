@@ -64,7 +64,7 @@ func _draw_clock() -> void:
 	var icon_y := CLOCK_RECT.position.y + (CLOCK_RECT.size.y - SKY_ICON_SIZE) / 2.0
 	var icon := Rect2(CLOCK_RECT.position.x + PAD * 0.75, icon_y, SKY_ICON_SIZE, SKY_ICON_SIZE)
 	UiDraw.sky_icon(self, icon, band)
-	var label := "開店準備" if match_state.is_preparing() else band.display_name
+	var label := band.display_name
 	var label_pos := Vector2(CLOCK_RECT.position.x + DAY_X, CLOCK_RECT.position.y + DAY_LABEL_Y)
 	UiDraw.text(self, label_pos, label, UiPalette.FONT_LARGE, UiPalette.INK)
 	_draw_day_bar()
@@ -79,7 +79,7 @@ func _draw_day_bar() -> void:
 	)
 	var bands := db().sorted_bands()
 	var total := match_state.duration()
-	var now := 0.0 if match_state.is_preparing() else match_state.elapsed / total
+	var now := match_state.elapsed / total
 	var x := bar.position.x
 	for band in bands:
 		var part := bar.size.x * band.duration / total
@@ -183,20 +183,14 @@ func _draw_tug() -> void:
 	)
 
 
-## 時計の札の右端の、残り時間(開店前は開店までの秒数)。残り30秒で赤く点滅する
+## 時計の札の右端の、残り時間。残り30秒で赤く点滅する
 func _draw_remaining() -> void:
 	var fill := UiPalette.INK
 	var label := "残り"
-	var value := ""
-	if match_state.is_preparing():
-		fill = UiPalette.WARN.darkened(HURRY_PULSE)
-		label = "開店まで"
-		value = "%d秒" % int(ceil(match_state.prep_remaining()))
-	else:
-		var remaining := match_state.remaining_time()
-		value = UiDraw.mm_ss(remaining)
-		if remaining <= HURRY_SECONDS:
-			fill = UiPalette.BAD.lightened(HURRY_PULSE * blink())
+	var remaining := match_state.remaining_time()
+	var value := UiDraw.mm_ss(remaining)
+	if remaining <= HURRY_SECONDS:
+		fill = UiPalette.BAD.lightened(HURRY_PULSE * blink())
 	var rect := Rect2(
 		CLOCK_RECT.end.x - REMAIN_WIDTH - REMAIN_INSET,
 		CLOCK_RECT.position.y + REMAIN_INSET,

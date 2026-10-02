@@ -19,8 +19,6 @@ const HOVER_LIGHTEN := 0.1
 const USED_GRAY := Color("#a9a59c")
 const RUNNING_TRACK := Color(1, 1, 1, 0.35)
 const TOKEN_DARKEN := 0.25
-## 開店準備中(まだ使えない)の色のくすませ方
-const WAITING_FADE := 0.6
 
 var _hover := false
 var _pressing := false
@@ -74,8 +72,6 @@ func _draw() -> void:
 	var fill := manager.color
 	if store().active_used and not running:
 		fill = USED_GRAY
-	elif not usable and not running:
-		fill = manager.color.lerp(USED_GRAY, WAITING_FADE)
 	elif _hover and usable:
 		fill = fill.lightened(HOVER_LIGHTEN)
 	if usable:
@@ -140,8 +136,6 @@ func _state_text() -> String:
 		return "発動中 あと%d秒" % int(ceil(store().active_remaining))
 	if store().active_used:
 		return "使用済み"
-	if match_state.is_preparing():
-		return "開店後に使える"
 	return "タップで発動!"
 
 

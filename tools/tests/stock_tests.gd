@@ -8,6 +8,7 @@ var _assert: Callable
 
 func run(assert_true: Callable) -> void:
 	_assert = assert_true
+	_test_opening_shelf_is_stocked_for_free()
 	_test_order_pays_and_arrives_after_delivery_time()
 	_test_analyst_orders_arrive_sooner()
 	_test_order_fails_without_funds()
@@ -17,6 +18,22 @@ func run(assert_true: Callable) -> void:
 	_test_assign_replaces_and_unassign_clears()
 	_test_price_change_has_a_cooldown()
 	_test_price_command_rejects_bad_input()
+
+
+## 両店とも開店時の棚で始まり、在庫は無料で利益は0(GameDesign.md 1.6節)
+func _test_opening_shelf_is_stocked_for_free() -> void:
+	var ids: Array[StringName] = [&"veteran", &"idol"]
+	var m := MatchState.new(T.db(), ids, 1)
+	var shelf := m.balance.opening_shelf
+	for store in m.stores:
+		_assert.call(store.shelf == shelf, "the store opens with the opening shelf")
+		_assert.call(store.stock(&"green_tea") == 30, "one free lot per opening product")
+		_assert.call(store.profit() == 0 and store.funds == 30000, "the opening stock is free")
+		_assert.call(store.shelf[StoreState.SLOT_COUNT - 1] == StoreState.EMPTY, "bottom row empty")
+	var onigiri := m.stores[0].oldest_lot(&"salmon_onigiri")
+	_assert.call(T.near(onigiri.expires_at, 60.0), "opening stock spoils counted from the opening")
+	m.advance(1.0)
+	_assert.call(m.stores[0].sales + m.stores[1].sales > 0, "customers buy from the first second")
 
 
 func _test_order_pays_and_arrives_after_delivery_time() -> void:

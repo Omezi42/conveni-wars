@@ -8,7 +8,7 @@ var _assert: Callable
 
 func run(assert_true: Callable) -> void:
 	_assert = assert_true
-	_test_active_is_once_and_not_during_prep()
+	_test_active_is_once()
 	_test_bulk_order_delivers_a_free_lot_per_shelf_product()
 	_test_handshake_pulls_every_customer_that_wants_something()
 	_test_time_sale_prices_everything_as_sale_while_running()
@@ -16,11 +16,9 @@ func run(assert_true: Callable) -> void:
 	_test_price_lock_sells_at_the_strong_price_without_losing_attraction()
 
 
-func _test_active_is_once_and_not_during_prep() -> void:
+func _test_active_is_once() -> void:
 	var m := T.new_match()
-	_assert.call(not m.use_active(0), "not during prep")
-	T.open(m)
-	_assert.call(m.use_active(0), "usable after opening")
+	_assert.call(m.use_active(0), "usable from the start")
 	_assert.call(not m.use_active(0), "only once")
 
 
@@ -29,7 +27,6 @@ func _test_bulk_order_delivers_a_free_lot_per_shelf_product() -> void:
 	m.assign(0, &"nori_bento", 0)
 	m.assign(0, &"green_tea", 1)
 	m.assign(0, &"green_tea", 2)
-	T.open(m)
 	var funds := m.stores[0].funds
 	m.use_active(0)
 	_assert.call(m.stores[0].stock(&"nori_bento") == 10, "bento +10")
@@ -43,7 +40,6 @@ func _test_handshake_pulls_every_customer_that_wants_something() -> void:
 	T.stock_slot(m, 0, &"ice_bar", 0, 500)
 	T.stock_slot(m, 1, &"potato_chips", 4, 500)
 	T.stock_slot(m, 1, &"karaage_stick", 1, 500)
-	T.open(m)
 	m.use_active(0)
 	var chosen := {0: 0, 1: 0}
 	for i in 30:
@@ -70,7 +66,6 @@ func _test_time_sale_prices_everything_as_sale_while_running() -> void:
 	var student := T.customer(&"student")
 	T.stock_slot(m, 0, &"potato_chips", 0, 1000)
 	m.set_price_step(0, &"potato_chips", 2)
-	T.open(m)
 	var sold_price := m.stores[0].sell_price(&"potato_chips")
 	m.use_active(0)
 	_assert.call(
@@ -83,7 +78,6 @@ func _test_time_sale_prices_everything_as_sale_while_running() -> void:
 
 func _test_price_lock_blocks_only_the_opponent() -> void:
 	var m := T.new_match(&"veteran", &"analyst")
-	T.open(m)
 	m.use_active(1)
 	_assert.call(not m.set_price_step(0, &"cola", 0), "the opponent cannot change prices")
 	_assert.call(m.set_price_step(1, &"cola", 0), "the analyst still can")
@@ -95,7 +89,6 @@ func _test_price_lock_sells_at_the_strong_price_without_losing_attraction() -> v
 	var m := T.new_match(&"veteran", &"analyst")
 	var student := T.customer(&"student")
 	T.stock_slot(m, 1, &"potato_chips", 0, 1000)
-	T.open(m)
 	var list_price := m.stores[1].sell_price(&"potato_chips")
 	var score := m.stores[1].evaluation(student).score
 	m.use_active(1)
