@@ -5,7 +5,7 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
-| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節) |
+| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
@@ -25,16 +25,17 @@
 | `SkillButton` | アクティブスキルと、その左の資金の硬貨 |
 | `StoreFrame` | 店の建物(看板と帯・床・入口)。棚はこの上に重ねる。自店は看板に取り逃した客の数の札を出す。相手の店は `compact` で小さく描く |
 | `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ。`customer_arrived` を間引いて「見える客」(客層の絵と欲しい物の吹き出し)を歩かせ、自店へ入ったら `ShelfView` のそのマスを光らせる。自店が取り逃した客は優先して見える客にする |
+| `PauseMenu` | 一時停止(9.9節)。画面全体を覆う幕と「続ける」「やり直す」「タイトルへ」。開いている間 `MatchController` は `advance` とCPUを呼ばない。上端の右端の `PopButton`・Esc・窓から離れたとき(`NOTIFICATION_APPLICATION_FOCUS_OUT`)に開く |
 | `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績・「大口獲得!」・逆転の表示 |
 
-画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・ヒントを出し直すか)は autoload の `GameSession` が持つ。
+画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・自己ベストと勝ち星が増えたか・ヒントを出し直すか)は autoload の `GameSession` が持つ。
 戦績が無いときのタイトルの「はじめる」は、`GameSession` が既定の店長(`FIRST_MANAGER_ID`)で試合を用意して、店長選択を飛ばす。
 
 ## 4.3 保存・音・ヒント(GameDesign.md 9.7節・9.8節)
 
 | 部品 | 内容 |
 |---|---|
-| `SaveData`(`scripts/save_data.gd`、RefCounted) | 戦績(勝ち・負け・引き分け・店長ごとの自己ベスト・最後のCPUの強さ・出したヒントのid)と設定(音量2つ)を `user://save.cfg` に `ConfigFile` で読み書きする。`GameSession` が1つ持つ |
+| `SaveData`(`scripts/save_data.gd`、RefCounted) | 戦績(勝ち・負け・引き分け・店長ごとの自己ベスト・店長ごとの勝ち星=勝ったCPUの強さのidの列・最後のCPUの強さ・出したヒントのid)と設定(音量2つ)を `user://save.cfg` に `ConfigFile` で読み書きする。`GameSession` が1つ持つ |
 | `AudioDirector`(autoload) | BGMの再生と切り替え・速さ、効果音の再生。効果音は id → `AudioStream` の表を持ち、同じ音は0.1秒に1回までに間引く。Master・BGM・SE の3つのバスの音量を設定から反映する |
 | `MatchSounds`(`scripts/ui/match/match_sounds.gd`、Node) | 試合のシグナルを受けて `AudioDirector` に効果音を頼む。売上の音程の上がり方もここで持つ |
 | `HintLayer`(`scripts/ui/match/hint_layer.gd`) | ヒント。試合のシグナルからきっかけを判定し、まだ出していないヒントを1つずつ、指す部品の矩形へ向けた吹き出しで出す。試合も入力も止めない(`mouse_filter` は IGNORE)。出したら `SaveData` に記録する |

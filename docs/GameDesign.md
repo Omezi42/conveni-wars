@@ -15,7 +15,7 @@
 | 6章 | 発注と在庫 | [`design/06_order.md`](design/06_order.md) |
 | 7章 | 店長キャラ | [`design/07_managers.md`](design/07_managers.md) |
 | 8章 | CPU戦 | [`design/08_cpu.md`](design/08_cpu.md) |
-| 9章 | 画面構成・UI・演出・見た目・ヒント・戦績・音 | [`design/09_ui.md`](design/09_ui.md) |
+| 9章 | 画面構成・UI・演出・見た目・ヒント・戦績・音・一時停止 | [`design/09_ui.md`](design/09_ui.md) |
 | 10章 | 技術方針 | [`design/10_tech_policy.md`](design/10_tech_policy.md) |
 | 11章 | 突発イベント | [`design/11_events.md`](design/11_events.md) |
 | 99章 | 未決事項 | [`design/99_open_issues.md`](design/99_open_issues.md) |

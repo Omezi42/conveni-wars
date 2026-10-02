@@ -9,6 +9,7 @@
 | `Attraction` | 魅力度の計算(静的関数だけ)。店と客層を受け取り、棚の倍率・値段補正・パッシブを掛けた点を返す(GameDesign.md 2.4節・4章・5.2節) |
 | `ShelfBonus` | 棚の倍率の計算(静的関数だけ)。目玉・コーナー・セットを判定し、マスごとの倍率と成立したボーナスの一覧を返す |
 | `EventScheduler` | 突発イベントの抽選・予告・客の到着(GameDesign.md 11章)。`MatchState` が持つ |
+| `MatchHistory` | 試合の記録(GameDesign.md 9.4節のふりかえり)。`BalanceConfig.history_interval` 秒ごとの両店の利益と、突発イベントの開始時刻・id・店ごとの客数を持つ。`MatchState` が `history` として持ち、`MatchResult.history` で結果画面へ渡す |
 | `ManagerSkills` | パッシブの補正値の問い合わせ(発注の原価・魅力度・安売りの効き・予報・配送の秒数)と、アクティブの発動・効果時間の管理(7章)。値札ロック中の強気の売値は `StoreState.sell_price()` が問い合わせる |
 
 - 試合の開始時に、両店へ `BalanceConfig.opening_shelf` を割り当て、その商品の在庫を無料のロットとして入れる(1.6節)。
@@ -42,7 +43,8 @@
 4. `EventScheduler` を進める(予告・開始・イベント客の生成)
 5. 到着間隔(時間帯の `duration / customer_count`)ぶんの時間が溜まっただけ客を生成する。
    1回の `advance` で複数人になることがある。客ごとに店を選び、買い物を処理し、取り逃した客を数える(2.6節)
-6. 試合時間を過ぎたら終了する
+6. `MatchHistory` に利益を記録する(記録の間隔ごと。試合の終わりの値も必ず1つ記録する)
+7. 試合時間を過ぎたら終了する
 
 ## 3.4 シグナル
 
