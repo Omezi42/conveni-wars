@@ -1,8 +1,12 @@
 class_name CustomerFlow
 extends MatchPart
-## 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ・取り逃した客の吹き出し(GameDesign.md 2.6節・9.2節・9.5節)。
+## 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ・見える客(GameDesign.md 2.6節・9.2節・9.5節)。
 ## 客は1人ずつ通りを歩かせず、入った店の入口へ吸い込まれる短い流れとして描き、
 ## 流れの太さでどちらの店へ多く入っているかを見せる(1秒に4〜9人来るため)。夜は入口から明かりがこぼれる。
+## 流れとは別に、1秒に1人ほどを見える客として通りの端から入口まで歩かせる(自店が取り逃した客を優先する)。
+
+## 見える客が自店へ入った(そのマスを光らせる)
+signal visible_entered(product_id: StringName)
 
 const WALK_SECONDS := 0.9
 const ICON_RADIUS := 9.0
@@ -17,14 +21,9 @@ const RATE_DECAY_SECONDS := 1.5
 const RATE_FOR_FULL_STREAM := 9.0
 const STREAM_MAX_WIDTH := 30.0
 const STREAM_ALPHA := 0.35
-const BUBBLE_SECONDS := 1.6
-## 吹き出しは店ごとにこの秒数に1つまで(画面が埋まらないように間引く。数はすべて数える)
-const BUBBLE_INTERVAL := 1.2
-const BUBBLE_RISE := 26.0
-const BUBBLE_PAD := 7.0
-const BUBBLE_HEIGHT := 24.0
-const BUBBLE_OFFSET := Vector2(0, -44)
-const BUBBLE_TAIL_INSET := 16.0
+const VISIBLE_SECONDS := 2.6
+## 見える客が通りの端から現れる位置(端からの距離)
+const VISIBLE_EDGE := 24.0
 const SIDEWALK_WIDTH := 16.0
 const CURB := 2.0
 const DASH_LENGTH := 16.0
@@ -39,8 +38,7 @@ const HALF := 0.5
 var door_points: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 
 var _walkers: Array[Dictionary] = []
-var _bubbles: Array[Dictionary] = []
-var _bubble_cooldown: Array[float] = [0.0, 0.0]
+var _visible := VisibleCustomers.new()
 var _rates: Array[float] = [0.0, 0.0]
 ## 夜の度合い(空と同じ速さで移る)
 var _night := -1.0
@@ -48,7 +46,15 @@ var _night := -1.0
 var _rng := RandomNumberGenerator.new()
 
 
-func push_arrival(type_id: StringName, store_index_in: int, is_event: bool) -> void:
+func _init() -> void:
+	_visible.priority_store = MatchController.PLAYER
+	_visible.entered.connect(_on_visible_entered)
+
+
+func push_arrival(
+	type_id: StringName, store_index_in: int, is_event: bool, product_id: StringName
+) -> void:
+	_push_visible(type_id, store_index_in, is_event, product_id)
 	if _walkers.size() >= MAX_WALKERS:
 		_walkers.pop_front()
 	var from_top := _rng.randf() < HALF
@@ -76,24 +82,37 @@ func push_arrival(type_id: StringName, store_index_in: int, is_event: bool) -> v
 
 
 func push_lost(lost_store: int, category_id: StringName) -> void:
-	if _bubble_cooldown[lost_store] > 0.0:
+	_visible.note_lost(lost_store, category_id)
+
+
+## 通りの上か下の端から、入った店の入口へ歩かせる(両店とも入らなければ反対の端へ抜ける)
+func _push_visible(
+	type_id: StringName, store_index_in: int, is_event: bool, product_id: StringName
+) -> void:
+	var walker := _visible.accept(type_id, store_index_in, is_event, product_id)
+	if walker.is_empty():
 		return
-	_bubble_cooldown[lost_store] = BUBBLE_INTERVAL
-	var label := "%sが無い…" % db().category(category_id).display_name
-	var anchor := door_points[lost_store] + BUBBLE_OFFSET
-	_bubbles.append({"text": label, "anchor": anchor, "t": 0.0, "store": lost_store})
+	var from_top := _rng.randf() < HALF
+	var x := size.x * HALF
+	var start := Vector2(x, -VISIBLE_EDGE if from_top else size.y + VISIBLE_EDGE)
+	var end := Vector2(x, size.y + VISIBLE_EDGE if from_top else -VISIBLE_EDGE)
+	if store_index_in >= 0:
+		end = door_points[store_index_in]
+	_visible.spawn(walker, start, Vector2(x, end.y), end, VISIBLE_SECONDS)
+
+
+func _on_visible_entered(entered_store: int, product_id: StringName) -> void:
+	if entered_store == MatchController.PLAYER:
+		visible_entered.emit(product_id)
 
 
 func _process(delta: float) -> void:
 	for walker in _walkers:
 		walker["t"] += delta / WALK_SECONDS
 	_walkers = _walkers.filter(func(w: Dictionary) -> bool: return w["t"] < 1.0)
-	for bubble in _bubbles:
-		bubble["t"] += delta / BUBBLE_SECONDS
-	_bubbles = _bubbles.filter(func(b: Dictionary) -> bool: return b["t"] < 1.0)
+	_visible.update(delta)
 	for i in _rates.size():
 		_rates[i] *= exp(-delta / RATE_DECAY_SECONDS)
-		_bubble_cooldown[i] = maxf(_bubble_cooldown[i] - delta, 0.0)
 	if match_state != null:
 		var target := 1.0 if match_state.current_band().night else 0.0
 		if _night < 0.0:
@@ -110,8 +129,7 @@ func _draw() -> void:
 		_draw_stream(i)
 	for walker in _walkers:
 		_draw_walker(walker)
-	for bubble in _bubbles:
-		_draw_bubble(bubble)
+	_visible.draw(self, db())
 
 
 ## 上から見た通り:両側の歩道・車道・中央の破線。夜は暗くなり、入口の前に店の明かりがこぼれる
@@ -179,21 +197,3 @@ func _draw_walker(walker: Dictionary) -> void:
 	if walker["event"]:
 		draw_circle(pos, radius + EVENT_RING * 2.0, UiPalette.MONEY)
 	UiDraw.customer_icon(self, pos, radius, customer, alpha)
-
-
-func _draw_bubble(bubble: Dictionary) -> void:
-	var t: float = bubble["t"]
-	var label: String = bubble["text"]
-	var width := UiDraw.text_width(label, UiPalette.FONT_SMALL) + BUBBLE_PAD * 2.0
-	var anchor: Vector2 = bubble["anchor"] + Vector2(0, -BUBBLE_RISE * t)
-	var own := int(bubble["store"]) == 0
-	var left := anchor.x if own else anchor.x - width
-	var rect := Rect2(left, anchor.y - BUBBLE_HEIGHT * HALF, width, BUBBLE_HEIGHT)
-	var alpha := 1.0 - t * t
-	var fill := UiPalette.INK_ON_DARK
-	fill.a = alpha
-	var edge := UiPalette.BAD
-	edge.a = alpha
-	var tail_x := rect.position.x + BUBBLE_TAIL_INSET if own else rect.end.x - BUBBLE_TAIL_INSET
-	UiDraw.bubble(self, rect, fill, edge, tail_x)
-	UiDraw.text_centered(self, rect, label, UiPalette.FONT_SMALL, edge)

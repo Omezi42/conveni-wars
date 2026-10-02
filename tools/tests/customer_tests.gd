@@ -11,6 +11,7 @@ func run(assert_true: Callable) -> void:
 	_test_shopping_follows_weight_then_score()
 	_test_customer_pays_the_current_price()
 	_test_lost_customers_are_counted_only_when_attraction_is_zero()
+	_test_arrival_names_the_first_product_bought()
 	_test_band_customers_arrive_in_exact_numbers()
 	_test_same_seed_gives_the_same_match()
 	_test_store_clock()
@@ -67,6 +68,26 @@ func _test_lost_customers_are_counted_only_when_attraction_is_zero() -> void:
 	_assert.call(lost[0] == &"0:hot_snack", "the bubble names the top wanted category")
 
 
+func _test_arrival_names_the_first_product_bought() -> void:
+	var m := T.new_match()
+	T.stock_slot(m, 0, &"nori_bento", 2)
+	T.stock_slot(m, 0, &"hot_coffee", 4)
+	var firsts: Array[StringName] = []
+	m.customer_arrived.connect(
+		func(_type: StringName, _store: int, _event: bool, product: StringName) -> void:
+			firsts.append(product)
+	)
+	m._serve_customer(T.customer(&"office"), false)
+	_assert.call(firsts[0] == &"hot_coffee", "the bubble shows the first product bought")
+	var empty := T.new_match()
+	empty.customer_arrived.connect(
+		func(_type: StringName, _store: int, _event: bool, product: StringName) -> void:
+			firsts.append(product)
+	)
+	empty._serve_customer(T.customer(&"office"), false)
+	_assert.call(firsts[1] == &"", "a customer who bought nothing has no product")
+
+
 func _test_band_customers_arrive_in_exact_numbers() -> void:
 	var m := T.new_match()
 	var counts := {}
@@ -74,7 +95,7 @@ func _test_band_customers_arrive_in_exact_numbers() -> void:
 	var band := [&""]
 	m.band_changed.connect(func(id: StringName) -> void: band[0] = id)
 	m.customer_arrived.connect(
-		func(_type: StringName, _store: int, is_event: bool) -> void:
+		func(_type: StringName, _store: int, is_event: bool, _product: StringName) -> void:
 			if not is_event:
 				counts[band[0]] = int(counts.get(band[0], 0)) + 1
 	)

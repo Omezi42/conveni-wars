@@ -6,7 +6,9 @@ extends RefCounted
 signal band_changed(band_id: StringName)
 signal delivery_arrived(store_index: int, product_id: StringName, count: int)
 ## store_index は入った店。どちらにも入らず帰った客は -1
-signal customer_arrived(type_id: StringName, store_index: int, is_event: bool)
+signal customer_arrived(
+	type_id: StringName, store_index: int, is_event: bool, first_product_id: StringName
+)
 signal customer_lost(store_index: int, category_id: StringName)
 signal purchased(store_index: int, product_id: StringName, count: int, amount: int)
 signal wasted(store_index: int, product_id: StringName, count: int)
@@ -345,10 +347,11 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 		if scores[store.index] <= 0.0 and chosen != store.index:
 			store.record_lost(band_id)
 			customer_lost.emit(store.index, customer_type.top_category())
-	customer_arrived.emit(customer_type.id, chosen, is_event)
+	var first_product := &""
 	if chosen >= 0:
 		stores[chosen].record_visit(customer_type.id, &"" if is_event else band_id)
-		_shop(stores[chosen], evaluations[chosen], customer_type, is_event)
+		first_product = _shop(stores[chosen], evaluations[chosen], customer_type, is_event)
+	customer_arrived.emit(customer_type.id, chosen, is_event, first_product)
 	return chosen
 
 
@@ -368,7 +371,8 @@ func _shop(
 	evaluation: Attraction.Evaluation,
 	customer_type: CustomerTypeData,
 	is_event: bool
-) -> void:
+) -> StringName:
+	var first_product := &""
 	var remaining := customer_type.buy_count
 	var per_product := 1
 	if is_event:
@@ -376,10 +380,12 @@ func _shop(
 		per_product = balance.event_per_product_limit
 	for pick in evaluation.picks:
 		if remaining <= 0:
-			return
+			break
 		var count := store.take(pick.product_id, mini(per_product, remaining))
 		if count <= 0:
 			continue
+		if first_product == &"":
+			first_product = pick.product_id
 		remaining -= count
 		var amount := store.sell_price(pick.product_id) * count
 		store.funds += amount
@@ -387,6 +393,7 @@ func _shop(
 		if is_event:
 			store.event_sales += amount
 		purchased.emit(store.index, pick.product_id, count, amount)
+	return first_product
 
 
 func _finish() -> void:

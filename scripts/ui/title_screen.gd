@@ -3,6 +3,7 @@ extends Control
 ## タイトル(GameDesign.md 9.1節・9.5節)。夕暮れの通りに、看板を掲げた2軒のコンビニが向かい合う。
 ## 「はじめる」「遊び方」(ヒントを全部出し直して始める。9.7節)「設定」を置く。
 ## 戦績が無いときの「はじめる」は店長選択を飛ばして試合を始める(9.1節)。文字のルール説明は置かない(9.5節)。
+## 背景では TitleStreet がCPUどうしの試合を回し、見える客を2軒の店へ歩かせる。
 
 const NEXT_SCENE := "res://scenes/manager_select.tscn"
 const MATCH_SCENE := "res://scenes/match.tscn"
@@ -40,6 +41,12 @@ const HANDLE := Vector2(4, 22)
 
 
 func _ready() -> void:
+	var street := TitleStreet.new()
+	add_child(street)
+	street.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	street.walk_y = GROUND_Y + CURB_HEIGHT * 0.5
+	for i in STORE_RECTS.size():
+		street.door_x[i] = _door_rect(i).get_center().x
 	var start := PopButton.create("はじめる", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD + 6)
 	add_child(start)
 	start.position = BUTTON_RECT.position
@@ -132,8 +139,7 @@ func _draw_store(rect: Rect2, index: int) -> void:
 		rect.size.y - WINDOW_TOP
 	)
 	var door_on_right := index == 0
-	var door_x := body.end.x - DOOR_WIDTH if door_on_right else body.position.x
-	var door := Rect2(door_x, body.position.y, DOOR_WIDTH, body.size.y)
+	var door := _door_rect(index)
 	var window_x := body.position.x if door_on_right else door.end.x + DOOR_GAP
 	var window := Rect2(
 		window_x, body.position.y, body.size.x - DOOR_WIDTH - DOOR_GAP, body.size.y - WINDOW_INSET
@@ -150,6 +156,19 @@ func _draw_store(rect: Rect2, index: int) -> void:
 	)
 	var handle := Rect2(handle_x, door.get_center().y - HANDLE.y * 0.5, HANDLE.x, HANDLE.y)
 	draw_rect(handle, UiPalette.INK)
+
+
+## 入口(店は通りの中央を向き、自店は右・相手は左に入口がある)
+func _door_rect(index: int) -> Rect2:
+	var rect := STORE_RECTS[index]
+	var body := Rect2(
+		rect.position.x + WINDOW_INSET,
+		rect.position.y + WINDOW_TOP,
+		rect.size.x - WINDOW_INSET * 2.0,
+		rect.size.y - WINDOW_TOP
+	)
+	var door_x := body.end.x - DOOR_WIDTH if index == 0 else body.position.x
+	return Rect2(door_x, body.position.y, DOOR_WIDTH, body.size.y)
 
 
 ## 窓の中の棚と、並んだ商品の絵

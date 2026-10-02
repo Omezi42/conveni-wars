@@ -10,6 +10,8 @@ const CPU_PROFILE_ID := &"standard"
 ## 本物の戦績を書き換えないよう、テストの間はこのファイルへ保存する
 const TEST_SAVE_PATH := "user://test_save.cfg"
 const SETTLE_FRAMES := 6
+## タイトルの背景の試合を、見える客が何人か歩くまで進める秒数
+const TITLE_WARMUP := 6.0
 ## 試合のどの時刻(開店からの秒)で撮るか
 const MATCH_SHOTS: Array[float] = [1.0, 12.0, 70.0, 160.0, 245.0]
 const SEED := 20260929
@@ -32,6 +34,10 @@ func _run() -> void:
 	_session.save = _test_save()
 
 	var title := await _show("res://scenes/title.tscn")
+	var street: Control = title.get_child(0)
+	for i in int(TITLE_WARMUP / STEP):
+		street._physics_process(STEP)
+		street._process(STEP)
 	await _shot("01_title")
 	title._on_settings()
 	await _shot("01_title_settings")

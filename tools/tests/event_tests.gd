@@ -32,7 +32,7 @@ func _test_schedule_and_arrivals(seed_value: int) -> void:
 			announced["%s:%d:%d" % [id, store_index, starts.size()]] = m.elapsed
 	)
 	m.customer_arrived.connect(
-		func(_type: StringName, _store: int, is_event: bool) -> void:
+		func(_type: StringName, _store: int, is_event: bool, _product: StringName) -> void:
 			if is_event:
 				event_customers.append(m.elapsed)
 	)

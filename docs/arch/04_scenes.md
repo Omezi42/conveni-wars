@@ -53,6 +53,7 @@ UIクロームはすべてコードで描く。色・文字の大きさ・線の
 | `UiPalette` | 色・文字の大きさ(最小 `FONT_SMALL` = 16px。9.5節)・輪郭線の太さ・影をずらす量 |
 | `UiDraw` | 輪郭線と影のあるパネル(`card`)・縁取りした文字・幅に収める文字の大きさ(`fit_size`)・グラデーション・縞・商品/カテゴリ/客層の絵(足もとの影つき。絵が無いときは仮アイコン)・空の小窓・硬貨・注意の印・吹き出し・光の筋 |
 | `PopButton` | 輪郭線と影のあるボタン。押すと沈み、`chosen` でチェックを付ける。`caption` で上に小さな1行 |
+| `VisibleCustomers`(RefCounted) | 見える客(9.2節)。来店を1秒に1人ほどに間引き(`priority_store` の店が取り逃した客は別の間隔で優先)、客層の絵と吹き出しを曲線に沿って歩かせる。道は呼ぶ側(`CustomerFlow`・`TitleStreet`)が付ける。`customer_lost` は `customer_arrived` より先に届くので、`note_lost` で控えて次の来店に付ける |
 | `SkyBackdrop` | 背景の空。試合中は `set_band()` で時間帯の空へ移る。空だけを描く `paint()` はタイトル・店長選択・結果も使う |
 
 - 商品・客層・店長の絵は `assets/icons/{products,customers,managers}/<データのid>.png`(256px・背景は透明)。同じ名前で上書きすれば差し替わる

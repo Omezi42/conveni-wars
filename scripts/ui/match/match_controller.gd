@@ -232,6 +232,7 @@ func _connect_signals() -> void:
 	match_state.purchased.connect(_on_purchased)
 	match_state.customer_arrived.connect(_flow.push_arrival)
 	match_state.customer_lost.connect(_flow.push_lost)
+	_flow.visible_entered.connect(_own_shelf.flash)
 	match_state.event_started.connect(_on_event_started)
 	match_state.event_ended.connect(_on_event_ended)
 	match_state.skill_used.connect(_on_skill_used)

@@ -49,6 +49,10 @@ const SOLD_OUT_FILL := Color("#f8d3cf")
 const EMPTY_INK := Color(0.36, 0.4, 0.51, 0.55)
 const DROP_HIGHLIGHT := Color(0.18, 0.44, 0.91, 0.25)
 const SELECT_MIN_ALPHA := 0.35
+## 見える客が入ったときにマスを光らせる秒数・光の濃さ・枠の広がり
+const FLASH_SECONDS := 0.7
+const FLASH_ALPHA := 0.55
+const FLASH_GROW := 4.0
 
 var cell_size := Vector2(116, 108)
 var gap := Vector2(10, 16)
@@ -61,6 +65,8 @@ var _drop_slot := -1
 ## 押して、まだ離していないマス(離したときに値段のメニューを開く。ドラッグしたら取り消す)
 var _press_slot := -1
 var _gauge: StockGauge
+## マスごとの光りの残り(1 → 0)
+var _flash: Array[float] = []
 
 
 func setup(state: MatchState, index: int) -> void:
@@ -120,6 +126,25 @@ func slot_at(pos: Vector2) -> int:
 
 ## 売れた商品の「+¥」を出す位置。同じ商品が複数のマスにあれば倍率の高いマス
 func sale_origin(product_id: StringName) -> Vector2:
+	var best := _best_slot(product_id)
+	if best < 0:
+		return global_position + grid_size() / 2.0
+	return global_position + _space_rect(slot_rect(best)).get_center()
+
+
+## 見える客が買った商品のマスを光らせる(GameDesign.md 9.2節)
+func flash(product_id: StringName) -> void:
+	var slot := _best_slot(product_id)
+	if slot < 0:
+		return
+	if _flash.is_empty():
+		_flash.resize(StoreState.SLOT_COUNT)
+		_flash.fill(0.0)
+	_flash[slot] = 1.0
+
+
+## その商品が並ぶマスのうち、ボーナスの倍率の高いマス(無ければ -1)
+func _best_slot(product_id: StringName) -> int:
 	var best := -1
 	var multipliers := store().shelf_bonus().multipliers
 	for slot in StoreState.SLOT_COUNT:
@@ -128,14 +153,14 @@ func sale_origin(product_id: StringName) -> Vector2:
 			and (best < 0 or multipliers[slot] > multipliers[best])
 		):
 			best = slot
-	if best < 0:
-		return global_position + grid_size() / 2.0
-	return global_position + _space_rect(slot_rect(best)).get_center()
+	return best
 
 
 func _process(delta: float) -> void:
 	if _gauge != null:
 		_gauge.tick(delta)
+	for slot in _flash.size():
+		_flash[slot] = maxf(_flash[slot] - delta / FLASH_SECONDS, 0.0)
 	super._process(delta)
 
 
@@ -266,6 +291,13 @@ func _draw_space(slot: int, bonus: ShelfBonus.Result) -> void:
 		UiDraw.panel(self, space, Color.TRANSPARENT, hint, UiPalette.OUTLINE, radius)
 	if slot == open_slot:
 		UiDraw.panel(self, space.grow(2.0), Color.TRANSPARENT, team, UiPalette.OUTLINE + 1, radius)
+	if slot < _flash.size() and _flash[slot] > 0.0:
+		var glow := UiPalette.MONEY
+		glow.a = FLASH_ALPHA * _flash[slot]
+		var edge := UiPalette.MONEY
+		edge.a = _flash[slot]
+		var grow := FLASH_GROW * (1.0 - _flash[slot])
+		UiDraw.panel(self, space.grow(grow), glow, edge, UiPalette.OUTLINE, radius)
 
 
 func _draw_product(
