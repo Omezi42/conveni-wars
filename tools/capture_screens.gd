@@ -89,7 +89,12 @@ func _capture_match(controller: Control) -> void:
 	await _shot("%02d_match_selecting" % index)
 	controller._selection.clear()
 	index += 1
+	controller._open_pause()
+	await _shot("%02d_match_paused" % index)
+	controller._pause.close()
+	index += 1
 	while not state.finished:
+		_keep_running(controller)
 		controller._physics_process(STEP)
 		player_cpu.update(STEP)
 	await _shot("%02d_match_closed" % index)
@@ -100,11 +105,17 @@ func _capture_match(controller: Control) -> void:
 
 ## 試合を1コマ進める。演出と人の流れも同じ時間だけ進め、早送りのあいだに溜まらないようにする
 func _step(controller: Control, player_cpu: CpuPlayer) -> void:
+	_keep_running(controller)
 	controller._physics_process(STEP)
 	controller._process(STEP)
 	controller._fx._process(STEP)
 	controller._flow._process(STEP)
 	player_cpu.update(STEP)
+
+
+## 撮影の窓が後ろへ回ると試合が一時停止するため(GameDesign.md 9.9節)、撮る間は閉じておく
+func _keep_running(controller: Control) -> void:
+	controller._pause.close()
 
 
 func _show(path: String) -> Control:

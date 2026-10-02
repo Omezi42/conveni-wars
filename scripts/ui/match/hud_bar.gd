@@ -29,7 +29,8 @@ const REMAIN_FONT := 26
 const REMAIN_LABEL_BASE := 13.0
 const REMAIN_VALUE_TOP := 12.0
 
-const SCORE_RECT := Rect2(412, 6, 856, 42)
+## 右端は一時停止のボタンのために空ける(MatchController.PAUSE_BUTTON_RECT)
+const SCORE_RECT := Rect2(412, 6, 796, 42)
 const VS_RADIUS := 19.0
 const SALES_FONT := 28
 const PROFIT_LABEL := "の利益"

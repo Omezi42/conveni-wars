@@ -5,9 +5,13 @@ extends Control
 const PLAYER := 0
 const CPU := 1
 const RESULT_SCENE := "res://scenes/result.tscn"
+const MATCH_SCENE := "res://scenes/match.tscn"
+const TITLE_SCENE := "res://scenes/title.tscn"
 
 const SCREEN_SIZE := Vector2(1280, 720)
 const HUD_RECT := Rect2(0, 0, 1280, 80)
+## 上端の右端の一時停止のボタン(GameDesign.md 9.9節)
+const PAUSE_BUTTON_RECT := Rect2(1220, 8, 48, 50)
 const OWN_FRAME_RECT := Rect2(12, 86, 628, 514)
 const OWN_SHELF_POS := Vector2(30, 68)
 const OWN_CELL := Vector2(176, 136)
@@ -56,6 +60,7 @@ var _price_menu: PriceMenu
 var _catalog: CatalogView
 var _flow: CustomerFlow
 var _fx: FxLayer
+var _pause: PauseMenu
 ## "店番号:商品id" → [店番号, 商品id, 金額]
 var _pending_pops: Dictionary = {}
 var _pop_timer := 0.0
@@ -75,9 +80,12 @@ func _ready() -> void:
 	_connect_signals()
 	if GameSession.wants_guide():
 		_open_guide()
+	_build_pause()
 
 
 func _physics_process(delta: float) -> void:
+	if _pause.visible:
+		return
 	if match_state.finished:
 		_end_timer -= delta
 		if _end_timer <= 0.0 and not _leaving:
@@ -104,7 +112,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if press != null and press.pressed and press.button_index == MOUSE_BUTTON_RIGHT:
 		_selection.clear()
 	if event.is_action_pressed("ui_cancel"):
-		_selection.clear()
+		if _pause.visible:
+			_pause.close()
+		elif _selection.has_selection():
+			_selection.clear()
+		else:
+			_open_pause()
+
+
+## ブラウザのタブや窓から離れたら一時停止する(GameDesign.md 9.9節)
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and _pause != null:
+		_open_pause()
 
 
 func _build() -> void:
@@ -180,6 +199,31 @@ func _open_guide() -> void:
 	_guide.add_step(GUIDE_TEXTS[2], drag, GUIDE_CARD_RIGHT)
 	_guide.finished.connect(func() -> void: _guide = null)
 	_place(_guide, Rect2(Vector2.ZERO, SCREEN_SIZE))
+
+
+## 幕はガイドより上に重ねるため、最後に置く
+func _build_pause() -> void:
+	var button := PauseMenu.create_button()
+	_place(button, PAUSE_BUTTON_RECT)
+	button.pressed.connect(_open_pause)
+	_pause = PauseMenu.new()
+	_place(_pause, Rect2(Vector2.ZERO, SCREEN_SIZE))
+	_pause.restart_requested.connect(_on_restart)
+	_pause.quit_requested.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
+
+
+func _open_pause() -> void:
+	if match_state.finished or _leaving:
+		return
+	_selection.clear()
+	_price_menu.close()
+	_pause.open()
+
+
+## やめた試合は戦績に数えない(GameDesign.md 9.9節)
+func _on_restart() -> void:
+	GameSession.prepare_match(GameSession.player_manager_id)
+	get_tree().change_scene_to_file(MATCH_SCENE)
 
 
 func _part(part: MatchPart, index: int) -> MatchPart:

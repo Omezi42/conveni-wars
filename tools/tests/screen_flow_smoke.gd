@@ -41,6 +41,7 @@ func _run() -> void:
 	var controller: Control = await _show("res://scenes/match.tscn")
 	_check(_class_of(controller) == &"MatchController", "match scene")
 	_exercise_player_moves(controller)
+	_exercise_pause(controller)
 	await _play_to_the_end(controller)
 	_check(_session.last_result != null, "the match hands its result to the session")
 	_check(_session.save.games_played() == 2, "the result is added to the record")
@@ -157,6 +158,23 @@ func _exercise_shelf_order(controller: Control, state: MatchState) -> void:
 	var after := state.stores[PLAYER].pending_count(product_id)
 	_check(after == before + state.balance.lot_size, "the order button on a slot orders a lot")
 	_check(not controller._price_menu.visible, "ordering from a slot does not open the price menu")
+
+
+## 一時停止の間は試合が進まず、続けると動き出す(GameDesign.md 9.9節)
+func _exercise_pause(controller: Control) -> void:
+	var state: MatchState = controller.match_state
+	controller._open_pause()
+	_check(controller._pause.visible, "the pause menu opens")
+	var before := state.elapsed
+	controller._physics_process(1.0)
+	_check(is_equal_approx(state.elapsed, before), "the pause stops the match")
+	var escape := InputEventAction.new()
+	escape.action = &"ui_cancel"
+	escape.pressed = true
+	controller._unhandled_input(escape)
+	_check(not controller._pause.visible, "escape closes the pause menu")
+	controller._physics_process(1.0)
+	_check(state.elapsed > before, "the match runs after the pause")
 
 
 func _left_press(pos: Vector2) -> InputEventMouseButton:
