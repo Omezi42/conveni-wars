@@ -46,8 +46,10 @@ const STAMP_SEGMENTS := 48
 const STAMP_INNER_RING := 0.4
 const BUTTON_SIZE := Vector2(250, 70)
 ## 自店のレシートの左上に掛ける「自己ベスト更新!」の札
-const BEST_SIZE := Vector2(190, 36)
+## 勝ち星が増えたときの札は、自己ベストの札の右に並べる
+const BEST_SIZE := Vector2(170, 36)
 const BEST_OFFSET := Vector2(-18, -16)
+const BADGE_GAP := 6.0
 const BUTTON_Y := 622.0
 const BUTTON_GAP := 28.0
 
@@ -108,8 +110,8 @@ func _draw() -> void:
 		_draw_receipt(rect, _result.stores[i])
 		if _result.winner == i:
 			_draw_stamp(Vector2(rect.end.x, rect.position.y) + STAMP_OFFSET)
-		if i == MatchController.PLAYER and GameSession.last_new_best:
-			_draw_new_best(rect.position + BEST_OFFSET)
+		if i == MatchController.PLAYER:
+			_draw_badges(rect.position + BEST_OFFSET)
 
 
 func _draw_verdict(label: String, color: Color, burst: bool) -> void:
@@ -257,10 +259,18 @@ func _draw_types(x: float, width: float, top: float, store: StoreState) -> void:
 		index += 1
 
 
-func _draw_new_best(at: Vector2) -> void:
-	var badge := Rect2(at, BEST_SIZE)
-	UiDraw.card(self, badge, UiPalette.MONEY, int(BEST_SIZE.y * 0.5), UiPalette.OUTLINE_THIN)
-	UiDraw.text_centered(self, badge, "自己ベスト更新!", UiPalette.FONT_BODY, UiPalette.INK)
+## 自己ベスト更新と、増えた勝ち星(9.4節)の札
+func _draw_badges(at: Vector2) -> void:
+	var labels: Array[String] = []
+	if GameSession.last_new_best:
+		labels.append("自己ベスト更新!")
+	if GameSession.last_new_star != &"":
+		var level := GameDatabase.get_default().cpu_profile(GameSession.last_new_star)
+		labels.append("★ %sに初勝利!" % level.display_name)
+	for i in labels.size():
+		var badge := Rect2(at + Vector2((BEST_SIZE.x + BADGE_GAP) * i, 0), BEST_SIZE)
+		UiDraw.card(self, badge, UiPalette.MONEY, int(BEST_SIZE.y * 0.5), UiPalette.OUTLINE_THIN)
+		UiDraw.text_centered(self, badge, labels[i], UiPalette.FONT_BODY, UiPalette.INK)
 
 
 ## 勝った店のレシートに押す赤い判

@@ -14,6 +14,8 @@ var match_seed := 0
 var last_result: MatchResult
 ## 直前の試合で自己ベストを更新したか
 var last_new_best := false
+## 直前の試合で増えた勝ち星のCPUの強さ。増えていなければ空
+var last_new_star: StringName = &""
 ## 次の試合で初回ガイドを出すか(タイトルの「遊び方」から始めたとき)
 var guide_requested := false
 var save := SaveData.new()
@@ -70,4 +72,9 @@ func finish_match(result: MatchResult) -> void:
 	last_result = result
 	guide_requested = false
 	last_new_best = save.record(result, PLAYER)
+	last_new_star = &""
+	if result.winner == PLAYER:
+		var manager_id := result.stores[PLAYER].manager.id
+		if save.add_star(manager_id, cpu_profile_id()):
+			last_new_star = cpu_profile_id()
 	save.save_file()

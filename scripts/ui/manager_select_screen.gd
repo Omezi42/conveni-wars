@@ -2,6 +2,7 @@ class_name ManagerSelectScreen
 extends Control
 ## 店長の選択(GameDesign.md 7章・9.5節)。店長は社員証の形のカードで並べる。
 ## カードをタップして選び(浮き上がって黄色い枠が付く)、開店する。CPUは残りから選ばれる(8.1節)。
+## 店長の色の地の右下に、CPUの強さごとの勝ち星(9.7節)を並べる。
 ## 左下でCPUの強さ(8.3節)を選ぶ。スキルは短い言葉で出し、カーソルを乗せた(タッチでは押した)カードだけ正確な効果を出す(7.1節)。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
@@ -28,6 +29,10 @@ const BODY_GAP := 8.0
 const SECTION_GAP := 14.0
 const PASSIVE_LINES := 3
 const ACTIVE_LINES := 4
+## 勝ち星(店長の色の地の右下からの位置)
+const STAR_RADIUS := 10.0
+const STAR_SPACING := 24.0
+const STAR_INSET := Vector2(16, 16)
 const SELECT_RING := 5.0
 const RIBBON_SIZE := Vector2(96, 28)
 const BUTTON_RECT := Rect2(460, 582, 360, 78)
@@ -163,6 +168,7 @@ func _draw_card(rect: Rect2, manager: ManagerData, selected: bool, detailed: boo
 		self, badge, manager.color, UiPalette.INK, UiPalette.OUTLINE_THIN, UiPalette.RADIUS
 	)
 	_draw_portrait(badge.get_center(), manager)
+	_draw_stars(badge, manager)
 	var name_pos := Vector2(rect.position.x, rect.position.y + NAME_Y)
 	UiDraw.text(
 		self,
@@ -191,6 +197,17 @@ func _draw_card(rect: Rect2, manager: ManagerData, selected: bool, detailed: boo
 		)
 		UiDraw.card(self, ribbon, UiPalette.MONEY, int(RIBBON_SIZE.y * 0.5), UiPalette.OUTLINE_THIN)
 		UiDraw.text_centered(self, ribbon, "選択中", UiPalette.FONT_BODY, UiPalette.INK)
+
+
+## 勝ったCPUの強さの星だけ黄色く塗る(左から やさしい・ふつう・つよい)
+func _draw_stars(badge: Rect2, manager: ManagerData) -> void:
+	var profiles := GameDatabase.get_default().sorted_cpu_profiles()
+	var right := badge.end - STAR_INSET
+	for i in profiles.size():
+		var center := right - Vector2(STAR_SPACING * (profiles.size() - 1 - i), 0)
+		var won: bool = GameSession.save.has_star(manager.id, profiles[i].id)
+		var fill := UiPalette.MONEY if won else UiPalette.PAPER_DIM
+		UiDraw.star(self, center, STAR_RADIUS, fill, UiPalette.INK)
 
 
 func _draw_portrait(center: Vector2, manager: ManagerData) -> void:

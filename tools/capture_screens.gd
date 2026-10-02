@@ -35,6 +35,9 @@ func _run() -> void:
 	await _shot("01_title_settings")
 	title.queue_free()
 
+	_session.save.add_star(&"veteran", &"easy")
+	_session.save.add_star(&"idol", &"easy")
+	_session.save.add_star(&"idol", &"standard")
 	var select := await _show("res://scenes/manager_select.tscn")
 	select._selected = 1
 	select._start.disabled = false
@@ -64,6 +67,9 @@ func _run() -> void:
 	var result := _find(&"ResultScreen")
 	if result == null:
 		result = await _show("res://scenes/result.tscn")
+	_session.last_new_best = true
+	_session.last_new_star = &"hard"
+	result.queue_redraw()
 	await _shot("99_result")
 	print("captured to ", _out_dir)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))

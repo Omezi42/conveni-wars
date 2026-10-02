@@ -11,6 +11,7 @@ func run(assert_true: Callable) -> void:
 	_assert = assert_true
 	_test_record_counts_results_and_best_profit()
 	_test_round_trip()
+	_test_stars()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
 
 
@@ -32,6 +33,19 @@ func _test_record_counts_results_and_best_profit() -> void:
 	_assert.call(save.wins == 1 and save.losses == 1 and save.draws == 1, "win, loss and draw")
 	_assert.call(save.best_for(&"idol") == 2000, "best profit per manager")
 	_assert.call(save.best_for(&"veteran") == 0, "other managers have no best yet")
+
+
+func _test_stars() -> void:
+	var save := SaveData.new(PATH)
+	_assert.call(not save.has_star(&"idol", &"easy"), "a new save has no stars")
+	_assert.call(save.add_star(&"idol", &"easy"), "the first win against a level adds a star")
+	_assert.call(not save.add_star(&"idol", &"easy"), "the same star is not added twice")
+	_assert.call(not save.has_star(&"idol", &"hard"), "stars are per cpu level")
+	_assert.call(not save.has_star(&"veteran", &"easy"), "stars are per manager")
+	save.save_file()
+	var loaded := SaveData.new(PATH)
+	loaded.load_file()
+	_assert.call(loaded.has_star(&"idol", &"easy"), "the stars survive")
 
 
 func _test_round_trip() -> void:

@@ -12,6 +12,8 @@ var losses := 0
 var draws := 0
 ## 店長id → 自己ベストの利益
 var best_profit: Dictionary = {}
+## 店長id → 勝ったことのあるCPUの強さのidの列(勝ち星。GameDesign.md 9.7節)
+var stars: Dictionary = {}
 ## 最後に選んだCPUの強さ。まだ選んでいなければ空
 var cpu_profile_id: StringName = &""
 var bgm_volume := DEFAULT_VOLUME
@@ -32,6 +34,7 @@ func load_file() -> void:
 	losses = file.get_value(RECORD, "losses", 0)
 	draws = file.get_value(RECORD, "draws", 0)
 	best_profit = file.get_value(RECORD, "best_profit", {})
+	stars = file.get_value(RECORD, "stars", {})
 	cpu_profile_id = StringName(file.get_value(RECORD, "cpu_profile_id", ""))
 	bgm_volume = file.get_value(SETTINGS, "bgm_volume", DEFAULT_VOLUME)
 	se_volume = file.get_value(SETTINGS, "se_volume", DEFAULT_VOLUME)
@@ -43,6 +46,7 @@ func save_file() -> void:
 	file.set_value(RECORD, "losses", losses)
 	file.set_value(RECORD, "draws", draws)
 	file.set_value(RECORD, "best_profit", best_profit)
+	file.set_value(RECORD, "stars", stars)
 	file.set_value(RECORD, "cpu_profile_id", String(cpu_profile_id))
 	file.set_value(SETTINGS, "bgm_volume", bgm_volume)
 	file.set_value(SETTINGS, "se_volume", se_volume)
@@ -55,6 +59,22 @@ func games_played() -> int:
 
 func best_for(manager_id: StringName) -> int:
 	return int(best_profit.get(String(manager_id), 0))
+
+
+func has_star(manager_id: StringName, cpu_profile_id: StringName) -> bool:
+	var won: Array = stars.get(String(manager_id), [])
+	return won.has(String(cpu_profile_id))
+
+
+## 勝ち星を足す。初めての星なら true
+func add_star(manager_id: StringName, cpu_profile_id: StringName) -> bool:
+	if has_star(manager_id, cpu_profile_id):
+		return false
+	var key := String(manager_id)
+	var won: Array = stars.get(key, [])
+	won.append(String(cpu_profile_id))
+	stars[key] = won
+	return true
 
 
 ## 試合の結果を戦績に足す。自己ベストを更新したら true
