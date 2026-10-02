@@ -72,8 +72,10 @@ func _test_time_sale_prices_everything_as_sale_while_running() -> void:
 		T.near(m.stores[0].evaluation(student).score, 3.0 * 1.9), "scored as a (boosted) sale"
 	)
 	_assert.call(m.stores[0].sell_price(&"potato_chips") == sold_price, "the price is unchanged")
-	m.advance(20.1)
-	_assert.call(T.near(m.stores[0].evaluation(student).score, 3.0 * 0.55), "back after 20s")
+	m.advance(float(m.stores[0].manager.active_params["duration"]) + 0.1)
+	_assert.call(
+		T.near(m.stores[0].evaluation(student).score, 3.0 * 0.55), "back after the duration"
+	)
 
 
 func _test_price_lock_blocks_only_the_opponent() -> void:

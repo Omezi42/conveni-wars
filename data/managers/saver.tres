@@ -16,10 +16,10 @@ passive_description = "安売りの値段補正の効きが2倍"
 passive_short = "安売りがよく効く"
 active_kind = 2
 active_params = {
-"duration": 20.0
+"duration": 30.0
 }
 active_name = "タイムセール"
-active_description = "20秒間、自店の全商品を「安売り」として客を呼ぶ(売値は変わらない)"
-active_short = "20秒間、値下げせずに安売りの客寄せ"
+active_description = "30秒間、自店の全商品を「安売り」として客を呼ぶ(売値は変わらない)"
+active_short = "30秒間、値下げせずに安売りの客寄せ"
 color = Color(0.22745098, 0.6156863, 0.3647059, 1)
 portrait = ExtResource("2_icon")
