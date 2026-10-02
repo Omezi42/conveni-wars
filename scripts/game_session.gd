@@ -1,5 +1,5 @@
 extends Node
-## 画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・初回ガイドを出すか)と、戦績と設定の保存を持つ
+## 画面間の受け渡し(選んだ店長・CPUの強さ・試合結果)と、戦績と設定の保存を持つ
 ## (Architecture.md 4章)。
 
 const PLAYER := 0
@@ -16,8 +16,6 @@ var last_result: MatchResult
 var last_new_best := false
 ## 直前の試合で増えた勝ち星のCPUの強さ。増えていなければ空
 var last_new_star: StringName = &""
-## 次の試合で初回ガイドを出すか(タイトルの「遊び方」から始めたとき)
-var guide_requested := false
 var save := SaveData.new()
 
 var _rng := RandomNumberGenerator.new()
@@ -63,14 +61,8 @@ func is_first_match() -> bool:
 	return save.games_played() == 0
 
 
-## 初回ガイドを出すか(戦績が無いとき、または「遊び方」から始めたとき。GameDesign.md 9.7節)
-func wants_guide() -> bool:
-	return guide_requested or is_first_match()
-
-
 func finish_match(result: MatchResult) -> void:
 	last_result = result
-	guide_requested = false
 	last_new_best = save.record(result, PLAYER)
 	last_new_star = &""
 	if result.winner == PLAYER:

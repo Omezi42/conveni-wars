@@ -28,7 +28,7 @@
 | `PauseMenu` | 一時停止(9.9節)。画面全体を覆う幕と「続ける」「やり直す」「タイトルへ」。開いている間 `MatchController` は `advance` とCPUを呼ばない。上端の右端の `PopButton`・Esc・窓から離れたとき(`NOTIFICATION_APPLICATION_FOCUS_OUT`)に開く |
 | `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績・「大口獲得!」・利益の逆転の表示 |
 
-画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・自己ベストと勝ち星が増えたか・ヒントを出し直すか)は autoload の `GameSession` が持つ。
+画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・自己ベストと勝ち星が増えたか)は autoload の `GameSession` が持つ。
 戦績が無いときのタイトルの「はじめる」は、`GameSession` が既定の店長(`FIRST_MANAGER_ID`)で試合を用意して、店長選択を飛ばす。
 
 ## 4.3 保存・音・ヒント(GameDesign.md 9.7節・9.8節)

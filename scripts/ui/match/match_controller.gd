@@ -37,15 +37,6 @@ const REVERSAL_COOLDOWN := 12.0
 const RESULT_DELAY := 2.5
 ## 時間帯のカットインの地は空の色を暗くして白い文字を読めるようにする
 const BAND_CUTIN_DARKEN := 0.25
-## 初回ガイドの説明の札の位置(GameDesign.md 9.7節)
-const GUIDE_CARD_LEFT := Vector2(200, 200)
-const GUIDE_CARD_UPPER := Vector2(430, 330)
-const GUIDE_CARD_RIGHT := Vector2(820, 380)
-const GUIDE_TEXTS: Array[String] = [
-	"右下は次の時間帯の予報。次に来る客が欲しがる商品が、多い順に並ぶ。先回りして仕入れよう。",
-	"下の品ぞろえの札の発注ボタンで仕入れる。代金を先に払い、5秒で届く。売れ残りも仕入れ代は戻らない。",
-	"札を棚のマスへドラッグ(またはタップしてからマスをタップ)して並べる。並べた商品だけが売れる。",
-]
 
 var match_state: MatchState
 
@@ -58,6 +49,7 @@ var _own_frame: StoreFrame
 var _rival_frame: StoreFrame
 var _price_menu: PriceMenu
 var _catalog: CatalogView
+var _skill: SkillButton
 var _flow: CustomerFlow
 var _fx: FxLayer
 var _pause: PauseMenu
@@ -66,8 +58,7 @@ var _pending_pops: Dictionary = {}
 var _pop_timer := 0.0
 var _player_leading := false
 var _reversal_cooldown := 0.0
-## 初回ガイドが出ている間は開店準備の時計を止める
-var _guide: GuideOverlay
+var _hints: HintLayer
 var _end_timer := -1.0
 var _leaving := false
 
@@ -78,8 +69,7 @@ func _ready() -> void:
 	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.cpu_profile_id()))
 	_build()
 	_connect_signals()
-	if GameSession.wants_guide():
-		_open_guide()
+	_build_hints()
 	_build_pause()
 
 
@@ -92,8 +82,6 @@ func _physics_process(delta: float) -> void:
 			_leaving = true
 			GameSession.finish_match(match_state.result)
 			get_tree().change_scene_to_file(RESULT_SCENE)
-		return
-	if _guide != null and match_state.is_preparing():
 		return
 	match_state.advance(delta)
 	_cpu.update(delta)
@@ -173,7 +161,8 @@ func _build() -> void:
 	_catalog = _part(CatalogView.new(), PLAYER)
 	_catalog.selection = _selection
 	_place(_catalog, CATALOG_RECT)
-	_place(_part(SkillButton.new(), PLAYER), SKILL_RECT)
+	_skill = _part(SkillButton.new(), PLAYER)
+	_place(_skill, SKILL_RECT)
 
 	_price_menu = PriceMenu.new()
 	_place(_price_menu, Rect2(Vector2.ZERO, SCREEN_SIZE))
@@ -188,20 +177,18 @@ func _build() -> void:
 	sounds.setup(match_state)
 
 
-func _open_guide() -> void:
-	_guide = GuideOverlay.new()
-	var own_shelf := Rect2(OWN_FRAME_RECT.position + OWN_SHELF_POS, _own_shelf.size)
-	var forecast: Array[Rect2] = [FORECAST_RECT]
-	var catalog: Array[Rect2] = [CATALOG_RECT]
-	var drag: Array[Rect2] = [CATALOG_RECT, own_shelf]
-	_guide.add_step(GUIDE_TEXTS[0], forecast, GUIDE_CARD_LEFT)
-	_guide.add_step(GUIDE_TEXTS[1], catalog, GUIDE_CARD_UPPER)
-	_guide.add_step(GUIDE_TEXTS[2], drag, GUIDE_CARD_RIGHT)
-	_guide.finished.connect(func() -> void: _guide = null)
-	_place(_guide, Rect2(Vector2.ZERO, SCREEN_SIZE))
+func _build_hints() -> void:
+	_hints = HintLayer.new()
+	_hints.own_shelf = _own_shelf
+	_hints.catalog = _catalog
+	_hints.forecast_rect = FORECAST_RECT
+	var skill := _skill.button_rect()
+	_hints.skill_rect = Rect2(SKILL_RECT.position + skill.position, skill.size)
+	_place(_hints, Rect2(Vector2.ZERO, SCREEN_SIZE))
+	_hints.setup(match_state, GameSession.save)
 
 
-## 幕はガイドより上に重ねるため、最後に置く
+## 幕はヒントより上に重ねるため、最後に置く
 func _build_pause() -> void:
 	var button := PauseMenu.create_button()
 	_place(button, PAUSE_BUTTON_RECT)

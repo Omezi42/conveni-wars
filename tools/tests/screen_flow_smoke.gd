@@ -34,7 +34,7 @@ func _run() -> void:
 	_check(_class_of(select) == &"ManagerSelectScreen", "manager select scene")
 	select.queue_free()
 
-	await _check_guide()
+	await _check_hints()
 
 	_session.prepare_match(&"idol")
 	_check(_session.cpu_manager_id != &"idol", "cpu picks a manager the player did not")
@@ -78,21 +78,25 @@ func _check_first_start(title: Control) -> void:
 	await process_frame
 
 
-## 初回ガイドの間は開店準備の時計が止まり、とばすと動き出す(GameDesign.md 9.7節)
-func _check_guide() -> void:
-	_session.guide_requested = true
+## ヒントは試合を止めずに出て、端末に1回だけ記録される(GameDesign.md 9.7節)
+func _check_hints() -> void:
+	_session.save.clear_hints()
 	_session.prepare_match(&"veteran")
 	var controller: Control = await _show("res://scenes/match.tscn")
 	var state: MatchState = controller.match_state
+	var hints: HintLayer = controller._hints
 	var before := state.elapsed
-	controller._physics_process(1.0)
-	_check(is_equal_approx(state.elapsed, before), "the guide stops the prep clock")
-	controller._guide._advance()
-	controller._guide._advance()
-	controller._guide._advance()
-	controller._physics_process(1.0)
-	_check(state.elapsed > before, "the clock runs after the guide")
-	_session.guide_requested = false
+	controller._physics_process(HintLayer.OPENING_DELAY)
+	hints._process(0.0)
+	_check(state.elapsed > before, "hints do not stop the clock")
+	_check(
+		hints._current != null and hints._current.id == HintLayer.OPENING,
+		"the forecast hint appears after a few seconds"
+	)
+	_check(_session.save.has_shown_hint(HintLayer.OPENING), "a shown hint is recorded")
+	state.order(0, state.db.sorted_products()[0].id)
+	hints._process(0.0)
+	_check(hints._current == null, "the hint closes when the player orders")
 	controller.queue_free()
 	await process_frame
 
@@ -222,7 +226,7 @@ func _check(condition: bool, message: String) -> void:
 		_failures.append(message)
 
 
-## 1試合遊んだことのある戦績(初回ガイドを出さない)
+## 1試合遊んだことのある戦績(タイトルの「はじめる」で店長選択を出す)
 func _test_save() -> SaveData:
 	var save := SaveData.new(TEST_SAVE_PATH)
 	save.wins = 1

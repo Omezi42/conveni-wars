@@ -1,7 +1,7 @@
 class_name TitleScreen
 extends Control
 ## タイトル(GameDesign.md 9.1節・9.5節)。夕暮れの通りに、看板を掲げた2軒のコンビニが向かい合う。
-## 「はじめる」「遊び方」(初回ガイドを出して始める。9.7節)「設定」を置く。
+## 「はじめる」「遊び方」(ヒントを全部出し直して始める。9.7節)「設定」を置く。
 ## 戦績が無いときの「はじめる」は店長選択を飛ばして試合を始める(9.1節)。文字のルール説明は置かない(9.5節)。
 
 const NEXT_SCENE := "res://scenes/manager_select.tscn"
@@ -69,7 +69,8 @@ func _on_start() -> void:
 
 
 func _on_how_to() -> void:
-	GameSession.guide_requested = true
+	GameSession.save.clear_hints()
+	GameSession.save.save_file()
 	get_tree().change_scene_to_file(NEXT_SCENE)
 
 

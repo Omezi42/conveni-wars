@@ -16,6 +16,8 @@ var best_profit: Dictionary = {}
 var stars: Dictionary = {}
 ## 最後に選んだCPUの強さ。まだ選んでいなければ空
 var cpu_profile_id: StringName = &""
+## 出したヒントのid(GameDesign.md 9.7節)
+var shown_hints: Array = []
 var bgm_volume := DEFAULT_VOLUME
 var se_volume := DEFAULT_VOLUME
 
@@ -36,6 +38,7 @@ func load_file() -> void:
 	best_profit = file.get_value(RECORD, "best_profit", {})
 	stars = file.get_value(RECORD, "stars", {})
 	cpu_profile_id = StringName(file.get_value(RECORD, "cpu_profile_id", ""))
+	shown_hints = file.get_value(RECORD, "shown_hints", [])
 	bgm_volume = file.get_value(SETTINGS, "bgm_volume", DEFAULT_VOLUME)
 	se_volume = file.get_value(SETTINGS, "se_volume", DEFAULT_VOLUME)
 
@@ -48,6 +51,7 @@ func save_file() -> void:
 	file.set_value(RECORD, "best_profit", best_profit)
 	file.set_value(RECORD, "stars", stars)
 	file.set_value(RECORD, "cpu_profile_id", String(cpu_profile_id))
+	file.set_value(RECORD, "shown_hints", shown_hints)
 	file.set_value(SETTINGS, "bgm_volume", bgm_volume)
 	file.set_value(SETTINGS, "se_volume", se_volume)
 	file.save(_path)
@@ -75,6 +79,20 @@ func add_star(manager_id: StringName, cpu_profile_id: StringName) -> bool:
 	won.append(String(cpu_profile_id))
 	stars[key] = won
 	return true
+
+
+func has_shown_hint(id: StringName) -> bool:
+	return shown_hints.has(String(id))
+
+
+func mark_hint(id: StringName) -> void:
+	if not has_shown_hint(id):
+		shown_hints.append(String(id))
+
+
+## タイトルの「遊び方」から始めたとき、ヒントを全部出し直す
+func clear_hints() -> void:
+	shown_hints.clear()
 
 
 ## 試合の結果を戦績に足す。自己ベストを更新したら true

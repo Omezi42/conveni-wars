@@ -351,14 +351,20 @@ func _draw_bonus_tags(space: Rect2, kinds: Array[int]) -> void:
 
 
 ## 棚板に掛かる値札。色で値段の段階(安売り=黄色の特価札・定価=白・強気=紺)を見せる
-func _draw_tag(slot: int) -> void:
+## マスの値札(棚板の中央)
+func tag_rect(slot: int) -> Rect2:
 	var rect := slot_rect(slot)
-	var product_id := store().shelf[slot]
 	var detailed := _detailed()
 	var width := rect.size.x * (TAG_WIDTH if detailed else COMPACT_TAG_WIDTH)
 	var height := TAG_HEIGHT if detailed else COMPACT_TAG_HEIGHT
 	var board_mid := rect.end.y - _board_height() * 0.5
-	var tag := Rect2(rect.get_center().x - width * 0.5, board_mid - height * 0.5, width, height)
+	return Rect2(rect.get_center().x - width * 0.5, board_mid - height * 0.5, width, height)
+
+
+func _draw_tag(slot: int) -> void:
+	var product_id := store().shelf[slot]
+	var detailed := _detailed()
+	var tag := tag_rect(slot)
 	var step := store().price_step(product_id)
 	var shadow := Rect2(tag.position + Vector2(0, UiPalette.SHADOW_DROP * 0.5), tag.size)
 	UiDraw.panel(self, shadow, UiPalette.SHADOW, Color.TRANSPARENT, 0, UiPalette.RADIUS_SMALL)

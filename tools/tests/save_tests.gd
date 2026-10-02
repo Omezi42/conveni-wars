@@ -12,6 +12,7 @@ func run(assert_true: Callable) -> void:
 	_test_record_counts_results_and_best_profit()
 	_test_round_trip()
 	_test_stars()
+	_test_hints()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(PATH))
 
 
@@ -46,6 +47,20 @@ func _test_stars() -> void:
 	var loaded := SaveData.new(PATH)
 	loaded.load_file()
 	_assert.call(loaded.has_star(&"idol", &"easy"), "the stars survive")
+
+
+func _test_hints() -> void:
+	var save := SaveData.new(PATH)
+	_assert.call(not save.has_shown_hint(&"forecast"), "a new save has shown no hints")
+	save.mark_hint(&"forecast")
+	save.mark_hint(&"forecast")
+	_assert.call(save.shown_hints.size() == 1, "a hint is recorded once")
+	save.save_file()
+	var loaded := SaveData.new(PATH)
+	loaded.load_file()
+	_assert.call(loaded.has_shown_hint(&"forecast"), "shown hints survive")
+	loaded.clear_hints()
+	_assert.call(not loaded.has_shown_hint(&"forecast"), "how-to clears the shown hints")
 
 
 func _test_round_trip() -> void:

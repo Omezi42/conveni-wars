@@ -63,6 +63,14 @@ func tile_index(product_id: StringName) -> int:
 	return -1
 
 
+## そのカテゴリで並び順が最初の札の番号。品ぞろえに無ければ -1
+func first_tile_in(category_id: StringName) -> int:
+	for i in _shown.size():
+		if _shown[i].category_id == category_id:
+			return i
+	return -1
+
+
 func order_rect(index: int) -> Rect2:
 	var tile := _tiles[index]
 	var bottom := tile.end.y - PAD - StockGauge.ORDER_DROP

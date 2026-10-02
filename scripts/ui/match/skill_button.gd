@@ -35,7 +35,7 @@ func setup(state: MatchState, index: int) -> void:
 	tooltip_text = "%s:%s" % [store().manager.active_name, store().manager.active_description]
 
 
-func _button_rect() -> Rect2:
+func button_rect() -> Rect2:
 	var top := FUNDS_HEIGHT + GAP
 	return Rect2(0.0, top, size.x, size.y - top - UiPalette.SHADOW_DROP)
 
@@ -43,7 +43,7 @@ func _button_rect() -> Rect2:
 func _gui_input(event: InputEvent) -> void:
 	var motion := event as InputEventMouseMotion
 	if motion != null:
-		_hover = _button_rect().has_point(motion.position)
+		_hover = button_rect().has_point(motion.position)
 		mouse_default_cursor_shape = (
 			Control.CURSOR_POINTING_HAND if _hover else Control.CURSOR_ARROW
 		)
@@ -51,7 +51,7 @@ func _gui_input(event: InputEvent) -> void:
 	var press := event as InputEventMouseButton
 	if press == null or press.button_index != MOUSE_BUTTON_LEFT:
 		return
-	_pressing = press.pressed and _button_rect().has_point(press.position)
+	_pressing = press.pressed and button_rect().has_point(press.position)
 	if _pressing:
 		match_state.use_active(store_index)
 		accept_event()
@@ -68,7 +68,7 @@ func _draw() -> void:
 		return
 	_draw_funds()
 	var manager := store().manager
-	var rect := _button_rect()
+	var rect := button_rect()
 	var usable := match_state.can_use_active(store_index)
 	var running := store().active_remaining > 0.0
 	var fill := manager.color

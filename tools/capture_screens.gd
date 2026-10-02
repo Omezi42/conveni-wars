@@ -50,14 +50,12 @@ func _run() -> void:
 	await _shot("02_manager_select_hover")
 	select.queue_free()
 
-	_session.guide_requested = true
+	_session.save.clear_hints()
 	_session.prepare_match(&"idol")
-	var guided := await _show("res://scenes/match.tscn")
-	for step in 3:
-		await _shot("02_guide_%d" % (step + 1))
-		guided._guide._advance()
-	_session.guide_requested = false
-	guided.queue_free()
+	var hinted := await _show("res://scenes/match.tscn")
+	hinted._physics_process(HintLayer.OPENING_DELAY)
+	await _shot("02_hint")
+	hinted.queue_free()
 	await process_frame
 
 	## データ分析は予報が2つ先まで出て、予報の段が低くなる(GameDesign.md 7章)
@@ -163,7 +161,7 @@ func _find(class_id: StringName) -> Node:
 	return null
 
 
-## 1試合遊んだことのある戦績(初回ガイドを出さない)
+## 1試合遊んだことのある戦績(タイトルの「はじめる」で店長選択を出す)
 func _test_save() -> SaveData:
 	var save := SaveData.new(TEST_SAVE_PATH)
 	save.wins = 1
