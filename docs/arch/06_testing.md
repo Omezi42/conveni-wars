@@ -11,3 +11,7 @@
   (ウィンドウを開くため `--headless` では撮れない)
 - テストとスクリーンショットは本物の戦績に触れないよう、`GameSession.save` をテスト用のファイル(`user://test_save.cfg`)に
   差し替え、終わったら消す
+- Web版は `bash tools/export_web.sh` で `build/web/` へ書き出し、書き出したpckでヘッドレステストを回してから、
+  ファイルごとの大きさ(そのまま / gzip)を出す
+- Webの読み込み中の絵(GameDesign.md 10章)は `application/boot_splash/image` の `assets/boot_splash.png`。
+  タイトルからボタンと歩く客を除いて `godot --path . --script res://tools/capture_boot_splash.gd` で撮る。タイトルの絵を変えたら撮り直す
