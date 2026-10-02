@@ -2,7 +2,7 @@ class_name ManagerSelectScreen
 extends Control
 ## 店長の選択(GameDesign.md 7章・9.5節)。店長は社員証の形のカードで並べる。
 ## カードをタップして選び(浮き上がって黄色い枠が付く)、開店する。CPUは残りから選ばれる(8.1節)。
-## 左下でCPUの強さ(8.3節)を選ぶ。
+## 左下でCPUの強さ(8.3節)を選ぶ。スキルは短い言葉で出し、カーソルを乗せた(タッチでは押した)カードだけ正確な効果を出す(7.1節)。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const HEADER_RECT := Rect2(490, 22, 300, 52)
@@ -132,10 +132,10 @@ func _draw() -> void:
 			rect.position.y -= LIFT
 		elif i == _hover:
 			rect.position.y -= HOVER_LIFT
-		_draw_card(rect, managers[i], i == _selected)
+		_draw_card(rect, managers[i], i == _selected, i == _hover)
 
 
-func _draw_card(rect: Rect2, manager: ManagerData, selected: bool) -> void:
+func _draw_card(rect: Rect2, manager: ManagerData, selected: bool, detailed: bool) -> void:
 	if selected:
 		var ring := rect.grow(SELECT_RING)
 		UiDraw.panel(
@@ -174,18 +174,13 @@ func _draw_card(rect: Rect2, manager: ManagerData, selected: bool) -> void:
 		rect.size.x
 	)
 	var y := rect.position.y + SECTION_Y
-	y = _draw_section(
-		rect, y, "パッシブ", UiPalette.INK_SOFT, "", manager.passive_description, PASSIVE_LINES
-	)
+	var passive := manager.passive_description if detailed else manager.passive_short
+	var active := manager.active_description if detailed else manager.active_short
+	var body_size := UiPalette.FONT_BODY if detailed else UiPalette.FONT_LARGE
+	y = _draw_section(rect, y, "パッシブ", UiPalette.INK_SOFT, "", passive, body_size, PASSIVE_LINES)
 	y += SECTION_GAP
 	_draw_section(
-		rect,
-		y,
-		"アクティブ",
-		manager.color,
-		manager.active_name,
-		manager.active_description,
-		ACTIVE_LINES
+		rect, y, "アクティブ", manager.color, manager.active_name, active, body_size, ACTIVE_LINES
 	)
 	if selected:
 		var ribbon := Rect2(
@@ -219,7 +214,14 @@ func _draw_portrait(center: Vector2, manager: ManagerData) -> void:
 
 ## 札(パッシブ/アクティブ)と、その右に名前、下に説明。描き終えた下端を返す
 func _draw_section(
-	rect: Rect2, y: float, label: String, color: Color, title: String, body: String, max_lines: int
+	rect: Rect2,
+	y: float,
+	label: String,
+	color: Color,
+	title: String,
+	body: String,
+	font_size: int,
+	max_lines: int
 ) -> float:
 	var x := rect.position.x + PAD
 	var width := rect.size.x - PAD * 2.0
@@ -235,7 +237,6 @@ func _draw_section(
 		)
 		UiDraw.text(self, title_pos, title, UiPalette.FONT_LARGE, UiPalette.INK)
 	var font := UiDraw.font()
-	var font_size := UiPalette.FONT_BODY
 	var left := HORIZONTAL_ALIGNMENT_LEFT
 	var body_top := chip.end.y + BODY_GAP + font.get_ascent(font_size)
 	draw_multiline_string(

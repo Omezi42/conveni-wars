@@ -11,10 +11,12 @@ passive_params = {
 "cost_multiplier": 0.98
 }
 passive_description = "発注の原価が−2%"
+passive_short = "仕入れが少し安い"
 active_params = {
 "count": 10
 }
 active_name = "大量発注"
 active_description = "棚に割り当てた商品すべてに、10個ずつ無料で即座に届く"
+active_short = "並べた商品が全部、10個ずつ無料で届く"
 color = Color(0.70980394, 0.39607844, 0.11372549, 1)
 portrait = ExtResource("2_icon")

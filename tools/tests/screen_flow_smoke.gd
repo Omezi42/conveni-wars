@@ -27,6 +27,7 @@ func _run() -> void:
 	_session.save = _test_save()
 	var title: Control = await _show("res://scenes/title.tscn")
 	_check(_class_of(title) == &"TitleScreen", "title scene")
+	await _check_first_start(title)
 	title.queue_free()
 
 	var select: Control = await _show("res://scenes/manager_select.tscn")
@@ -53,6 +54,27 @@ func _run() -> void:
 			printerr("screen flow FAILED: ", failure)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit(0 if _failures.is_empty() else 1)
+
+
+## 戦績が無いときの「はじめる」は店長選択を飛ばし、既定の店長で試合を始める(GameDesign.md 9.1節)
+func _check_first_start(title: Control) -> void:
+	var wins: int = _session.save.wins
+	_session.save.wins = 0
+	title._on_start()
+	await process_frame
+	await process_frame
+	_check(
+		_session.player_manager_id == _session.FIRST_MANAGER_ID,
+		"first start uses the default manager"
+	)
+	var opened := false
+	for child in root.get_children():
+		if _class_of(child) == &"MatchController":
+			opened = true
+			child.queue_free()
+	_check(opened, "first start skips the manager select")
+	_session.save.wins = wins
+	await process_frame
 
 
 ## 初回ガイドの間は開店準備の時計が止まり、とばすと動き出す(GameDesign.md 9.7節)

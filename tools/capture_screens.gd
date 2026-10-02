@@ -40,6 +40,9 @@ func _run() -> void:
 	select._start.disabled = false
 	select.queue_redraw()
 	await _shot("02_manager_select")
+	select._hover = 2
+	select.queue_redraw()
+	await _shot("02_manager_select_hover")
 	select.queue_free()
 
 	_session.guide_requested = true

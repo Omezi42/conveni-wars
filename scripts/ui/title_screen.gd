@@ -2,8 +2,10 @@ class_name TitleScreen
 extends Control
 ## タイトル(GameDesign.md 9.1節・9.5節)。夕暮れの通りに、看板を掲げた2軒のコンビニが向かい合う。
 ## 「はじめる」「遊び方」(初回ガイドを出して始める。9.7節)「設定」を置く。
+## 戦績が無いときの「はじめる」は店長選択を飛ばして試合を始める(9.1節)。文字のルール説明は置かない(9.5節)。
 
 const NEXT_SCENE := "res://scenes/manager_select.tscn"
+const MATCH_SCENE := "res://scenes/match.tscn"
 const LOGO_Y := 150.0
 const LOGO_SHADOW := Vector2(0, 7)
 const LOGO_OUTLINE := 16
@@ -13,18 +15,9 @@ const TAGLINE := "CPUの店長と、1日の利益で勝負!"
 const TAGLINE_Y := 184.0
 const TAGLINE_HEIGHT := 38.0
 const TAGLINE_PAD := 22.0
-const RULES_RECT := Rect2(420, 236, 440, 164)
-const RULE_LINE := 34.0
-const RULE_FONT := 17
-const RULES: Array[String] = [
-	"向かい合った2軒のコンビニで、同じ客を取り合う。",
-	"次に来る客層を読んで、先に発注する。",
-	"棚に並べて、値段で相手を出し抜く。",
-	"1試合5分。利益(売上−仕入れ)で勝負。",
-]
-const BUTTON_RECT := Rect2(490, 414, 300, 76)
-const HOW_TO_RECT := Rect2(490, 500, 146, 50)
-const SETTINGS_RECT := Rect2(644, 500, 146, 50)
+const BUTTON_RECT := Rect2(490, 290, 300, 76)
+const HOW_TO_RECT := Rect2(490, 386, 146, 50)
+const SETTINGS_RECT := Rect2(644, 386, 146, 50)
 const GROUND_Y := 560.0
 const CURB_HEIGHT := 40.0
 const ROAD_LINE_Y := 650.0
@@ -51,7 +44,7 @@ func _ready() -> void:
 	add_child(start)
 	start.position = BUTTON_RECT.position
 	start.size = BUTTON_RECT.size
-	start.pressed.connect(func() -> void: get_tree().change_scene_to_file(NEXT_SCENE))
+	start.pressed.connect(_on_start)
 	var how_to := _add_small_button("遊び方", HOW_TO_RECT)
 	how_to.pressed.connect(_on_how_to)
 	var settings := _add_small_button("設定", SETTINGS_RECT)
@@ -65,6 +58,14 @@ func _add_small_button(label: String, rect: Rect2) -> PopButton:
 	button.position = rect.position
 	button.size = rect.size
 	return button
+
+
+func _on_start() -> void:
+	if GameSession.is_first_match():
+		GameSession.prepare_match(GameSession.FIRST_MANAGER_ID)
+		get_tree().change_scene_to_file(MATCH_SCENE)
+		return
+	get_tree().change_scene_to_file(NEXT_SCENE)
 
 
 func _on_how_to() -> void:
@@ -86,7 +87,6 @@ func _draw() -> void:
 		_draw_store(STORE_RECTS[i], i)
 	_draw_logo()
 	_draw_tagline()
-	_draw_rules()
 
 
 func _draw_ground() -> void:
@@ -211,11 +211,3 @@ func _draw_tagline() -> void:
 	var rect := Rect2((size.x - width) * 0.5, TAGLINE_Y, width, TAGLINE_HEIGHT)
 	UiDraw.panel(self, rect, UiPalette.INK, Color.TRANSPARENT, 0, int(TAGLINE_HEIGHT * 0.5))
 	UiDraw.text_centered(self, rect, TAGLINE, UiPalette.FONT_LARGE, UiPalette.INK_ON_DARK)
-
-
-func _draw_rules() -> void:
-	UiDraw.card(self, RULES_RECT, UiPalette.PAPER)
-	var top := RULES_RECT.position.y + (RULES_RECT.size.y - RULE_LINE * RULES.size()) * 0.5
-	for i in RULES.size():
-		var line := Rect2(RULES_RECT.position.x, top + RULE_LINE * i, RULES_RECT.size.x, RULE_LINE)
-		UiDraw.text_centered(self, line, RULES[i], RULE_FONT, UiPalette.INK)

@@ -5,6 +5,8 @@ extends Node
 const PLAYER := 0
 ## 初めての試合のCPUの強さ(GameDesign.md 8.3節)
 const FIRST_CPU_PROFILE_ID := &"easy"
+## 初めての試合で、店長選択を飛ばして使う店長(GameDesign.md 9.1節)
+const FIRST_MANAGER_ID := &"veteran"
 
 var player_manager_id: StringName = &""
 var cpu_manager_id: StringName = &""
@@ -54,9 +56,14 @@ func set_cpu_profile_id(id: StringName) -> void:
 	save.save_file()
 
 
+## 戦績が1試合も無いか(タイトルの「はじめる」で店長選択を飛ばす。GameDesign.md 9.1節)
+func is_first_match() -> bool:
+	return save.games_played() == 0
+
+
 ## 初回ガイドを出すか(戦績が無いとき、または「遊び方」から始めたとき。GameDesign.md 9.7節)
 func wants_guide() -> bool:
-	return guide_requested or save.games_played() == 0
+	return guide_requested or is_first_match()
 
 
 func finish_match(result: MatchResult) -> void:

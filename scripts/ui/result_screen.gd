@@ -5,6 +5,7 @@ extends Control
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
+const SELECT_SCENE := "res://scenes/manager_select.tscn"
 const VERDICT_Y := 92.0
 const VERDICT_BURST_RADIUS := 220.0
 const VERDICT_BURST_RAYS := 20
@@ -59,8 +60,9 @@ func _ready() -> void:
 	elif _result != null and _result.winner == MatchController.CPU:
 		AudioDirector.play_se(&"lose")
 	var again := PopButton.create("もう一度", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
+	var select := PopButton.create("店長を選ぶ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
 	var title := PopButton.create("タイトルへ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
-	var buttons: Array[PopButton] = [again, title]
+	var buttons: Array[PopButton] = [again, select, title]
 	var total := BUTTON_SIZE.x * buttons.size() + BUTTON_GAP * (buttons.size() - 1)
 	for i in buttons.size():
 		add_child(buttons[i])
@@ -68,6 +70,7 @@ func _ready() -> void:
 		var x := (size.x - total) / 2.0 + i * (BUTTON_SIZE.x + BUTTON_GAP)
 		buttons[i].position = Vector2(x, BUTTON_Y)
 	again.pressed.connect(_on_again)
+	select.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
 	title.pressed.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
 
 
