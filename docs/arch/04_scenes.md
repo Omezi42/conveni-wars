@@ -5,7 +5,7 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
-| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く |
+| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。時間帯ごとの割合の下に、`StoreState` が数えた負けた理由のうち最多のものを出す |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
@@ -26,7 +26,7 @@
 | `StoreFrame` | 店の建物(看板と帯・床・入口)。棚はこの上に重ねる。自店は看板に取り逃した客の数の札を出す。相手の店は `compact` で小さく描く |
 | `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ。`customer_arrived` を間引いて「見える客」(客層の絵と欲しい物の吹き出し)を歩かせ、自店へ入ったら `ShelfView` のそのマスを光らせる。自店が取り逃した客は優先して見える客にする |
 | `PauseMenu` | 一時停止(9.9節)。画面全体を覆う幕と「続ける」「やり直す」「タイトルへ」。開いている間 `MatchController` は `advance` とCPUを呼ばない。上端の右端の `PopButton`・Esc・窓から離れたとき(`NOTIFICATION_APPLICATION_FOCUS_OUT`)に開く |
-| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績・「大口獲得!」・利益の逆転の表示 |
+| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績(1行の文言は `MatchController` が `StoreState` の負けた理由から作る)・「大口獲得!」・利益の逆転の表示 |
 
 画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・自己ベストと勝ち星が増えたか)は autoload の `GameSession` が持つ。
 戦績が無いときのタイトルの「はじめる」は、`GameSession` が既定の店長(`FIRST_MANAGER_ID`)で試合を用意して、店長選択を飛ばす。
