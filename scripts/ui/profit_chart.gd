@@ -1,7 +1,7 @@
 class_name ProfitChart
 extends Control
 ## 結果のふりかえり(GameDesign.md 9.4節)。両店の利益の折れ線に、時間帯の境目・時間帯ごとに自店へ入った客の割合・
-## 突発イベントの印(自店が大口獲得したものは★)を重ねる。
+## いちばん多い負けた理由・突発イベントの印(自店が大口獲得したものは★)を重ねる。
 
 const PAD := 18.0
 const TITLE_Y := 36.0
@@ -10,7 +10,7 @@ const LEGEND_GAP := 6.0
 const LEGEND_SPACING := 16.0
 const PLOT_TOP := 78.0
 const PLOT_LEFT := 74.0
-const PLOT_BOTTOM_SPACE := 118.0
+const PLOT_BOTTOM_SPACE := 142.0
 const LINE_WIDTH := 3.0
 const GRID_WIDTH := 1.5
 const DASH := Vector2(6, 5)
@@ -22,7 +22,9 @@ const MARK_LINE := Color(1.0, 0.69, 0.13, 0.4)
 const STRIP_GAP := 8.0
 const STRIP_HEIGHT := 28.0
 const SHARE_Y := 30.0
-const NOTE_Y := 56.0
+## 割合の下の、その時間帯でいちばん多い負けた理由(GameDesign.md 9.4節)
+const REASON_Y := 54.0
+const NOTE_Y := 80.0
 ## ベースラインから文字の見た目の中央までの高さ(文字の大きさに対する割合)
 const TEXT_MID := 0.35
 ## 下向きの三角の上辺の高さ(半径に対する割合)
@@ -195,6 +197,16 @@ func _draw_bands(plot: Rect2) -> void:
 			"-" if share < 0.0 else "%d%%" % roundi(share * 100.0),
 			UiPalette.FONT_HEAD,
 			_share_color(share),
+			HORIZONTAL_ALIGNMENT_CENTER,
+			strip.size.x
+		)
+		var store := _result.stores[MatchController.PLAYER]
+		UiDraw.text(
+			self,
+			Vector2(x, strip.end.y + REASON_Y),
+			LossText.short_label(store.losses_in_band(bands[i].id)),
+			UiPalette.FONT_BODY,
+			UiPalette.INK_SOFT,
 			HORIZONTAL_ALIGNMENT_CENTER,
 			strip.size.x
 		)

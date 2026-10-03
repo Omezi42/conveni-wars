@@ -275,9 +275,10 @@ func _band_report(band_id: StringName) -> String:
 	var report := "%sの客 %d%%" % [match_state.db.band(band_id).display_name, roundi(share * 100.0)]
 	if share >= balance.read_hit_share:
 		_fx.big("読み的中!", UiPalette.GOOD, true, FxLayer.CUTIN_SECONDS)
-	elif share <= balance.read_miss_share and store.most_lost_category(band_id) != &"":
-		var category := match_state.db.category(store.most_lost_category(band_id))
-		report += "  次は%sを並べよう" % category.display_name
+	elif share <= balance.read_miss_share:
+		var advice := LossText.advice(store.losses_in_band(band_id), store, match_state.db)
+		if advice != "":
+			report += "  " + advice
 	return report
 
 

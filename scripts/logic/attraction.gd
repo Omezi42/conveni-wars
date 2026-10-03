@@ -9,6 +9,9 @@ class Pick:
 	var product_id: StringName
 	var weight: int
 	var score: float
+	var price_modifier: float
+	## 在庫のあるマスのうち最大の棚の倍率
+	var bonus: float
 
 
 class Evaluation:
@@ -17,6 +20,19 @@ class Evaluation:
 	var score := 0.0
 	## 買う順番(カテゴリの重みが大きい順 → 点が高い順)
 	var picks: Array[Pick] = []
+	## パッシブの倍率
+	var appeal := 1.0
+
+	## 値段補正・棚の倍率を外した魅力度(GameDesign.md 2.7節)
+	func score_with(use_price: bool, use_bonus: bool) -> float:
+		var total := 0.0
+		for pick in picks:
+			total += (
+				pick.weight
+				* (pick.price_modifier if use_price else 1.0)
+				* (pick.bonus if use_bonus else 1.0)
+			)
+		return total * appeal
 
 
 static func evaluate(
@@ -31,26 +47,26 @@ static func evaluate(
 		var weight := customer_type.weight_of(db.product(product_id).category_id)
 		if weight <= 0:
 			continue
-		var score := (
-			weight
-			* price_modifier_in_store(store, product_id, customer_type, db.balance)
-			* shelf_result.multipliers[slot]
-		)
 		# 同じ商品を複数のマスに置いても、数えるのは点が最も高い1マスだけ
 		var pick: Pick = best.get(product_id)
 		if pick == null:
 			pick = Pick.new()
 			pick.product_id = product_id
 			pick.weight = weight
+			pick.price_modifier = price_modifier_in_store(
+				store, product_id, customer_type, db.balance
+			)
 			best[product_id] = pick
-		pick.score = maxf(pick.score, score)
+		pick.bonus = maxf(pick.bonus, shelf_result.multipliers[slot])
+		pick.score = weight * pick.price_modifier * pick.bonus
 
 	var evaluation := Evaluation.new()
 	for pick: Pick in best.values():
 		evaluation.picks.append(pick)
 		evaluation.score += pick.score
 	evaluation.picks.sort_custom(_pick_before)
-	evaluation.score *= ManagerSkills.appeal_multiplier(store.manager, customer_type.id)
+	evaluation.appeal = ManagerSkills.appeal_multiplier(store.manager, customer_type.id)
+	evaluation.score *= evaluation.appeal
 	return evaluation
 
 
