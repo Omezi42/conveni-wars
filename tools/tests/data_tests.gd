@@ -19,11 +19,13 @@ func _test_counts() -> void:
 	_assert.call(db.balance != null, "balance.tres should load")
 	_assert.call(db.categories.size() == 12, "12 categories")
 	_assert.call(db.products.size() == 16, "16 products")
-	_assert.call(db.customer_types.size() == 10, "10 customer types")
+	_assert.call(db.customer_types.size() == 12, "12 customer types")
 	_assert.call(db.bands.size() == 4, "4 time bands")
 	_assert.call(db.combos.size() == 5, "5 combos")
 	_assert.call(db.events.size() == 4, "4 events")
 	_assert.call(db.managers.size() == 4, "4 managers")
+	var weathers := db.sorted_weathers().map(func(w: WeatherData) -> StringName: return w.id)
+	_assert.call(weathers == [&"sunny", &"rain", &"heat", &"cold"], "4 weathers in order")
 	var levels := db.sorted_cpu_profiles().map(func(p: CpuProfile) -> StringName: return p.id)
 	_assert.call(levels == [&"easy", &"standard", &"hard"], "3 cpu levels, weakest first")
 
@@ -47,6 +49,11 @@ func _test_references_resolve() -> void:
 		_assert.call(db.customer_type(event.customer_type_id) != null, "%s customer" % event.id)
 		for band_id in event.band_ids:
 			_assert.call(db.band(band_id) != null, "%s band %s" % [event.id, band_id])
+	for weather: WeatherData in db.weathers.values():
+		for type_id: StringName in weather.mix_bonus:
+			_assert.call(db.customer_type(type_id) != null, "%s adds %s" % [weather.id, type_id])
+		for event_id: StringName in weather.event_weights:
+			_assert.call(db.event(event_id) != null, "%s weights %s" % [weather.id, event_id])
 
 
 func _test_match_totals() -> void:
@@ -62,9 +69,13 @@ func _test_match_totals() -> void:
 
 func _test_event_customers_are_not_in_any_band() -> void:
 	var db := T.db()
+	var only_special: Array[StringName] = []
 	for event: EventData in db.events.values():
+		only_special.append(event.customer_type_id)
+	for weather: WeatherData in db.weathers.values():
+		only_special.append_array(weather.mix_bonus.keys())
+	for type_id in only_special:
 		for band: TimeBandData in db.bands.values():
 			_assert.call(
-				not band.mix.has(event.customer_type_id),
-				"%s's customers should come only with the event" % event.id
+				not band.mix.has(type_id), "%s should come only with an event or weather" % type_id
 			)

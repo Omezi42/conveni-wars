@@ -67,7 +67,7 @@ func _test_replay_matches(original: MatchState) -> MatchState:
 		kinds.has_all(expected), "the player's orders, shelf, skill and auto order are recorded"
 	)
 	_assert.call(T.near(record.step, STEP), "the tick length is recorded")
-	var m := MatchState.new(original.db, record.manager_ids, record.seed_value)
+	var m := MatchState.new(original.db, record.manager_ids, record.seed_value, record.weather_id)
 	var cpus: Array[CpuPlayer] = [CpuPlayer.new(m, 1, m.db.cpu_profile(record.cpu_profile_id))]
 	var runner := MatchRunner.new(m, cpus)
 	runner.replay = record.commands

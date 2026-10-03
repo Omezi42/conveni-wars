@@ -72,9 +72,10 @@ func estimate_demand(seconds: float) -> Dictionary:
 		if overlap <= 0.0:
 			continue
 		var customers := overlap * band.customer_count / band.duration * _profile.assumed_share
-		var total := float(band.mix_total())
-		for type_id: StringName in band.mix:
-			var share := int(band.mix[type_id]) / total
+		var mix := _match.band_mix(band)
+		var total := float(MatchState.mix_total(mix))
+		for type_id: StringName in mix:
+			var share := int(mix[type_id]) / total
 			_add_units(demand, _db.customer_type(type_id), customers * share, 1, 1)
 	var event_start := _seen_start
 	var reacted := _match.elapsed >= _seen_at + _profile.event_reaction_delay

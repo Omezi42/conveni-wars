@@ -15,6 +15,7 @@ var customer_types: Dictionary = {}
 var bands: Dictionary = {}
 var combos: Dictionary = {}
 var events: Dictionary = {}
+var weathers: Dictionary = {}
 var managers: Dictionary = {}
 var cpu_profiles: Dictionary = {}
 
@@ -24,6 +25,7 @@ var _sorted_managers: Array[ManagerData] = []
 var _sorted_customer_types: Array[CustomerTypeData] = []
 var _sorted_categories: Array[CategoryData] = []
 var _sorted_events: Array[EventData] = []
+var _sorted_weathers: Array[WeatherData] = []
 var _sorted_cpu_profiles: Array[CpuProfile] = []
 
 
@@ -42,6 +44,7 @@ func load_all() -> void:
 	bands = _load_folder("bands")
 	combos = _load_folder("combos")
 	events = _load_folder("events")
+	weathers = _load_folder("weather")
 	managers = _load_folder("managers")
 	cpu_profiles = _load_folder("cpu")
 	_sort_all()
@@ -65,6 +68,10 @@ func band(id: StringName) -> TimeBandData:
 
 func event(id: StringName) -> EventData:
 	return events.get(id) as EventData
+
+
+func weather(id: StringName) -> WeatherData:
+	return weathers.get(id) as WeatherData
 
 
 func manager(id: StringName) -> ManagerData:
@@ -103,6 +110,10 @@ func sorted_categories() -> Array[CategoryData]:
 
 func sorted_events() -> Array[EventData]:
 	return _sorted_events
+
+
+func sorted_weathers() -> Array[WeatherData]:
+	return _sorted_weathers
 
 
 ## CPUの強さ(弱い順。GameDesign.md 8.3節)
@@ -186,6 +197,10 @@ func _sort_all() -> void:
 	_sorted_events.assign(events.values())
 	_sorted_events.sort_custom(
 		func(a: EventData, b: EventData) -> bool: return String(a.id) < String(b.id)
+	)
+	_sorted_weathers.assign(weathers.values())
+	_sorted_weathers.sort_custom(
+		func(a: WeatherData, b: WeatherData) -> bool: return a.order < b.order
 	)
 	_sorted_cpu_profiles.assign(cpu_profiles.values())
 	_sorted_cpu_profiles.sort_custom(

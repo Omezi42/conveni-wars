@@ -14,6 +14,7 @@
   - `save=名前` で記録を残し、`compare=名前` でその記録と店長の勝率を並べる。`set=店長.active.キー=値` / `set=balance.キー=値` で
     `.tres` を書き換えずにスキルや balance の数値を試せる
   - 店長だけを測るときは `managers` を付ける(1回およそ5分)
+  - 天気(GameDesign.md 12章)は `weather=天気id` で1つに絞れる。付けなければ天気ごとに回して、天気ごとに判定する
 - UI(`scripts/ui/`)は `tools/tests/screen_flow_smoke.gd` が実際のシーンを起こし、タイトル →(戦績なしは店長選択を飛ばす)店長選択 → ヒント →
   試合(両店ともCPUに操作させて早回し)→ 結果 を通す。最後に起動スモークでパースエラーを拾う
 - 画面の見た目は `godot --path . --script res://tools/capture_screens.gd -- <出力フォルダ>` でスクリーンショットを撮り、人が見る

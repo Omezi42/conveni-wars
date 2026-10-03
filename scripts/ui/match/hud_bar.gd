@@ -20,6 +20,12 @@ const DAY_BAR_Y := 42.0
 const DAY_BAR_HEIGHT := 12.0
 const DAY_MARKER := Vector2(6, 7)
 const FUTURE_FADE := 0.55
+## 時間帯の名前の右に並べる天気の絵と名前(GameDesign.md 12.3節)
+const WEATHER_GAP := 12.0
+const WEATHER_ICON := 28.0
+const WEATHER_NAME_GAP := 4.0
+## ベースラインから文字の見た目の中央までの高さ(文字の大きさに対する割合)
+const TEXT_MID := 0.35
 ## 残り時間の札(時間帯の札の右端に入れる)
 const REMAIN_WIDTH := 116.0
 const REMAIN_INSET := 6.0
@@ -71,8 +77,20 @@ func _draw_clock() -> void:
 	var label := band.display_name
 	var label_pos := Vector2(CLOCK_RECT.position.x + DAY_X, CLOCK_RECT.position.y + DAY_LABEL_Y)
 	UiDraw.text(self, label_pos, label, UiPalette.FONT_LARGE, UiPalette.INK)
+	var weather_x := label_pos.x + UiDraw.text_width(label, UiPalette.FONT_LARGE) + WEATHER_GAP
+	_draw_weather(Vector2(weather_x, label_pos.y))
 	_draw_day_bar()
 	_draw_remaining()
+
+
+## base は天気の絵の左端と、名前のベースライン
+func _draw_weather(base: Vector2) -> void:
+	var weather := match_state.weather
+	var icon_mid := base.y - UiPalette.FONT_LARGE * TEXT_MID
+	var center := Vector2(base.x + WEATHER_ICON * 0.5, icon_mid)
+	UiDraw.weather_icon(self, center, WEATHER_ICON, weather)
+	var name_pos := Vector2(base.x + WEATHER_ICON + WEATHER_NAME_GAP, base.y)
+	UiDraw.text(self, name_pos, weather.display_name, UiPalette.FONT_BODY, UiPalette.INK_SOFT)
 
 
 ## 1日の帯。時間帯ごとに空の色で塗り分け、まだ来ていない時間帯は薄くし、いまの位置に印を置く

@@ -16,12 +16,16 @@ var active_counts: Array[int] = []
 var _db: GameDatabase
 var _rng: RandomNumberGenerator
 var _duration: float
+var _weather: WeatherData
 var _announced: Array[bool] = []
 
 
-func _init(database: GameDatabase, rng: RandomNumberGenerator, store_count: int) -> void:
+func _init(
+	database: GameDatabase, rng: RandomNumberGenerator, store_count: int, weather: WeatherData
+) -> void:
 	_db = database
 	_rng = rng
+	_weather = weather
 	_duration = database.match_duration()
 	_announced.resize(store_count)
 	active_counts.resize(store_count)
@@ -104,9 +108,22 @@ func _schedule_after(from_time: float) -> void:
 			return
 		var candidates := _events_in_band(_db.band_at(start).id)
 		if not candidates.is_empty():
-			next_event = candidates[_rng.randi_range(0, candidates.size() - 1)]
+			next_event = _pick(candidates)
 			next_start = start
 			return
+
+
+## 天気の重みに比例して選ぶ(GameDesign.md 12.2節)
+func _pick(candidates: Array[EventData]) -> EventData:
+	var total := 0
+	for data in candidates:
+		total += _weather.event_weight(data.id)
+	var roll := _rng.randi_range(1, total)
+	for data in candidates:
+		roll -= _weather.event_weight(data.id)
+		if roll <= 0:
+			return data
+	return candidates.back()
 
 
 func _events_in_band(band_id: StringName) -> Array[EventData]:

@@ -1,6 +1,6 @@
 class_name MatchRecord
 extends RefCounted
-## 試合の再生に要るもの(GameDesign.md 10章、Architecture.md 3.5節)。種・店長・CPUの強さ・1tickの秒数・
+## 試合の再生に要るもの(GameDesign.md 10章、Architecture.md 3.5節)。種・店長・天気・CPUの強さ・1tickの秒数・
 ## 1店ぶんのコマンドの列と、時間帯の始まりごとのスナップショットを持つ。
 
 enum Kind { ORDER, ASSIGN, UNASSIGN, PRICE, ACTIVE, AUTO_ORDER }
@@ -42,6 +42,8 @@ class Snapshot:
 var seed_value: int
 var manager_ids: Array[StringName] = []
 var cpu_profile_id: StringName = &""
+## 試合を作るときに指定した天気。空なら種から引いた(再生でも同じく空で渡し、乱数の順を揃える)
+var weather_id: StringName = &""
 ## 1回の advance の秒数(最初の advance で決まる)
 var step := 0.0
 ## コマンドを記録する店。記録しなければ NOT_RECORDING

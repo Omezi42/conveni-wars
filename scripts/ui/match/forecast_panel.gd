@@ -156,15 +156,16 @@ func _draw_demand(rect: Rect2, demand: Dictionary) -> void:
 		UiDraw.text(self, name_pos, name, name_size, ink, HORIZONTAL_ALIGNMENT_CENTER, slot)
 
 
-## カテゴリ → 欲しがられる度合い(客層の割合 × 欲しい重み の合計)
+## カテゴリ → 欲しがられる度合い(天気を足した客層の割合 × 欲しい重み の合計)
 func _demand(band: TimeBandData) -> Dictionary:
 	var demand := {}
-	var total := float(band.mix_total())
+	var mix := match_state.band_mix(band)
+	var total := float(MatchState.mix_total(mix))
 	if total <= 0.0:
 		return demand
-	for type_id: StringName in band.mix:
+	for type_id: StringName in mix:
 		var customer := db().customer_type(type_id)
-		var share: float = band.mix[type_id] / total
+		var share: float = mix[type_id] / total
 		for category_id: StringName in customer.wants:
 			demand[category_id] = (
 				demand.get(category_id, 0.0) + share * customer.weight_of(category_id)

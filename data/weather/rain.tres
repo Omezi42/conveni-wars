@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WeatherData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weather_data.gd" id="1_rain"]
+
+[resource]
+script = ExtResource("1_rain")
+id = &"rain"
+display_name = "雨"
+order = 1
+chance = 2
+mix_bonus = {
+&"rain_shelter": 3
+}
+event_weights = {
+&"shower": 3
+}
+sky_tint = Color(0.5, 0.55, 0.62, 0.55)
+cutin_text = "日用品と飲料がよく売れる"

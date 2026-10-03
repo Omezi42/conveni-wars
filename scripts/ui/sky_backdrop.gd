@@ -71,8 +71,14 @@ func set_sky(top: Color, bottom: Color, night: bool, instant := false) -> void:
 	_blend = 0.0
 
 
-func set_band(band: TimeBandData, instant := false) -> void:
-	set_sky(band.sky_top, band.sky_bottom, band.night, instant)
+## weather があれば、その天気の色を混ぜる(GameDesign.md 12.3節)
+func set_band(band: TimeBandData, instant := false, weather: WeatherData = null) -> void:
+	var top := band.sky_top
+	var bottom := band.sky_bottom
+	if weather != null:
+		top = weather.tinted(top)
+		bottom = weather.tinted(bottom)
+	set_sky(top, bottom, band.night, instant)
 
 
 func _process(delta: float) -> void:

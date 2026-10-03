@@ -2,11 +2,12 @@ extends SceneTree
 ## CPU対CPUを多数回まわし、店長ごとの勝率(95%信頼区間つき)・利益の分布・突発イベントが売上に占める割合と、
 ## 偏った戦い方(固定の棚・値段の固定・買い溜め)のCPUの勝率を出して GameDesign.md 1.5節の調整の目標を判定する(Architecture.md 6章)。
 ## godot --headless --path . --script res://tools/simulate.gd --
-##     [games=100] [strategy=96] [jobs=8] [managers] [save=名前] [compare=名前] [set=...]
+##     [games=100] [strategy=96] [jobs=8] [managers] [weather=天気id] [save=名前] [compare=名前] [set=...]
 ##   games    店長の組み合わせ(異なる2人)ごとの試合数。席の入れ替えで半分ずつ、同じシードの一覧で回す
 ##   strategy 偏った戦い方ごとの試合数。16通りの店長の組み合わせへ均等に割り振る
 ##   jobs     並列に動かすGodotのプロセス数(既定はCPUのコア数)
 ##   managers 店長の勝率だけを出す(偏った戦い方のCPUを回さない)
+##   weather  その天気(GameDesign.md 12章)だけを回す。付けなければ天気ごとに回し、天気ごとに目標を判定する
 ##   save / compare  結果を logs/sim/<名前>.jsonl へ保存する / 保存した結果と店長の勝率を並べる
 ##   set      スキルや balance.tres の数値を試しに変える(.tres は書き換えない)。カンマで複数。
 ##            例: set=idol.active.duration=8,saver.active.duration=40,balance.choice_exponent=2.5
@@ -27,6 +28,7 @@ const POLL_MSEC := 200
 var _db: GameDatabase
 var _profile: CpuProfile
 var _managers: Array[ManagerData]
+var _weather_ids: Array[StringName] = []
 
 
 func _initialize() -> void:
@@ -34,6 +36,11 @@ func _initialize() -> void:
 	_db = GameDatabase.get_default()
 	_profile = _db.cpu_profile(PROFILE_ID)
 	_managers = _db.sorted_managers()
+	if options.has("weather"):
+		_weather_ids.append(StringName(options["weather"]))
+	else:
+		for weather in _db.sorted_weathers():
+			_weather_ids.append(weather.id)
 	if options.has("set"):
 		_override(options["set"])
 	var jobs := _jobs(options)
@@ -56,10 +63,24 @@ func _initialize() -> void:
 	if options.has("compare"):
 		baseline = _read(_record_path(options["compare"]))
 	var report := Report.new(_managers, PROFILE_ID)
-	var ok := report.print_all(records, baseline)
+	var ok := true
+	for weather_id in _weather_ids:
+		print("######## weather: %s" % _db.weather(weather_id).display_name)
+		ok = (
+			report.print_all(_in_weather(records, weather_id), _in_weather(baseline, weather_id))
+			and ok
+		)
 	print("== %s" % ("ALL TARGETS OK" if ok else "SOME TARGETS NG"))
 	print("elapsed %.1fs (%d processes)" % [(Time.get_ticks_msec() - started) / 1000.0, processes])
 	quit()
+
+
+## 天気を持たない古い記録は晴れとして扱う
+func _in_weather(records: Array, weather_id: StringName) -> Array:
+	return records.filter(
+		func(record: Dictionary) -> bool:
+			return StringName(record.get("weather", "sunny")) == weather_id
+	)
 
 
 func _parse(args: PackedStringArray) -> Dictionary:
@@ -88,6 +109,15 @@ func _override(spec: String) -> void:
 
 ## 回す試合の一覧。順番もシードも引数だけで決まるので、どのプロセスでも同じ一覧になる
 func _jobs(options: Dictionary) -> Array[Dictionary]:
+	var jobs: Array[Dictionary] = []
+	for weather_id in _weather_ids:
+		for job in _weather_jobs(options):
+			job["weather"] = String(weather_id)
+			jobs.append(job)
+	return jobs
+
+
+func _weather_jobs(options: Dictionary) -> Array[Dictionary]:
 	var jobs: Array[Dictionary] = []
 	var per_seat := int(options.get("games", DEFAULT_GAMES)) / 2
 	for a in _managers.size():
@@ -155,7 +185,7 @@ func _run_parallel(job_count: int, processes: int) -> Array:
 
 func _play(job: Dictionary) -> Dictionary:
 	var ids: Array[StringName] = [job["ids"][0], job["ids"][1]]
-	var m := MatchState.new(_db, ids, job["seed"])
+	var m := MatchState.new(_db, ids, job["seed"], StringName(job["weather"]))
 	var kind: int = job["kind"]
 	var first := (
 		CpuPlayer.new(m, 0, _profile)

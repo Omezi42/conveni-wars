@@ -28,6 +28,7 @@ const MINUTES_PER_HOUR := 60
 var db: GameDatabase
 var balance: BalanceConfig
 var rng := RandomNumberGenerator.new()
+var weather: WeatherData
 var elapsed: float
 ## advance を呼んだ回数(コマンドの記録と再生に使う。Architecture.md 3.5節)
 var tick := 0
@@ -43,18 +44,26 @@ var _band_index := -1
 var _band_spawned := 0
 
 
-func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: int) -> void:
+## weather_id が空なら、天気を乱数で引く(GameDesign.md 12.1節)
+func _init(
+	database: GameDatabase,
+	manager_ids: Array[StringName],
+	seed_value: int,
+	weather_id: StringName = &""
+) -> void:
 	db = database
 	balance = database.balance
 	rng.seed = seed_value
+	weather = database.weather(weather_id) if weather_id != &"" else _draw_weather()
 	record = MatchRecord.new(seed_value, manager_ids)
+	record.weather_id = weather_id
 	elapsed = 0.0
 	_duration = database.match_duration()
 	for i in STORE_COUNT:
 		stores.append(StoreState.new(database, i, database.manager(manager_ids[i])))
 	for i in STORE_COUNT:
 		stores[i].rival = opponent(i)
-	events = EventScheduler.new(database, rng, STORE_COUNT)
+	events = EventScheduler.new(database, rng, STORE_COUNT, weather)
 	history = MatchHistory.new(balance.history_interval)
 	for store in stores:
 		_open_store(store)
@@ -187,6 +196,21 @@ func clock_minutes() -> int:
 	return band.clock_start * MINUTES_PER_HOUR + int(span * band_progress())
 
 
+## 時間帯の客層の割合に天気の客層を足したもの(客層id → 重み)。TimeBandData.mix を直接読まずにこれを使う
+func band_mix(band: TimeBandData) -> Dictionary:
+	var mix := band.mix.duplicate()
+	for type_id: StringName in weather.mix_bonus:
+		mix[type_id] = int(mix.get(type_id, 0)) + int(weather.mix_bonus[type_id])
+	return mix
+
+
+static func mix_total(mix: Dictionary) -> int:
+	var total := 0
+	for type_id: StringName in mix:
+		total += int(mix[type_id])
+	return total
+
+
 func opponent(store_index: int) -> StoreState:
 	return stores[(store_index + 1) % STORE_COUNT]
 
@@ -252,7 +276,7 @@ func deliver(store_index: int, product_id: StringName, count: int) -> void:
 
 ## 同じ状態の別の試合(スナップショット用。シグナル・記録・MatchHistory は引き継がない)
 func duplicate_state() -> MatchState:
-	var copy := MatchState.new(db, record.manager_ids, record.seed_value)
+	var copy := MatchState.new(db, record.manager_ids, record.seed_value, weather.id)
 	copy.rng.state = rng.state
 	copy.elapsed = elapsed
 	copy.tick = tick
@@ -421,12 +445,26 @@ func _spawn_band_customers(target: int) -> void:
 
 
 func _pick_customer_type(band: TimeBandData) -> CustomerTypeData:
-	var roll := rng.randi_range(1, band.mix_total())
-	for type_id: StringName in band.mix:
-		roll -= int(band.mix[type_id])
+	var mix := band_mix(band)
+	var roll := rng.randi_range(1, mix_total(mix))
+	for type_id: StringName in mix:
+		roll -= int(mix[type_id])
 		if roll <= 0:
 			return db.customer_type(type_id)
-	return db.customer_type(band.mix.keys().back())
+	return db.customer_type(mix.keys().back())
+
+
+func _draw_weather() -> WeatherData:
+	var weathers := db.sorted_weathers()
+	var total := 0
+	for data in weathers:
+		total += data.chance
+	var roll := rng.randi_range(1, total)
+	for data in weathers:
+		roll -= data.chance
+		if roll <= 0:
+			return data
+	return weathers.back()
 
 
 ## 客に店を選ばせて買い物をさせ、入った店の番号を返す(帰った客は -1)
@@ -506,6 +544,7 @@ func _finish() -> void:
 	result = MatchResult.new()
 	result.stores = stores
 	result.winner = _decide_winner()
+	result.weather = weather
 	history.record_final(_duration, stores)
 	result.history = history
 	result.record = record

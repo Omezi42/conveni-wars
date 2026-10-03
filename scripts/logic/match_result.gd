@@ -8,4 +8,5 @@ const DRAW := -1
 var winner: int = DRAW
 var stores: Array[StoreState] = []
 var history: MatchHistory
+var weather: WeatherData
 var record: MatchRecord

@@ -4,18 +4,22 @@
 
 | クラス | 責務 |
 |---|---|
-| `MatchState` | 試合の唯一の状態。時計・時間帯・両店・乱数・客の到着・イベント。コマンドとシグナルの窓口 |
+| `MatchState` | 試合の唯一の状態。時計・時間帯・天気・両店・乱数・客の到着・イベント。コマンドとシグナルの窓口 |
 | `StoreState` | 1店ぶんの状態。資金・売上・仕入れに払った額(`spent`。利益 = 売上 − `spent`)・客層ごとの来店数・取り逃した客の数・廃棄数・棚(マス9つぶんの商品id。空は `&""`)・商品ごとの在庫・発注中・値段段階・値段の冷却・自動発注がオンの商品・店長・スキルの効果時間 |
 | `Attraction` | 魅力度の計算(静的関数だけ)。店と客層を受け取り、棚の倍率・値段補正・いちばん欲しいカテゴリが無いときの倍率・パッシブを掛けた点を返す(GameDesign.md 2.4節・4章・5.2節) |
 | `LossReason` | 負けた理由の判定(静的関数だけ。GameDesign.md 2.7節)。両店の `Attraction.Evaluation` を比べ、理由とカテゴリを返す。理由ごとの人数は `LossReason.Tally` に数える |
 | `ShelfBonus` | 棚の倍率の計算(静的関数だけ)。目玉・コーナー・セットを判定し、マスごとの倍率と成立したボーナスの一覧を返す |
 | `EventScheduler` | 突発イベントの抽選・予告・客の到着(GameDesign.md 11章)。`MatchState` が持つ |
 | `MatchHistory` | 試合の記録(GameDesign.md 9.4節のふりかえり)。`BalanceConfig.history_interval` 秒ごとの両店の利益と、突発イベントの開始時刻・id・店ごとの客数を持つ。`MatchState` が `history` として持ち、`MatchResult.history` で結果画面へ渡す |
-| `MatchRecord` | 試合の再生に要るもの(GameDesign.md 10章):種・両店の店長・CPUの強さ・1tickの秒数・プレイヤーのコマンドの列(何tick目・種類・商品id・マス/値段段階/自動発注のオンオフ)と、時間帯の始まりごとのスナップショット(3.5節)。`MatchState` が `record` として持ち、`MatchResult.record` で結果画面へ渡す |
+| `MatchRecord` | 試合の再生に要るもの(GameDesign.md 10章):種・両店の店長・天気・CPUの強さ・1tickの秒数・プレイヤーのコマンドの列(何tick目・種類・商品id・マス/値段段階/自動発注のオンオフ)と、時間帯の始まりごとのスナップショット(3.5節)。`MatchState` が `record` として持ち、`MatchResult.record` で結果画面へ渡す |
 | `MatchRunner` | 1tickの進め方を1か所にまとめる:そのtickの記録済みコマンドを流す(再生のときだけ)→ `advance` → CPUを順に `update` → 時間帯が変わったらスナップショット。試合画面・再生・計算し直しが同じ順で進むようにするため |
 | `CpuReview` | 結果画面の「CPUならどうしたか」(9.4節)。時間帯ごとにスナップショットから計算し直し、差の大きい時間帯の文を作る。`process(usec)` で時間の予算ぶんだけ進め、終わったら true を返す |
 | `ManagerSkills` | パッシブの補正値の問い合わせ(発注の原価・魅力度・安売りの効き・予報・配送の秒数)と、アクティブの発動・効果時間の管理(7章)。値札ロック中の強気の売値は `StoreState.sell_price()` が問い合わせる |
 
+- 天気(GameDesign.md 12章)は `MatchState.new()` の `weather_id` で指定する。空なら、ほかの乱数を引く前に `rng` で出やすさに比例して引く
+  (同じ種なら同じ天気)。時間帯の客層の割合は `TimeBandData.mix` を直接読まず、天気の `mix_bonus` を足した
+  `MatchState.band_mix(band)` を使う(客の生成・CPU・予報・シミュレーションの戦略のすべて)。
+  `EventScheduler` はイベントを天気の `event_weights` に比例して選ぶ
 - 試合の開始時に、両店へ `BalanceConfig.opening_shelf` を割り当て、その商品の在庫を無料のロットとして入れる(1.6節)。
   `spent` に数えないので利益は0から始まる
 - `StoreState` は時間帯ごとの来店数と、時間帯ごと・カテゴリごとの取り逃した客の数を持つ(9.3節の時間帯の成績)。
