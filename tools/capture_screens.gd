@@ -17,6 +17,8 @@ const MATCH_SHOTS: Array[float] = [1.0, 12.0, 70.0, 75.8, 77.6, 150.8, 152.6, 16
 const SEED := 20260929
 ## 予報が2段の時刻と、突発イベントの予告が出ている時刻
 const ANALYST_SHOTS: Array[float] = [3.0, 30.0]
+## 天気ごとに撮る時刻(開店のカットインと、昼の空と予報。GameDesign.md 12.3節)
+const WEATHER_SHOTS: Array[float] = [1.0, 80.0]
 
 var _out_dir := ""
 var _session: Node
@@ -78,6 +80,8 @@ func _run() -> void:
 	analyst.queue_free()
 	await process_frame
 
+	await _capture_weathers()
+
 	_session.prepare_match(&"idol")
 	_session.match_seed = SEED
 	var controller := await _show("res://scenes/match.tscn")
@@ -94,6 +98,23 @@ func _run() -> void:
 	print("captured to ", _out_dir)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit()
+
+
+func _capture_weathers() -> void:
+	for weather in GameDatabase.get_default().sorted_weathers():
+		_session.prepare_match(&"veteran")
+		_session.match_seed = SEED
+		_session.weather_id = weather.id
+		var controller := await _show("res://scenes/match.tscn")
+		var state: MatchState = controller.match_state
+		var player_cpu := CpuPlayer.new(state, PLAYER, state.db.cpu_profile(CPU_PROFILE_ID))
+		for at in WEATHER_SHOTS:
+			while state.elapsed < at:
+				_step(controller, player_cpu)
+			await _shot("02_weather_%s_%ds" % [weather.id, int(at)])
+		controller.queue_free()
+		await process_frame
+	_session.weather_id = &""
 
 
 func _capture_match(controller: Control) -> void:

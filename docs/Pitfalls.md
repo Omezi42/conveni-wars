@@ -35,3 +35,8 @@
 
 - **テストやスクリーンショットで試合を最後まで回すと、`GameSession.finish_match()` が戦績を保存する。**
   本物の `user://save.cfg` を書き換えないよう、`GameSession.save` をテスト用のファイルの `SaveData` に差し替えてから回す
+
+## 検証
+
+- **新しいワークツリーには `.godot/imported` が無く、check.sh のテストがコンパイルに失敗したまま上限の秒数まで固まる。**
+  check.sh の取り込みだけでは足りないことがある。先に `godot --headless --path . --import` を1回回す(終わりぎわに落ちるが、取り込みは済んでいる)
