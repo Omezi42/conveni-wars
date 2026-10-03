@@ -1,7 +1,7 @@
 class_name ProfitChart
 extends Control
 ## 結果のふりかえり(GameDesign.md 9.4節)。両店の利益の折れ線に、時間帯の境目・時間帯ごとに自店へ入った客の割合・
-## 突発イベントの印(自店が大口獲得したものは★)を重ねる。
+## 突発イベントの印(自店が大口獲得したものは★)を重ねる。下段に「CPUならどうしたか」(CpuReview)の文を出す。
 
 const PAD := 18.0
 const TITLE_Y := 36.0
@@ -11,6 +11,12 @@ const LEGEND_SPACING := 16.0
 const PLOT_TOP := 78.0
 const PLOT_LEFT := 74.0
 const PLOT_BOTTOM_SPACE := 118.0
+## 下段の「CPUならどうしたか」の高さ・見出しと1行目の位置・時間帯ごとの間隔・2行目までの間隔
+const REVIEW_SPACE := 128.0
+const REVIEW_HEAD_Y := 22.0
+const REVIEW_FIRST_Y := 50.0
+const REVIEW_ITEM := 44.0
+const REVIEW_DETAIL_Y := 21.0
 const LINE_WIDTH := 3.0
 const GRID_WIDTH := 1.5
 const DASH := Vector2(6, 5)
@@ -30,6 +36,9 @@ const TRIANGLE_TOP := 0.6
 const GRID_DARKEN := 0.1
 const MARK_OUTLINE := 1.0
 
+## 計算し終わるまでは「計算中…」を出す。null なら下段を描かない
+var review: CpuReview
+
 var _result: MatchResult
 
 
@@ -44,9 +53,8 @@ func _draw() -> void:
 	_draw_legend()
 	if _result == null or _result.history == null or _result.history.times.is_empty():
 		return
-	var plot := Rect2(
-		PLOT_LEFT, PLOT_TOP, size.x - PLOT_LEFT - PAD, size.y - PLOT_TOP - PLOT_BOTTOM_SPACE
-	)
+	var bottom := PLOT_BOTTOM_SPACE + REVIEW_SPACE
+	var plot := Rect2(PLOT_LEFT, PLOT_TOP, size.x - PLOT_LEFT - PAD, size.y - PLOT_TOP - bottom)
 	var span := _profit_span()
 	_draw_grid(plot, span)
 	_draw_band_lines(plot)
@@ -54,6 +62,7 @@ func _draw() -> void:
 	for i in range(MatchState.STORE_COUNT - 1, -1, -1):
 		_draw_line(plot, span, i)
 	_draw_bands(plot)
+	_draw_review()
 
 
 ## 右上の「― 自店 ― 相手」
@@ -222,3 +231,44 @@ func _share_color(share: float) -> Color:
 	if share >= 0.0 and share <= balance.read_miss_share:
 		return UiPalette.BAD
 	return UiPalette.INK
+
+
+## 「CPUならどうしたか」:時間帯ごとに「何をしていれば」と「差・取り逃しの変化」の2行
+func _draw_review() -> void:
+	if review == null:
+		return
+	var top := size.y - REVIEW_SPACE
+	_dashed(PAD, size.x - PAD, top)
+	UiDraw.text(
+		self,
+		Vector2(PAD, top + REVIEW_HEAD_Y),
+		"CPUならどうしたか",
+		UiPalette.FONT_SMALL,
+		UiPalette.INK_SOFT
+	)
+	var y := top + REVIEW_FIRST_Y
+	if not review.is_done():
+		UiDraw.text(self, Vector2(PAD, y), "計算中…", UiPalette.FONT_BODY, UiPalette.INK_SOFT)
+		return
+	var shown := review.shown()
+	if shown.is_empty():
+		UiDraw.text(self, Vector2(PAD, y), "どの時間帯もCPUの手と互角以上!", UiPalette.FONT_BODY, UiPalette.GOOD)
+		return
+	var db := GameDatabase.get_default()
+	for finding in shown:
+		var names: PackedStringArray = []
+		for product_id in finding.product_ids:
+			names.append(db.product(product_id).display_name)
+		var action := "発注と値付けを変えていれば"
+		if not names.is_empty():
+			action = "%sを並べていれば" % "と".join(names)
+		var head := "%s:%s" % [finding.band.display_name, action]
+		UiDraw.text(self, Vector2(PAD, y), head, UiPalette.FONT_BODY, UiPalette.INK)
+		var detail := (
+			"差 +%s(取り逃し %d人→%d人)"
+			% [UiDraw.yen(finding.gain), finding.lost_before, finding.lost_after]
+		)
+		UiDraw.text(
+			self, Vector2(PAD, y + REVIEW_DETAIL_Y), detail, UiPalette.FONT_SMALL, UiPalette.GOOD
+		)
+		y += REVIEW_ITEM

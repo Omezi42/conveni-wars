@@ -44,7 +44,7 @@ func _test_history_follows_the_whole_match() -> void:
 	var band_visits := 0
 	for store in m.stores:
 		for band in m.db.sorted_bands():
-			band_visits += store.visitors_in_band(band.id)
+			band_visits += int(store.visitors_by_band.get(band.id, 0))
 	var band_total := 0
 	for band in m.db.sorted_bands():
 		band_total += band.customer_count

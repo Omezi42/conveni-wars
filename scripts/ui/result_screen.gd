@@ -46,8 +46,11 @@ const BEST_OFFSET := Vector2(-18, -16)
 const BADGE_GAP := 6.0
 const BUTTON_Y := 622.0
 const BUTTON_GAP := 28.0
+## 「CPUならどうしたか」の計算に1フレームで使う時間(マイクロ秒)
+const REVIEW_BUDGET_USEC := 25000
 
 var _result: MatchResult
+var _chart: ProfitChart
 
 
 func _ready() -> void:
@@ -68,11 +71,14 @@ func _ready() -> void:
 		var x := (size.x - total) / 2.0 + i * (BUTTON_SIZE.x + BUTTON_GAP)
 		buttons[i].position = Vector2(x, BUTTON_Y)
 	if _result != null:
-		var chart := ProfitChart.new()
-		add_child(chart)
-		chart.size = CHART_SIZE
-		chart.position = Vector2((size.x - CHART_SIZE.x) / 2.0, RECEIPT_Y)
-		chart.setup(_result)
+		_chart = ProfitChart.new()
+		add_child(_chart)
+		_chart.size = CHART_SIZE
+		_chart.position = Vector2((size.x - CHART_SIZE.x) / 2.0, RECEIPT_Y)
+		_chart.setup(_result)
+		if _result.record != null and not _result.record.snapshots.is_empty():
+			var db := GameDatabase.get_default()
+			_chart.review = CpuReview.new(_result, db, MatchController.PLAYER)
 	again.pressed.connect(_on_again)
 	select.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
 	title.pressed.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
@@ -80,6 +86,9 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	queue_redraw()
+	if _chart != null and _chart.review != null and not _chart.review.is_done():
+		if _chart.review.process(REVIEW_BUDGET_USEC):
+			_chart.queue_redraw()
 
 
 func _draw() -> void:

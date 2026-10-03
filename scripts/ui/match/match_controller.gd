@@ -41,6 +41,7 @@ const BAND_CUTIN_DARKEN := 0.25
 var match_state: MatchState
 
 var _cpu: CpuPlayer
+var _runner: MatchRunner
 var _sky: SkyBackdrop
 var _selection := UiSelection.new()
 var _own_shelf: ShelfView
@@ -67,6 +68,9 @@ func _ready() -> void:
 	var db := GameDatabase.get_default()
 	match_state = MatchState.new(db, GameSession.manager_ids(), GameSession.match_seed)
 	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.cpu_profile_id()))
+	match_state.record.cpu_profile_id = GameSession.cpu_profile_id()
+	_runner = MatchRunner.new(match_state, [_cpu])
+	_runner.take_snapshots = true
 	_build()
 	_connect_signals()
 	_build_hints()
@@ -84,8 +88,7 @@ func _physics_process(delta: float) -> void:
 			GameSession.finish_match(match_state.result)
 			get_tree().change_scene_to_file(RESULT_SCENE)
 		return
-	match_state.advance(delta)
-	_cpu.update(delta)
+	_runner.step(delta)
 
 
 func _process(delta: float) -> void:

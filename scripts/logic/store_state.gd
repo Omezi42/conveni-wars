@@ -49,6 +49,8 @@ var visitors_by_band: Dictionary = {}
 var lost_by_band: Dictionary = {}
 ## 時間帯id → { 取り逃した客がいちばん欲しがったカテゴリid → 人数 }
 var lost_categories_by_band: Dictionary = {}
+## 時間帯id → { 商品id → 在庫ありで棚に並んでいた秒数 }
+var shelf_seconds_by_band: Dictionary = {}
 var wasted_count := 0
 var order_count := 0
 ## マスごとの商品id。空は EMPTY
@@ -197,8 +199,8 @@ func most_lost_category(band_id: StringName) -> StringName:
 
 ## 時間帯の客(突発イベントの客を除く)のうち、両店に入った客に占めるこの店の割合。どちらにも入っていなければ -1
 func band_share(band_id: StringName) -> float:
-	var own := visitors_in_band(band_id)
-	var total := own + rival.visitors_in_band(band_id)
+	var own := _visitors_in_band(band_id)
+	var total := own + rival._visitors_in_band(band_id)
 	if total == 0:
 		return -1.0
 	return float(own) / total
@@ -294,10 +296,10 @@ func record_visit(type_id: StringName, band_id: StringName) -> void:
 	visitors[type_id] = int(visitors.get(type_id, 0)) + 1
 	visitor_total += 1
 	if band_id != &"":
-		visitors_by_band[band_id] = visitors_in_band(band_id) + 1
+		visitors_by_band[band_id] = _visitors_in_band(band_id) + 1
 
 
-func visitors_in_band(band_id: StringName) -> int:
+func _visitors_in_band(band_id: StringName) -> int:
 	return int(visitors_by_band.get(band_id, 0))
 
 
@@ -306,6 +308,37 @@ func record_lost(band_id: StringName, category_id: StringName) -> void:
 	var counts: Dictionary = lost_categories_by_band.get_or_add(band_id, {})
 	counts[category_id] = int(counts.get(category_id, 0)) + 1
 	lost_total += 1
+
+
+## 同じ状態の別の店(スナップショット用。rival は MatchState がつなぎ直す)
+func duplicate_state() -> StoreState:
+	var copy := StoreState.new(_db, index, manager)
+	copy.funds = funds
+	copy.sales = sales
+	copy.spent = spent
+	copy.event_sales = event_sales
+	copy.visitors = visitors.duplicate()
+	copy.visitor_total = visitor_total
+	copy.lost_total = lost_total
+	copy.visitors_by_band = visitors_by_band.duplicate()
+	copy.lost_by_band = lost_by_band.duplicate()
+	copy.lost_categories_by_band = lost_categories_by_band.duplicate(true)
+	copy.shelf_seconds_by_band = shelf_seconds_by_band.duplicate(true)
+	copy.wasted_count = wasted_count
+	copy.order_count = order_count
+	copy.shelf = shelf.duplicate()
+	for order in pending:
+		copy.pending.append(PendingOrder.new(order.product_id, order.count, order.remaining))
+	copy.active_used = active_used
+	copy.active_remaining = active_remaining
+	for product_id: StringName in _lots:
+		var lots: Array = []
+		for lot: Lot in _lots[product_id]:
+			lots.append(Lot.new(lot.count, lot.expires_at))
+		copy._lots[product_id] = lots
+	copy._price_steps = _price_steps.duplicate()
+	copy._price_cooldowns = _price_cooldowns.duplicate()
+	return copy
 
 
 func _refresh() -> void:

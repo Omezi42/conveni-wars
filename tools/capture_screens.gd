@@ -90,6 +90,11 @@ func _run() -> void:
 	_session.last_new_best = true
 	_session.last_new_star = &"hard"
 	result.queue_redraw()
+	await _shot("98_result_reviewing")
+	var started := Time.get_ticks_msec()
+	while not result._chart.review.is_done():
+		await process_frame
+	print("review took %d ms" % (Time.get_ticks_msec() - started))
 	await _shot("99_result")
 	print("captured to ", _out_dir)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))

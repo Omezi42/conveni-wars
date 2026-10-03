@@ -28,11 +28,14 @@ var db: GameDatabase
 var balance: BalanceConfig
 var rng := RandomNumberGenerator.new()
 var elapsed: float
+## advance を呼んだ回数(コマンドの記録と再生に使う。Architecture.md 3.5節)
+var tick := 0
 var stores: Array[StoreState] = []
 var events: EventScheduler
 var history: MatchHistory
 var finished := false
 var result: MatchResult
+var record: MatchRecord
 
 var _duration: float
 var _band_index := -1
@@ -43,6 +46,7 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 	db = database
 	balance = database.balance
 	rng.seed = seed_value
+	record = MatchRecord.new(seed_value, manager_ids)
 	elapsed = 0.0
 	_duration = database.match_duration()
 	for i in STORE_COUNT:
@@ -61,10 +65,15 @@ func _init(database: GameDatabase, manager_ids: Array[StringName], seed_value: i
 func advance(delta: float) -> void:
 	if finished:
 		return
+	if record.step <= 0.0:
+		record.step = delta
+	tick += 1
 	elapsed += delta
+	var band_id := current_band().id
 	for store in stores:
 		_update_stock(store, delta)
 		_update_timers(store, delta)
+		_record_shelf_time(store, band_id, delta)
 	_update_band_customers()
 	_update_events()
 	history.record(minf(elapsed, _duration), stores)
@@ -85,6 +94,7 @@ func order(store_index: int, product_id: StringName) -> bool:
 	store.order_count += 1
 	var seconds := ManagerSkills.delivery_seconds(store.manager, balance)
 	store.pending.append(StoreState.PendingOrder.new(product_id, balance.lot_size, seconds))
+	record.add(tick, store_index, MatchRecord.Kind.ORDER, product_id, 0)
 	ordered.emit(store_index, product_id)
 	return true
 
@@ -96,6 +106,7 @@ func assign(store_index: int, product_id: StringName, slot: int) -> bool:
 	if store.shelf[slot] != product_id:
 		store.shelf[slot] = product_id
 		store.mark_dirty()
+	record.add(tick, store_index, MatchRecord.Kind.ASSIGN, product_id, slot)
 	return true
 
 
@@ -107,6 +118,7 @@ func unassign(store_index: int, slot: int) -> bool:
 		return false
 	store.shelf[slot] = StoreState.EMPTY
 	store.mark_dirty()
+	record.add(tick, store_index, MatchRecord.Kind.UNASSIGN, &"", slot)
 	return true
 
 
@@ -119,6 +131,7 @@ func set_price_step(store_index: int, product_id: StringName, step: int) -> bool
 	if store.price_step(product_id) == step:
 		return false
 	store.set_price_step_internal(product_id, step, balance.price_cooldown)
+	record.add(tick, store_index, MatchRecord.Kind.PRICE, product_id, step)
 	price_changed.emit(store_index, product_id, step)
 	return true
 
@@ -127,6 +140,7 @@ func use_active(store_index: int) -> bool:
 	if not can_use_active(store_index):
 		return false
 	stores[store_index].active_used = true
+	record.add(tick, store_index, MatchRecord.Kind.ACTIVE, &"", 0)
 	ManagerSkills.activate(self, store_index)
 	skill_used.emit(store_index)
 	return true
@@ -229,6 +243,26 @@ func deliver(store_index: int, product_id: StringName, count: int) -> void:
 	_deliver_at(stores[store_index], product_id, count, elapsed)
 
 
+## 同じ状態の別の試合(スナップショット用。シグナル・記録・MatchHistory は引き継がない)
+func duplicate_state() -> MatchState:
+	var copy := MatchState.new(db, record.manager_ids, record.seed_value)
+	copy.rng.state = rng.state
+	copy.elapsed = elapsed
+	copy.tick = tick
+	copy.finished = finished
+	copy._band_index = _band_index
+	copy._band_spawned = _band_spawned
+	copy.record.step = record.step
+	copy.record.store_index = MatchRecord.NOT_RECORDING
+	copy.stores.clear()
+	for store in stores:
+		copy.stores.append(store.duplicate_state())
+	for i in STORE_COUNT:
+		copy.stores[i].rival = copy.opponent(i)
+	copy.events.copy_from(events)
+	return copy
+
+
 # --- 内部 ---
 
 
@@ -268,6 +302,14 @@ func _update_stock(store: StoreState, delta: float) -> void:
 	var removed := store.remove_expired(elapsed)
 	for product_id: StringName in removed:
 		wasted.emit(store.index, product_id, removed[product_id])
+
+
+## 在庫ありで棚に並んでいる商品の秒数を、いまの時間帯へ足す(9.4節の「CPUならどうしたか」)
+func _record_shelf_time(store: StoreState, band_id: StringName, delta: float) -> void:
+	var seconds: Dictionary = store.shelf_seconds_by_band.get_or_add(band_id, {})
+	for product_id in store.shelf_product_ids():
+		if store.stock(product_id) > 0:
+			seconds[product_id] = float(seconds.get(product_id, 0.0)) + delta
 
 
 func _update_timers(store: StoreState, delta: float) -> void:
@@ -403,6 +445,7 @@ func _finish() -> void:
 	result.winner = _decide_winner()
 	history.record_final(_duration, stores)
 	result.history = history
+	result.record = record
 	match_ended.emit(result)
 
 

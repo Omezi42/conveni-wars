@@ -80,6 +80,17 @@ func finish_active() -> void:
 	active_event = null
 
 
+## other と同じ状態にする(スナップショット用。乱数は自分のものを使い続ける)
+func copy_from(other: EventScheduler) -> void:
+	next_event = other.next_event
+	next_start = other.next_start
+	active_event = other.active_event
+	active_start = other.active_start
+	active_spawned = other.active_spawned
+	active_counts = other.active_counts.duplicate()
+	_announced = other._announced.duplicate()
+
+
 func _schedule_after(from_time: float) -> void:
 	var balance := _db.balance
 	next_event = null

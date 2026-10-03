@@ -3,6 +3,9 @@ extends RefCounted
 ## CPU(GameDesign.md 8.2節、Architecture.md 5章)。プレイヤーと同じコマンドと、画面に出ている情報
 ## (客層予報・イベントの予告・相手の棚と値段)だけを使う。乱数は MatchState のものを使う。
 
+## false ならアクティブスキルを使わない(結果画面の計算し直しでプレイヤーの代わりに動かすとき)
+var use_skill := true
+
 var _match: MatchState
 var _db: GameDatabase
 var _index: int
@@ -22,6 +25,22 @@ func _init(match_state: MatchState, store_index: int, profile: CpuProfile) -> vo
 	_profile = profile
 
 
+func store_index() -> int:
+	return _index
+
+
+## 内部の状態ごと写し、match_state を操作する別のCPUにする(スナップショット用)
+func duplicate_for(match_state: MatchState) -> CpuPlayer:
+	var copy := CpuPlayer.new(match_state, _index, _profile)
+	copy.use_skill = use_skill
+	copy._think_timer = _think_timer
+	copy._skill_at = _skill_at
+	copy._seen_start = _seen_start
+	copy._seen_at = _seen_at
+	copy._read_type = _read_type
+	return copy
+
+
 func update(delta: float) -> void:
 	if _match.finished:
 		return
@@ -35,7 +54,8 @@ func update(delta: float) -> void:
 	_order(demand, keep_limit)
 	_place()
 	_price()
-	_use_skill_when_ready()
+	if use_skill:
+		_use_skill_when_ready()
 
 
 ## いまから seconds 秒のうちに自店で売れると見込むカテゴリごとの個数

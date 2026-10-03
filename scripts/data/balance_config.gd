@@ -44,6 +44,10 @@ extends Resource
 ## 時間帯の客のうち自店に入った割合がこれ以上なら「読み的中!」、これ以下なら外れ(9.3節)
 @export var read_hit_share: float
 @export var read_miss_share: float
+## 「CPUならどうしたか」に出す、自店 − 相手 の差がよくなった額の最小(9.4節)
+@export var review_min_gain: int
+## 「CPUならどうしたか」で、CPUのほうが在庫ありで長く並べた商品として名前を出す秒数の差
+@export var review_shelf_seconds: float
 
 @export_group("突発イベント(11章)")
 @export var event_interval_min: float
