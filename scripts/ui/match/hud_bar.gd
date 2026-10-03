@@ -1,7 +1,7 @@
 class_name HudBar
 extends MatchPart
 ## 上端(GameDesign.md 9.2節・9.5節)。左=時間帯・1日の進み・残り時間を1枚の札に、
-## 右=両店の利益と綱引きのバー。
+## 右=両店の利益と綱引きのバーと、その下にいまの時間帯の自店の客の割合の札。
 ## 売上は数字が回って追いつき、増えた瞬間に少し大きくなる。
 
 const ROLL_SPEED := 6.0
@@ -40,6 +40,10 @@ const SALES_FONT := 36
 const PROFIT_LABEL := "の利益"
 const TUG_Y := 62.0
 const TUG_HEIGHT := 12.0
+## いまの時間帯の自店の客の割合の札(綱引きのバーの下の中央。9.2節)
+const SHARE_SIZE := Vector2(96, 28)
+const SHARE_TOP := 80.0
+const SHARE_LABEL := "客 %d%%"
 
 var _shown_profit: Array[float] = [0.0, 0.0]
 var _bump: Array[float] = [0.0, 0.0]
@@ -144,6 +148,7 @@ func _draw_scoreboard() -> void:
 	var cell := Rect2(center - Vector2.ONE * VS_RADIUS, Vector2.ONE * VS_RADIUS * 2.0)
 	UiDraw.text_centered(self, cell, "VS", UiPalette.FONT_BODY, UiPalette.INK)
 	_draw_tug()
+	_draw_live_share(center.x)
 
 
 ## 店名は札の外側の端に、利益は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
@@ -222,3 +227,26 @@ func _draw_remaining() -> void:
 	UiDraw.text(self, label_pos, label, UiPalette.FONT_SMALL, white, center, rect.size.x)
 	var value_rect := rect.grow_individual(0, -REMAIN_VALUE_TOP, 0, 0)
 	UiDraw.text_centered(self, value_rect, value, REMAIN_FONT, white)
+
+
+## 時間帯の始めの少ない人数では割合が大きく揺れるため、両店に入った客が基準の人数に届くまで出さない
+func _draw_live_share(center_x: float) -> void:
+	var band_id := match_state.current_band().id
+	var own := match_state.stores[MatchController.PLAYER]
+	var visitors := own.visitors_in_band(band_id) + own.rival.visitors_in_band(band_id)
+	if visitors < match_state.balance.live_share_min_visitors:
+		return
+	var share := own.band_share(band_id)
+	var fill := UiPalette.PAPER
+	var ink := UiPalette.INK
+	match match_state.balance.share_grade(share):
+		1:
+			fill = UiPalette.GOOD
+			ink = UiPalette.INK_ON_DARK
+		-1:
+			fill = UiPalette.BAD
+			ink = UiPalette.INK_ON_DARK
+	var rect := Rect2(Vector2(center_x - SHARE_SIZE.x / 2.0, SHARE_TOP), SHARE_SIZE)
+	UiDraw.card(self, rect, fill, UiPalette.RADIUS_SMALL, UiPalette.OUTLINE_THIN)
+	var label := SHARE_LABEL % roundi(share * 100.0)
+	UiDraw.text_centered(self, rect, label, UiPalette.FONT_BODY, ink)

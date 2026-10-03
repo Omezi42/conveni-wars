@@ -5,7 +5,7 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
-| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く |
+| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。時間帯ごとの割合の下に、`StoreState` が数えた負けた理由のうち最多のものを出す |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
@@ -15,18 +15,18 @@
 
 | 部品 | 内容 |
 |---|---|
-| `HudBar` | 左=時間帯・天気の絵と名前・1日の進み・残り時間の1枚の札、右=両店の利益の綱引き |
+| `HudBar` | 左=時間帯・天気の絵と名前・1日の進み・残り時間の1枚の札、右=両店の利益の綱引きと、その下にいまの時間帯の自店の客の割合の札 |
 | `ForecastPanel` | 次の時間帯に欲しがられるカテゴリ(`MatchState.band_mix` の割合×欲しい重みの合計の大きい順)を商品の絵とカテゴリ名で。自店の棚に在庫ありで並ぶカテゴリにチェック。突発イベントの予告中は枠全体を予告に切り替える |
 | `ShelfView` | 3×3の棚。自店は操作可でボーナスの札と、右の列に在庫数・廃棄バー・入荷待ち・発注ボタンまで出す。マスを別のマスへドラッグすると同じ商品を写す。相手は絵と値札だけの表示(同じ部品を使い分ける) |
-| `PriceMenu` | 値段の3段階のボタン |
+| `PriceMenu` | 値段の3段階のボタン・棚から外す・自動発注の切り替え |
 | `CatalogView` | 品ぞろえの帯。棚に出ていない商品の札だけをカテゴリ順に並べ、在庫数・廃棄バー・入荷待ち・発注ボタンを出す。札の幅は並べる数で帯を割る。札から棚へドラッグする(またはタップで選ぶ) |
-| `StockGauge` | 廃棄バー・入荷待ちの札・発注ボタンの描き方と、発注ボタンの乗せた・押した・成否の光りの状態(RefCounted)。`ShelfView` と `CatalogView` が1つずつ持つ |
+| `StockGauge` | 廃棄バー・入荷待ちの札・発注ボタンの描き方と、発注ボタンの乗せた・押した・成否の光りの状態(RefCounted)。自動発注がオンの商品は「自動」と緑の枠で描く。`ShelfView` と `CatalogView` が1つずつ持つ |
 | `BonusHelp` | 自店の看板の「?」。乗せるか押すと棚の上にボーナスの見方を重ねる |
 | `SkillButton` | アクティブスキルと、その左の資金の硬貨 |
 | `StoreFrame` | 店の建物(看板と帯・床・入口)。棚はこの上に重ねる。自店は看板に取り逃した客の数の札を出す。相手の店は `compact` で小さく描く |
 | `CustomerFlow` | 2軒のあいだの通りと、両店の入口へ流れ込む人の流れ。`customer_arrived` を間引いて「見える客」(客層の絵と欲しい物の吹き出し)を歩かせ、自店へ入ったら `ShelfView` のそのマスを光らせる。自店が取り逃した客は優先して見える客にする |
 | `PauseMenu` | 一時停止(9.9節)。画面全体を覆う幕と「続ける」「やり直す」「タイトルへ」。開いている間 `MatchController` は `advance` とCPUを呼ばない。上端の右端の `PopButton`・Esc・窓から離れたとき(`NOTIFICATION_APPLICATION_FOCUS_OUT`)に開く |
-| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績・「大口獲得!」・利益の逆転の表示 |
+| `FxLayer` | 自店の「+¥160」の飛び出し・時間帯のカットインと終わった時間帯の成績(1行の文言は `MatchController` が `StoreState` の負けた理由から作る)・「大口獲得!」・利益の逆転の表示 |
 
 画面間の受け渡し(選んだ店長・CPUの強さ・試合結果・自己ベストと勝ち星が増えたか)は autoload の `GameSession` が持つ。
 戦績が無いときのタイトルの「はじめる」は、`GameSession` が既定の店長(`FIRST_MANAGER_ID`)で試合を用意して、店長選択を飛ばす。

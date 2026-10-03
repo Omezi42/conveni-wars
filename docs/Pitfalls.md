@@ -38,5 +38,8 @@
 
 ## 検証
 
-- **新しいワークツリーには `.godot/imported` が無く、check.sh のテストがコンパイルに失敗したまま上限の秒数まで固まる。**
-  check.sh の取り込みだけでは足りないことがある。先に `godot --headless --path . --import` を1回回す(終わりぎわに落ちるが、取り込みは済んでいる)
+- **`--import` は登録をしないまま終わることがある。**新しい class_name を足したあと check.sh が `--import` を回したのに、
+  ログがバナー1行だけでキャッシュに載らず、テストが `Identifier "…" not declared` で止まった(手で `--import` を回し直すと通った)。
+  check.sh は import のあとに登録を確かめ直し、載っていなければ Godot を回さず NG にする。そうなったら手で `--import` を回す
+- **`--script` で動かすスクリプトはコンパイルに失敗すると `quit()` に届かず、終わらない。**check.sh はログに
+  `Parse Error` などが出た時点で止めるので、時間切れまで待たない

@@ -127,7 +127,9 @@ func _capture_match(controller: Control) -> void:
 			_step(controller, player_cpu)
 		await _shot("%02d_match_%ds" % [index, int(at)])
 		index += 1
-	var slot := state.stores[PLAYER].shelf.find(state.stores[PLAYER].shelf_product_ids()[0])
+	var auto_id := state.stores[PLAYER].shelf_product_ids()[0]
+	state.set_auto_order(PLAYER, auto_id, true)
+	var slot := state.stores[PLAYER].shelf.find(auto_id)
 	controller._on_own_slot_pressed(slot)
 	await _shot("%02d_match_price_menu" % index)
 	controller._price_menu.close()
