@@ -8,8 +8,8 @@ extends SceneTree
 ##   jobs     並列に動かすGodotのプロセス数(既定はCPUのコア数)
 ##   managers 店長の勝率だけを出す(偏った戦い方のCPUを回さない)
 ##   save / compare  結果を logs/sim/<名前>.jsonl へ保存する / 保存した結果と店長の勝率を並べる
-##   set      スキルの数値を試しに変える(.tres は書き換えない)。カンマで複数。
-##            例: set=idol.active.duration=8,saver.active.duration=40
+##   set      スキルや balance.tres の数値を試しに変える(.tres は書き換えない)。カンマで複数。
+##            例: set=idol.active.duration=8,saver.active.duration=40,balance.choice_exponent=2.5
 
 const Strategies := preload("res://tools/sim_strategies.gd")
 const Report := preload("res://tools/sim_report.gd")
@@ -74,13 +74,16 @@ func _override(spec: String) -> void:
 	for item in spec.split(","):
 		var pair := item.split("=", true, 1)
 		var path := pair[0].split(".")
+		print("set %s = %s" % [pair[0], pair[1]])
+		if path[0] == "balance":
+			_db.balance.set(path[1], str_to_var(pair[1]))
+			continue
 		var params := (
 			_db.manager(StringName(path[0])).active_params
 			if path[1] == "active"
 			else _db.manager(StringName(path[0])).passive_params
 		)
 		params[path[2]] = str_to_var(pair[1])
-		print("set %s = %s" % [pair[0], pair[1]])
 
 
 ## 回す試合の一覧。順番もシードも引数だけで決まるので、どのプロセスでも同じ一覧になる
