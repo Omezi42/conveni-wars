@@ -228,9 +228,9 @@ func _share(band_id: StringName) -> float:
 
 
 func _share_color(share: float) -> Color:
-	var balance := GameDatabase.get_default().balance
-	if share >= balance.read_hit_share:
-		return UiPalette.GOOD
-	if share >= 0.0 and share <= balance.read_miss_share:
-		return UiPalette.BAD
+	match GameDatabase.get_default().balance.share_grade(share):
+		1:
+			return UiPalette.GOOD
+		-1:
+			return UiPalette.BAD
 	return UiPalette.INK

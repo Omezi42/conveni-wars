@@ -271,11 +271,11 @@ func _band_report(band_id: StringName) -> String:
 	var share := store.band_share(band_id)
 	if share < 0.0:
 		return ""
-	var balance := match_state.balance
 	var report := "%sの客 %d%%" % [match_state.db.band(band_id).display_name, roundi(share * 100.0)]
-	if share >= balance.read_hit_share:
+	var grade := match_state.balance.share_grade(share)
+	if grade > 0:
 		_fx.big("読み的中!", UiPalette.GOOD, true, FxLayer.CUTIN_SECONDS)
-	elif share <= balance.read_miss_share:
+	elif grade < 0:
 		var advice := LossText.advice(store.losses_in_band(band_id), store, match_state.db)
 		if advice != "":
 			report += "  " + advice

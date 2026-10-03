@@ -8,6 +8,8 @@ const CPU := 1
 const SHOW_SECONDS := 6.0
 const OPENING_DELAY := 3.0
 const SKILL_REMAINING := 150.0
+## 同じ商品を手でこの回数発注したら、自動発注のヒントを出す
+const AUTO_ORDER_AFTER := 3
 
 const OPENING := &"forecast"
 const LOST := &"lost_customer"
@@ -15,6 +17,7 @@ const LOW_STOCK := &"low_stock"
 const EVENT := &"event"
 const UNDERCUT := &"undercut"
 const SKILL := &"skill"
+const AUTO_ORDER := &"auto_order"
 
 const PAD := Vector2(14, 10)
 const MARGIN := 8.0
@@ -53,6 +56,8 @@ var _shown_at := 0.0
 var _start_elapsed := 0.0
 ## 商品id → 前の画面での在庫(少なくなった瞬間を拾う)
 var _last_stock: Dictionary = {}
+## 商品id → 自動発注がオフのときに発注した回数
+var _manual_orders: Dictionary = {}
 
 
 func _ready() -> void:
@@ -66,6 +71,7 @@ func setup(state: MatchState, data: SaveData) -> void:
 	state.customer_lost.connect(_on_customer_lost)
 	state.event_announced.connect(_on_event_announced)
 	state.price_changed.connect(_on_price_changed)
+	state.ordered.connect(_on_ordered)
 
 
 func _process(_delta: float) -> void:
@@ -118,6 +124,22 @@ func _check_low_stock() -> void:
 					LOW_STOCK, text, _order_button.bind(product_id), _has_pending.bind(product_id)
 				)
 			)
+
+
+func _on_ordered(store_index: int, product_id: StringName) -> void:
+	if store_index != PLAYER or store().auto_orders.has(product_id):
+		return
+	var count: int = _manual_orders.get(product_id, 0) + 1
+	_manual_orders[product_id] = count
+	if count >= AUTO_ORDER_AFTER and store().is_on_shelf(product_id):
+		_push(
+			Hint.new(
+				AUTO_ORDER,
+				"タップして自動発注にできる",
+				_price_tag.bind(product_id),
+				func() -> bool: return store().auto_orders.has(product_id)
+			)
+		)
 
 
 func _on_customer_lost(store_index: int, category_id: StringName) -> void:
