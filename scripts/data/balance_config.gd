@@ -39,6 +39,8 @@ extends Resource
 @export var delivery_seconds: float
 @export var waste_seconds: float
 @export var low_stock_threshold: int
+## 自動発注:在庫 + 入荷待ちがこの数以下になったら1ロット発注する(6.5節)
+@export var auto_order_threshold: int
 
 @export_group("結果と演出(9章)")
 ## ふりかえりの利益を記録する間隔(秒)
@@ -46,6 +48,8 @@ extends Resource
 ## 時間帯の客のうち自店に入った割合がこれ以上なら「読み的中!」、これ以下なら外れ(9.3節)
 @export var read_hit_share: float
 @export var read_miss_share: float
+## いまの時間帯の割合を上端に出し始める、両店に入った客の人数(9.2節)
+@export var live_share_min_visitors: int
 
 @export_group("突発イベント(11章)")
 @export var event_interval_min: float
@@ -61,3 +65,12 @@ extends Resource
 
 func price_step_count() -> int:
 	return price_step_rates.size()
+
+
+## 時間帯の客の割合が「読み的中」なら 1、「外れ」なら -1、そのあいだか客がいなければ 0(9.3節)
+func share_grade(share: float) -> int:
+	if share >= read_hit_share:
+		return 1
+	if share >= 0.0 and share <= read_miss_share:
+		return -1
+	return 0
