@@ -12,6 +12,8 @@ extends Resource
 @export_group("来店(2章)")
 ## 店を選ぶ確率を魅力度の何乗に比例させるか
 @export var choice_exponent: float
+## いちばん欲しいカテゴリ(重みが最大のもの)が棚に1つも無い店の魅力度に掛ける倍率
+@export var missing_top_multiplier: float
 
 @export_group("棚(4章)")
 @export var center_slot: int

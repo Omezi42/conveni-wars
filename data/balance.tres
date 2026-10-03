@@ -8,6 +8,7 @@ opening_shelf = Array[StringName]([&"green_tea", &"salmon_onigiri", &"karaage_st
 opening_lots = 1
 starting_funds = 30000
 choice_exponent = 2.0
+missing_top_multiplier = 0.0
 center_slot = 4
 center_multiplier = 1.5
 corner_multiplier = 1.3

@@ -56,6 +56,12 @@ func _test_lost_customers_are_counted_only_when_attraction_is_zero() -> void:
 	_assert.call(m.stores[1].lost_total == 0, "store 1 served the student")
 
 	T.stock_slot(m, 0, &"ice_bar", 1)
+	m._serve_customer(T.customer(&"student"), false)
+	_assert.call(
+		m.stores[0].lost_total == 2, "ice alone lacks the student's top categories: still lost"
+	)
+
+	T.stock_slot(m, 0, &"karaage_stick", 2, 500)
 	var before := m.stores[0].lost_total
 	for i in 50:
 		m._serve_customer(T.customer(&"student"), false)

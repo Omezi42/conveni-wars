@@ -46,10 +46,15 @@ static func evaluate(
 		pick.score = maxf(pick.score, score)
 
 	var evaluation := Evaluation.new()
+	var has_top := false
+	var top_weight := customer_type.top_weight()
 	for pick: Pick in best.values():
 		evaluation.picks.append(pick)
 		evaluation.score += pick.score
+		has_top = has_top or pick.weight == top_weight
 	evaluation.picks.sort_custom(_pick_before)
+	if not has_top:
+		evaluation.score *= db.balance.missing_top_multiplier
 	evaluation.score *= ManagerSkills.appeal_multiplier(store.manager, customer_type.id)
 	return evaluation
 
