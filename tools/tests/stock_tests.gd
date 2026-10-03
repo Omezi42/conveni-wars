@@ -31,7 +31,10 @@ func _test_opening_shelf_is_stocked_for_free() -> void:
 		_assert.call(store.profit() == 0 and store.funds == 30000, "the opening stock is free")
 		_assert.call(store.shelf[StoreState.SLOT_COUNT - 1] == StoreState.EMPTY, "bottom row empty")
 	var onigiri := m.stores[0].oldest_lot(&"salmon_onigiri")
-	_assert.call(T.near(onigiri.expires_at, 60.0), "opening stock spoils counted from the opening")
+	_assert.call(
+		T.near(onigiri.expires_at, m.balance.waste_seconds),
+		"opening stock spoils counted from the opening"
+	)
 	m.advance(1.0)
 	_assert.call(m.stores[0].sales + m.stores[1].sales > 0, "customers buy from the first second")
 
@@ -81,10 +84,11 @@ func _test_perishable_lot_is_wasted_after_waste_time() -> void:
 	m.deliver(0, &"green_tea", 30)
 	var wasted := [0]
 	m.wasted.connect(func(_s: int, _p: StringName, count: int) -> void: wasted[0] += count)
-	m.advance(59.9)
-	_assert.call(store.stock(&"salmon_onigiri") == 30, "still on hand at 59.9s")
+	var waste_seconds := m.balance.waste_seconds
+	m.advance(waste_seconds - 0.1)
+	_assert.call(store.stock(&"salmon_onigiri") == 30, "still on hand just before waste time")
 	m.advance(0.2)
-	_assert.call(store.stock(&"salmon_onigiri") == 0, "wasted after 60s")
+	_assert.call(store.stock(&"salmon_onigiri") == 0, "wasted after waste time")
 	_assert.call(store.wasted_count == 30 and wasted[0] == 30, "wasted count is recorded")
 	_assert.call(store.stock(&"green_tea") == 30, "drinks do not go bad")
 
@@ -98,7 +102,10 @@ func _test_sales_take_the_oldest_lot_first() -> void:
 	_assert.call(store.take(&"salmon_onigiri", 35) == 35, "takes across lots")
 	var oldest := store.oldest_lot(&"salmon_onigiri")
 	_assert.call(oldest.count == 25, "the first lot is used up first")
-	_assert.call(T.near(oldest.expires_at, m.elapsed + 60.0), "the remaining lot is the newer one")
+	_assert.call(
+		T.near(oldest.expires_at, m.elapsed + m.balance.waste_seconds),
+		"the remaining lot is the newer one"
+	)
 
 
 func _test_assign_replaces_and_unassign_clears() -> void:
