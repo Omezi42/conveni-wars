@@ -275,9 +275,10 @@ func _band_report(band_id: StringName) -> String:
 	var grade := match_state.balance.share_grade(share)
 	if grade > 0:
 		_fx.big("読み的中!", UiPalette.GOOD, true, FxLayer.CUTIN_SECONDS)
-	elif grade < 0 and store.most_lost_category(band_id) != &"":
-		var category := match_state.db.category(store.most_lost_category(band_id))
-		report += "  次は%sを並べよう" % category.display_name
+	elif grade < 0:
+		var advice := LossText.advice(store.losses_in_band(band_id), store, match_state.db)
+		if advice != "":
+			report += "  " + advice
 	return report
 
 

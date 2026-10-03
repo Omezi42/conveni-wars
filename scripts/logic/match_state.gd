@@ -385,9 +385,17 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 	# 時間帯の境目で前の時間帯の残りを生成している間は、その時間帯の客として数える
 	var band_id := db.sorted_bands()[maxi(_band_index, 0)].id
 	for store in stores:
-		if scores[store.index] <= 0.0 and chosen != store.index:
-			store.record_lost(band_id, customer_type.top_category())
-			customer_lost.emit(store.index, customer_type.top_category())
+		if chosen == store.index:
+			continue
+		var rival_index := (store.index + 1) % STORE_COUNT
+		var loss := LossReason.classify(
+			evaluations[store.index], evaluations[rival_index], customer_type, db
+		)
+		if loss == null:
+			continue
+		store.record_loss(band_id, loss)
+		if loss.kind == LossReason.Kind.OUT_OF_STOCK:
+			customer_lost.emit(store.index, loss.category_id)
 	var first_product := &""
 	if chosen >= 0:
 		stores[chosen].record_visit(customer_type.id, &"" if is_event else band_id)

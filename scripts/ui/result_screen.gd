@@ -1,7 +1,7 @@
 class_name ResultScreen
 extends Control
 ## 結果(GameDesign.md 9.4節・9.5節)。閉店後の夜空の下に、両店の成績をレシートの形で並べ、勝った店に「勝」の判を押す。
-## 利益・売上・仕入れ・来店した客の数・取り逃した客・廃棄した個数を出す。
+## 利益・売上・仕入れ・来店した客の数・取られた客(負けた理由が付いた客)・廃棄した個数を出す。
 ## 2枚のレシートのあいだに、ふりかえりの利益の折れ線(ProfitChart)を置く。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
@@ -179,7 +179,7 @@ func _draw_receipt(rect: Rect2, store: StoreState) -> void:
 	y = _row(inner_x, width, y, "売上", UiDraw.yen(store.sales))
 	y = _row(inner_x, width, y, "仕入れ", UiDraw.yen(-store.spent))
 	y = _row(inner_x, width, y, "来店した客", "%d人" % store.visitor_total)
-	y = _row(inner_x, width, y, "取り逃した客", "%d人" % store.lost_total)
+	y = _row(inner_x, width, y, "取られた客", "%d人" % store.losses.total)
 	_row(inner_x, width, y, "廃棄した個数", "%d個" % store.wasted_count)
 
 

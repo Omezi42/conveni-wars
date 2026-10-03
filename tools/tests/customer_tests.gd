@@ -172,11 +172,8 @@ func _test_band_report_numbers() -> void:
 	store.record_visit(&"office", &"morning")
 	m.stores[1].record_visit(&"office", &"morning")
 	_assert.call(is_equal_approx(store.band_share(&"morning"), 0.75), "3 of 4 visitors is 75%")
-	_assert.call(store.most_lost_category(&"morning") == &"", "nothing lost: no category")
-	store.record_lost(&"morning", &"bento")
-	store.record_lost(&"morning", &"coffee")
-	store.record_lost(&"morning", &"coffee")
-	_assert.call(store.most_lost_category(&"morning") == &"coffee", "the most lost category")
+	for i in 3:
+		store.record_loss(&"morning", LossReason.Loss.new(LossReason.Kind.OUT_OF_STOCK, &"bento"))
 	_assert.call(store.lost_in_band(&"morning") == 3, "lost customers are still counted")
 	T.stock_slot(m, 0, &"hot_coffee", 0)
 	_assert.call(store.is_category_stocked(&"coffee"), "coffee on the shelf with stock")
