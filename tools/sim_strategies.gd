@@ -31,9 +31,10 @@ class FixedShelf:
 	func _pick_products() -> Array[StringName]:
 		var weight := {}
 		for band in _db.sorted_bands():
-			var total := float(band.mix_total())
-			for type_id: StringName in band.mix:
-				var customers := band.customer_count * int(band.mix[type_id]) / total
+			var mix := _match.band_mix(band)
+			var total := float(MatchState.mix_total(mix))
+			for type_id: StringName in mix:
+				var customers := band.customer_count * int(mix[type_id]) / total
 				var customer := _db.customer_type(type_id)
 				for category_id: StringName in customer.wants:
 					var add := customers * customer.weight_of(category_id)

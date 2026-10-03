@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeatherData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weather_data.gd" id="1_sunny"]
+
+[resource]
+script = ExtResource("1_sunny")
+id = &"sunny"
+display_name = "晴れ"
+order = 0
+chance = 3
+mix_bonus = {}
+event_weights = {}
+sky_tint = Color(1, 1, 1, 0)
+cutin_text = "いつもどおりの1日"

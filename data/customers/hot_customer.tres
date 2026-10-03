@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CustomerTypeData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/customer_type_data.gd" id="1_hot_customer"]
+
+[resource]
+script = ExtResource("1_hot_customer")
+id = &"hot_customer"
+display_name = "暑がり客"
+order = 10
+wants = {
+&"drink": 3,
+&"ice": 3
+}
+price_sensitivity = 0.5
+buy_count = 2
+color = Color(0.93, 0.45, 0.2, 1)

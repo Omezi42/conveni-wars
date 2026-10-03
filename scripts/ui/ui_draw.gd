@@ -346,6 +346,21 @@ static func sky_icon(item: CanvasItem, rect: Rect2, band: TimeBandData) -> void:
 		sun(item, center, body)
 
 
+## 天気の絵。イラストが無いうちは、紙色の丸に名前の1文字目
+static func weather_icon(
+	item: CanvasItem, center: Vector2, side: float, weather: WeatherData
+) -> void:
+	var rect := Rect2(center - Vector2(side, side) * HALF, Vector2(side, side))
+	if weather.icon != null:
+		item.draw_texture_rect(weather.icon, rect, false)
+		return
+	item.draw_circle(center, side * HALF, UiPalette.INK)
+	item.draw_circle(center, side * HALF - UiPalette.OUTLINE_THIN, UiPalette.PAPER)
+	text_centered(
+		item, rect, weather.display_name.left(1), int(side * ICON_LETTER_RATIO), UiPalette.INK
+	)
+
+
 static func sun(item: CanvasItem, center: Vector2, radius: float) -> void:
 	for i in SUN_RAYS:
 		var direction := Vector2.from_angle(TAU * i / SUN_RAYS)

@@ -1,8 +1,9 @@
 extends SceneTree
 ## CPU対CPUを多数回まわし、店長ごとの勝率・利益の分布・突発イベントが売上に占める割合と、
 ## 偏った戦い方(固定の棚・値段の固定・買い溜め)のCPUの勝率を出して GameDesign.md 1.5節の調整の目標を判定する(Architecture.md 6章)。
-## godot --headless --path . --script res://tools/simulate.gd -- [試合数] [managers]
-## managers を付けると、店長の勝率だけを出す(偏った戦い方のCPUを回さない)
+## 目標は天気(GameDesign.md 12章)ごとに判定する。
+## godot --headless --path . --script res://tools/simulate.gd -- [試合数] [managers|all] [天気id]
+## managers を付けると、店長の勝率だけを出す(偏った戦い方のCPUを回さない)。天気idを付けると、その天気だけを回す
 
 const Strategies := preload("res://tools/sim_strategies.gd")
 
@@ -21,6 +22,7 @@ const EVENT_SHARE_MAX := 0.3
 var _db: GameDatabase
 var _profile: CpuProfile
 var _managers: Array[ManagerData]
+var _weather_id: StringName
 
 
 func _initialize() -> void:
@@ -30,11 +32,21 @@ func _initialize() -> void:
 	_profile = _db.cpu_profile(PROFILE_ID)
 	_managers = _db.sorted_managers()
 	var started := Time.get_ticks_msec()
-	var ok := _run_managers(count)
 	var managers_only := args.size() > 1 and args[1] == "managers"
-	for kind in 0 if managers_only else Strategies.NAMES.size():
-		var limit := FIXED_SHELF_WIN_MAX if kind == 0 else BIASED_WIN_MAX
-		ok = _run_strategy(kind, count, limit) and ok
+	var weather_ids: Array[StringName] = []
+	if args.size() > 2:
+		weather_ids.append(StringName(args[2]))
+	else:
+		for weather in _db.sorted_weathers():
+			weather_ids.append(weather.id)
+	var ok := true
+	for weather_id in weather_ids:
+		_weather_id = weather_id
+		print("######## weather: %s" % _db.weather(weather_id).display_name)
+		ok = _run_managers(count) and ok
+		for kind in 0 if managers_only else Strategies.NAMES.size():
+			var limit := FIXED_SHELF_WIN_MAX if kind == 0 else BIASED_WIN_MAX
+			ok = _run_strategy(kind, count, limit) and ok
 	print("== %s" % ("ALL TARGETS OK" if ok else "SOME TARGETS NG"))
 	print("elapsed %.1fs" % ((Time.get_ticks_msec() - started) / 1000.0))
 	quit()
@@ -63,7 +75,7 @@ func _run_managers(count: int) -> bool:
 	}
 	for i in count:
 		var ids := _pair(i)
-		var m := MatchState.new(_db, ids, i + 1)
+		var m := MatchState.new(_db, ids, i + 1, _weather_id)
 		_play(m, [CpuPlayer.new(m, 0, _profile), CpuPlayer.new(m, 1, _profile)])
 		for store in m.stores:
 			profits.append(store.profit())
@@ -113,7 +125,7 @@ func _run_strategy(kind: int, count: int, max_rate: float) -> bool:
 	var profit := 0
 	var rival_profit := 0
 	for i in count:
-		var m := MatchState.new(_db, _pair(i), i + 1)
+		var m := MatchState.new(_db, _pair(i), i + 1, _weather_id)
 		var cpus: Array[CpuPlayer] = [
 			Strategies.create(kind, m, 0, _profile), CpuPlayer.new(m, 1, _profile)
 		]

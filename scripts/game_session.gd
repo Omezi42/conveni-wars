@@ -7,10 +7,14 @@ const PLAYER := 0
 const FIRST_CPU_PROFILE_ID := &"easy"
 ## 初めての試合で、店長選択を飛ばして使う店長(GameDesign.md 9.1節)
 const FIRST_MANAGER_ID := &"veteran"
+## 初めての試合の天気(GameDesign.md 12.1節)
+const FIRST_WEATHER_ID := &"sunny"
 
 var player_manager_id: StringName = &""
 var cpu_manager_id: StringName = &""
 var match_seed := 0
+## 試合の天気。空なら MatchState が種から引く
+var weather_id: StringName = &""
 var last_result: MatchResult
 ## 直前の試合で自己ベストを更新したか
 var last_new_best := false
@@ -35,6 +39,7 @@ func prepare_match(manager_id: StringName) -> void:
 			others.append(manager.id)
 	cpu_manager_id = others[_rng.randi_range(0, others.size() - 1)]
 	match_seed = _rng.randi()
+	weather_id = FIRST_WEATHER_ID if is_first_match() else &""
 	last_result = null
 
 

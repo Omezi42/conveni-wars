@@ -6,11 +6,15 @@ static func db() -> GameDatabase:
 	return GameDatabase.get_default()
 
 
+## 天気は晴れ(時間帯の割合を2.2節のままにする)。天気を試すテストは weather_id を渡す
 static func new_match(
-	manager_a: StringName = &"veteran", manager_b: StringName = &"veteran", seed_value := 1
+	manager_a: StringName = &"veteran",
+	manager_b: StringName = &"veteran",
+	seed_value := 1,
+	weather_id: StringName = &"sunny"
 ) -> MatchState:
 	var ids: Array[StringName] = [manager_a, manager_b]
-	var match_state := MatchState.new(db(), ids, seed_value)
+	var match_state := MatchState.new(db(), ids, seed_value, weather_id)
 	for store in match_state.stores:
 		clear_store(match_state, store.index)
 	return match_state

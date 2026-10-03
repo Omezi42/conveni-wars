@@ -40,7 +40,10 @@ func setup(result: MatchResult) -> void:
 
 func _draw() -> void:
 	UiDraw.card(self, Rect2(Vector2.ZERO, size), UiPalette.PAPER, UiPalette.RADIUS)
-	UiDraw.text(self, Vector2(PAD, TITLE_Y), "利益の動き", UiPalette.FONT_LARGE, UiPalette.INK)
+	var title := "利益の動き"
+	if _result != null and _result.weather != null:
+		title += "(%s)" % _result.weather.display_name
+	UiDraw.text(self, Vector2(PAD, TITLE_Y), title, UiPalette.FONT_LARGE, UiPalette.INK)
 	_draw_legend()
 	if _result == null or _result.history == null or _result.history.times.is_empty():
 		return

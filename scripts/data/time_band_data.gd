@@ -12,7 +12,7 @@ extends Resource
 ## 店の時計の時刻(時)
 @export var clock_start: int
 @export var clock_end: int
-## 客層id → 来る割合の重み
+## 客層id → 来る割合の重み(試合では天気を足した MatchState.band_mix を使う)
 @export var mix: Dictionary
 ## 時間帯が変わるときのカットインの文言(GameDesign.md 9.3節)
 @export var cutin_text: String
@@ -20,10 +20,3 @@ extends Resource
 @export var sky_top: Color
 @export var sky_bottom: Color
 @export var night: bool
-
-
-func mix_total() -> int:
-	var total := 0
-	for type_id: StringName in mix:
-		total += int(mix[type_id])
-	return total

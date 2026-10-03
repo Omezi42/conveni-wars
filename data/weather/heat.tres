@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="WeatherData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/weather_data.gd" id="1_heat"]
+
+[resource]
+script = ExtResource("1_heat")
+id = &"heat"
+display_name = "猛暑"
+order = 2
+chance = 2
+mix_bonus = {
+&"hot_customer": 3
+}
+event_weights = {
+&"club_return": 2
+}
+sky_tint = Color(1, 0.75, 0.25, 0.35)
+cutin_text = "アイスと飲料がよく売れる"

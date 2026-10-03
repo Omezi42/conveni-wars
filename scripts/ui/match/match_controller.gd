@@ -65,13 +65,16 @@ var _leaving := false
 
 func _ready() -> void:
 	var db := GameDatabase.get_default()
-	match_state = MatchState.new(db, GameSession.manager_ids(), GameSession.match_seed)
+	var ids := GameSession.manager_ids()
+	match_state = MatchState.new(db, ids, GameSession.match_seed, GameSession.weather_id)
 	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.cpu_profile_id()))
 	_build()
 	_connect_signals()
 	_build_hints()
 	_build_pause()
-	_fx.cutin("開店!", UiPalette.STORE_COLORS[PLAYER])
+	var weather := match_state.weather
+	var opening := "開店! 今日は%s" % weather.display_name
+	_fx.cutin(opening, UiPalette.STORE_COLORS[PLAYER], false, weather.cutin_text)
 
 
 func _physics_process(delta: float) -> void:
@@ -118,7 +121,7 @@ func _notification(what: int) -> void:
 func _build() -> void:
 	_sky = SkyBackdrop.new()
 	_place(_sky, Rect2(Vector2.ZERO, SCREEN_SIZE))
-	_sky.set_band(match_state.current_band(), true)
+	_sky.set_band(match_state.current_band(), true, match_state.weather)
 
 	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
 
@@ -258,7 +261,7 @@ func _on_product_dropped(product_id: StringName, slot: int) -> void:
 
 func _on_band_changed(band_id: StringName) -> void:
 	var band := match_state.db.band(band_id)
-	_sky.set_band(band)
+	_sky.set_band(band, false, match_state.weather)
 	var bands := match_state.db.sorted_bands()
 	var index := bands.find(band)
 	var report := "" if index <= 0 else _band_report(bands[index - 1].id)
