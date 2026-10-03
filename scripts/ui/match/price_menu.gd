@@ -1,6 +1,6 @@
 class_name PriceMenu
 extends MatchPart
-## マスをタップすると出る値段の3段階のボタンと、棚から外すボタン(GameDesign.md 5.1節・6.3節・9.2節・9.5節)。
+## マスをタップすると出る値段の3段階のボタンと、棚から外す・自動発注の切り替えのボタン(GameDesign.md 5.1節・6.3節・6.5節・9.2節・9.5節)。
 ## ボタンは棚の値札と同じ色(安売り=黄色の特価札・定価=白・強気=紺)で、いまの段階は沈んで印が付く。
 ## 画面全体を覆い、メニューの外をタップすると閉じる。
 
@@ -15,6 +15,7 @@ const OFFSET := 14.0
 const POINTER := Vector2(18, 10)
 const PRICE_FONT := 20
 const REMOVE_FILL := Color("#dcd6c8")
+const AUTO_FILL := Color("#cdeed9")
 
 var _slot := -1
 var _product_id: StringName = &""
@@ -23,6 +24,7 @@ var _box := Rect2()
 var _pointer_tip := Vector2.ZERO
 var _buttons: Array[PopButton] = []
 var _remove: PopButton
+var _auto: PopButton
 
 
 func _ready() -> void:
@@ -45,6 +47,10 @@ func setup(state: MatchState, index: int) -> void:
 	_remove.radius = UiPalette.RADIUS_SMALL
 	_remove.pressed.connect(_on_remove_pressed)
 	add_child(_remove)
+	_auto = PopButton.create("自動発注", AUTO_FILL, UiPalette.INK, UiPalette.FONT_BODY)
+	_auto.radius = UiPalette.RADIUS_SMALL
+	_auto.pressed.connect(_on_auto_pressed)
+	add_child(_auto)
 
 
 func open_for(slot: int, anchor: Rect2) -> void:
@@ -64,8 +70,11 @@ func open_for(slot: int, anchor: Rect2) -> void:
 	var y := pos.y + PAD * 0.5 + HEADER_HEIGHT + STATUS_HEIGHT
 	for i in count:
 		_buttons[i].position = Vector2(pos.x + PAD + i * (BUTTON_SIZE.x + PAD), y)
+	var half := (width - PAD * 3.0) * 0.5
 	_remove.position = Vector2(pos.x + PAD, y + BUTTON_SIZE.y + PAD)
-	_remove.size = Vector2(width - PAD * 2.0, REMOVE_HEIGHT)
+	_remove.size = Vector2(half, REMOVE_HEIGHT)
+	_auto.position = _remove.position + Vector2(half + PAD, 0)
+	_auto.size = _remove.size
 	visible = true
 	_refresh()
 
@@ -98,6 +107,7 @@ func _refresh() -> void:
 		button.text = UiDraw.yen(store().price_for_step(_product_id, step))
 		button.chosen = step == current
 		button.disabled = not can_change or step == current
+	_auto.chosen = store().auto_orders.has(_product_id)
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -161,4 +171,9 @@ func _on_step_pressed(step: int) -> void:
 
 func _on_remove_pressed() -> void:
 	match_state.unassign(store_index, _slot)
+	close()
+
+
+func _on_auto_pressed() -> void:
+	match_state.set_auto_order(store_index, _product_id, not store().auto_orders.has(_product_id))
 	close()

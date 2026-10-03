@@ -22,6 +22,7 @@ lot_size = 30
 delivery_seconds = 5.0
 waste_seconds = 60.0
 low_stock_threshold = 10
+auto_order_threshold = 10
 event_interval_min = 15.0
 event_interval_max = 25.0
 event_announce_seconds = 10.0

@@ -37,6 +37,8 @@ extends Resource
 @export var delivery_seconds: float
 @export var waste_seconds: float
 @export var low_stock_threshold: int
+## 自動発注:在庫 + 入荷待ちがこの数以下になったら1ロット発注する(6.5節)
+@export var auto_order_threshold: int
 
 @export_group("結果と演出(9章)")
 ## ふりかえりの利益を記録する間隔(秒)

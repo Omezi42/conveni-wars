@@ -3,6 +3,7 @@ extends RefCounted
 ## 在庫の見え方と発注ボタン(GameDesign.md 6.1節・6.4節・9.2節)。棚のマス(ShelfView)と品ぞろえの札(CatalogView)で共有する。
 ## 廃棄までの残りのバー・入荷待ちの札・発注ボタンを描き、発注ボタンの乗せた・押した・成否の光りの状態を持つ
 ## (描く部品ごとに1つ持つ)。発注ボタンは押すと沈み、成否の色が一瞬光る。資金が足りないと灰色。
+## 自動発注がオンの商品は「発注」を「自動」に変え、枠を緑にする(6.5節)。
 
 const ORDER_DROP := 2.0
 ## この高さ以上の発注ボタンは「発注」と代金を2行に分ける
@@ -78,7 +79,11 @@ func draw_order_button(
 	else:
 		var shadow := Rect2(rect.position + Vector2(0, ORDER_DROP), rect.size)
 		UiDraw.panel(item, shadow, UiPalette.SHADOW, Color.TRANSPARENT, 0, radius)
-	UiDraw.panel(item, rect, fill, UiPalette.INK, UiPalette.OUTLINE_THIN, radius)
+	var auto := store().auto_orders.has(product_id)
+	if auto:
+		UiDraw.panel(item, rect, fill, UiPalette.GOOD, UiPalette.OUTLINE, radius)
+	else:
+		UiDraw.panel(item, rect, fill, UiPalette.INK, UiPalette.OUTLINE_THIN, radius)
 	if _flashes.has(product_id):
 		var flash: Array = _flashes[product_id]
 		var color := OK_FLASH if flash[1] else FAIL_FLASH
@@ -90,14 +95,16 @@ func draw_order_button(
 	if not with_caption:
 		UiDraw.text_centered(item, inner, price, UiPalette.FONT_BODY, ink)
 		return
+	var caption := "自動" if auto else "発注"
 	if rect.size.y < TWO_LINE_HEIGHT:
-		UiDraw.text_centered(item, inner, "発注 " + price, UiPalette.FONT_BODY, ink)
+		UiDraw.text_centered(item, inner, caption + " " + price, UiPalette.FONT_BODY, ink)
 		return
 	var halves := [
 		Rect2(inner.position, Vector2(inner.size.x, inner.size.y * 0.5)),
 		Rect2(inner.get_center() - Vector2(inner.size.x * 0.5, 0), inner.size * Vector2(1, 0.5)),
 	]
-	UiDraw.text_centered(item, halves[0], "発注", UiPalette.FONT_SMALL, ink)
+	var caption_ink := UiPalette.GOOD if auto and affordable else ink
+	UiDraw.text_centered(item, halves[0], caption, UiPalette.FONT_SMALL, caption_ink)
 	UiDraw.text_centered(item, halves[1], price, UiPalette.FONT_BODY, ink)
 
 
