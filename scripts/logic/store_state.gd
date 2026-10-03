@@ -54,6 +54,8 @@ var order_count := 0
 ## マスごとの商品id。空は EMPTY
 var shelf: Array[StringName] = []
 var pending: Array[PendingOrder] = []
+## 自動発注がオンの商品(GameDesign.md 6.5節)
+var auto_orders: Array[StringName] = []
 var active_used := false
 ## アクティブスキルの効果の残り秒数
 var active_remaining := 0.0

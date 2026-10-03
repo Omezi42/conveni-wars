@@ -14,6 +14,7 @@ signal purchased(store_index: int, product_id: StringName, count: int, amount: i
 signal wasted(store_index: int, product_id: StringName, count: int)
 signal ordered(store_index: int, product_id: StringName)
 signal price_changed(store_index: int, product_id: StringName, step: int)
+signal auto_order_changed(store_index: int, product_id: StringName, on: bool)
 signal event_announced(event_id: StringName, store_index: int)
 signal event_started(event_id: StringName)
 signal event_ended(event_id: StringName, store_counts: Array[int])
@@ -67,6 +68,8 @@ func advance(delta: float) -> void:
 		_update_timers(store, delta)
 	_update_band_customers()
 	_update_events()
+	for store in stores:
+		_update_auto_orders(store)
 	history.record(minf(elapsed, _duration), stores)
 	if elapsed >= _duration:
 		_finish()
@@ -93,9 +96,11 @@ func assign(store_index: int, product_id: StringName, slot: int) -> bool:
 	if finished or db.product(product_id) == null or not _is_slot(slot):
 		return false
 	var store := stores[store_index]
-	if store.shelf[slot] != product_id:
+	var replaced := store.shelf[slot]
+	if replaced != product_id:
 		store.shelf[slot] = product_id
 		store.mark_dirty()
+		_drop_auto_order_if_gone(store, replaced)
 	return true
 
 
@@ -105,8 +110,27 @@ func unassign(store_index: int, slot: int) -> bool:
 	var store := stores[store_index]
 	if store.shelf[slot] == StoreState.EMPTY:
 		return false
+	var removed := store.shelf[slot]
 	store.shelf[slot] = StoreState.EMPTY
 	store.mark_dirty()
+	_drop_auto_order_if_gone(store, removed)
+	return true
+
+
+## 自動発注のオン・オフ。棚に無い商品はオンにできない(GameDesign.md 6.5節)
+func set_auto_order(store_index: int, product_id: StringName, on: bool) -> bool:
+	if finished or db.product(product_id) == null:
+		return false
+	var store := stores[store_index]
+	if store.auto_orders.has(product_id) == on:
+		return false
+	if on:
+		if not store.is_on_shelf(product_id):
+			return false
+		store.auto_orders.append(product_id)
+	else:
+		store.auto_orders.erase(product_id)
+	auto_order_changed.emit(store_index, product_id, on)
 	return true
 
 
@@ -268,6 +292,23 @@ func _update_stock(store: StoreState, delta: float) -> void:
 	var removed := store.remove_expired(elapsed)
 	for product_id: StringName in removed:
 		wasted.emit(store.index, product_id, removed[product_id])
+
+
+## 自動発注がオンの商品を棚のマスの順に見て、在庫 + 入荷待ちが少なければ1ロット発注する(資金が足りなければ待つ)
+func _update_auto_orders(store: StoreState) -> void:
+	if store.auto_orders.is_empty():
+		return
+	for product_id in store.shelf_product_ids():
+		if not store.auto_orders.has(product_id):
+			continue
+		var have := store.stock(product_id) + store.pending_count(product_id)
+		if have <= balance.auto_order_threshold:
+			order(store.index, product_id)
+
+
+func _drop_auto_order_if_gone(store: StoreState, product_id: StringName) -> void:
+	if product_id != StoreState.EMPTY and not store.is_on_shelf(product_id):
+		set_auto_order(store.index, product_id, false)
 
 
 func _update_timers(store: StoreState, delta: float) -> void:
