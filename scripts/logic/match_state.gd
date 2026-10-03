@@ -14,6 +14,7 @@ signal purchased(store_index: int, product_id: StringName, count: int, amount: i
 signal wasted(store_index: int, product_id: StringName, count: int)
 signal ordered(store_index: int, product_id: StringName)
 signal price_changed(store_index: int, product_id: StringName, step: int)
+signal auto_order_changed(store_index: int, product_id: StringName, on: bool)
 signal event_announced(event_id: StringName, store_index: int)
 signal event_started(event_id: StringName)
 signal event_ended(event_id: StringName, store_counts: Array[int])
@@ -76,6 +77,8 @@ func advance(delta: float) -> void:
 		_record_shelf_time(store, band_id, delta)
 	_update_band_customers()
 	_update_events()
+	for store in stores:
+		_update_auto_orders(store)
 	history.record(minf(elapsed, _duration), stores)
 	if elapsed >= _duration:
 		_finish()
@@ -85,17 +88,9 @@ func advance(delta: float) -> void:
 
 
 func order(store_index: int, product_id: StringName) -> bool:
-	if not can_order(store_index, product_id):
+	if not _place_order(store_index, product_id):
 		return false
-	var store := stores[store_index]
-	var cost := lot_cost(store_index, product_id)
-	store.funds -= cost
-	store.spent += cost
-	store.order_count += 1
-	var seconds := ManagerSkills.delivery_seconds(store.manager, balance)
-	store.pending.append(StoreState.PendingOrder.new(product_id, balance.lot_size, seconds))
 	record.add(tick, store_index, MatchRecord.Kind.ORDER, product_id, 0)
-	ordered.emit(store_index, product_id)
 	return true
 
 
@@ -103,9 +98,11 @@ func assign(store_index: int, product_id: StringName, slot: int) -> bool:
 	if finished or db.product(product_id) == null or not _is_slot(slot):
 		return false
 	var store := stores[store_index]
-	if store.shelf[slot] != product_id:
+	var replaced := store.shelf[slot]
+	if replaced != product_id:
 		store.shelf[slot] = product_id
 		store.mark_dirty()
+		_drop_auto_order_if_gone(store, replaced)
 	record.add(tick, store_index, MatchRecord.Kind.ASSIGN, product_id, slot)
 	return true
 
@@ -116,9 +113,19 @@ func unassign(store_index: int, slot: int) -> bool:
 	var store := stores[store_index]
 	if store.shelf[slot] == StoreState.EMPTY:
 		return false
+	var removed := store.shelf[slot]
 	store.shelf[slot] = StoreState.EMPTY
 	store.mark_dirty()
 	record.add(tick, store_index, MatchRecord.Kind.UNASSIGN, &"", slot)
+	_drop_auto_order_if_gone(store, removed)
+	return true
+
+
+## 自動発注のオン・オフ。棚に無い商品はオンにできない(GameDesign.md 6.5節)
+func set_auto_order(store_index: int, product_id: StringName, on: bool) -> bool:
+	if not _change_auto_order(store_index, product_id, on):
+		return false
+	record.add(tick, store_index, MatchRecord.Kind.AUTO_ORDER, product_id, int(on))
 	return true
 
 
@@ -266,6 +273,37 @@ func duplicate_state() -> MatchState:
 # --- 内部 ---
 
 
+## 発注の中身(自動発注からも呼ぶ。コマンドとしては記録しない)
+func _place_order(store_index: int, product_id: StringName) -> bool:
+	if not can_order(store_index, product_id):
+		return false
+	var store := stores[store_index]
+	var cost := lot_cost(store_index, product_id)
+	store.funds -= cost
+	store.spent += cost
+	store.order_count += 1
+	var seconds := ManagerSkills.delivery_seconds(store.manager, balance)
+	store.pending.append(StoreState.PendingOrder.new(product_id, balance.lot_size, seconds))
+	ordered.emit(store_index, product_id)
+	return true
+
+
+func _change_auto_order(store_index: int, product_id: StringName, on: bool) -> bool:
+	if finished or db.product(product_id) == null:
+		return false
+	var store := stores[store_index]
+	if store.auto_orders.has(product_id) == on:
+		return false
+	if on:
+		if not store.is_on_shelf(product_id):
+			return false
+		store.auto_orders.append(product_id)
+	else:
+		store.auto_orders.erase(product_id)
+	auto_order_changed.emit(store_index, product_id, on)
+	return true
+
+
 func _is_slot(slot: int) -> bool:
 	return slot >= 0 and slot < StoreState.SLOT_COUNT
 
@@ -310,6 +348,23 @@ func _record_shelf_time(store: StoreState, band_id: StringName, delta: float) ->
 	for product_id in store.shelf_product_ids():
 		if store.stock(product_id) > 0:
 			seconds[product_id] = float(seconds.get(product_id, 0.0)) + delta
+
+
+## 自動発注がオンの商品を棚のマスの順に見て、在庫 + 入荷待ちが少なければ1ロット発注する(資金が足りなければ待つ)
+func _update_auto_orders(store: StoreState) -> void:
+	if store.auto_orders.is_empty():
+		return
+	for product_id in store.shelf_product_ids():
+		if not store.auto_orders.has(product_id):
+			continue
+		var have := store.stock(product_id) + store.pending_count(product_id)
+		if have <= balance.auto_order_threshold:
+			_place_order(store.index, product_id)
+
+
+func _drop_auto_order_if_gone(store: StoreState, product_id: StringName) -> void:
+	if product_id != StoreState.EMPTY and not store.is_on_shelf(product_id):
+		_change_auto_order(store.index, product_id, false)
 
 
 func _update_timers(store: StoreState, delta: float) -> void:
@@ -386,9 +441,17 @@ func _serve_customer(customer_type: CustomerTypeData, is_event: bool) -> int:
 	# 時間帯の境目で前の時間帯の残りを生成している間は、その時間帯の客として数える
 	var band_id := db.sorted_bands()[maxi(_band_index, 0)].id
 	for store in stores:
-		if scores[store.index] <= 0.0 and chosen != store.index:
-			store.record_lost(band_id, customer_type.top_category())
-			customer_lost.emit(store.index, customer_type.top_category())
+		if chosen == store.index:
+			continue
+		var rival_index := (store.index + 1) % STORE_COUNT
+		var loss := LossReason.classify(
+			evaluations[store.index], evaluations[rival_index], customer_type, db
+		)
+		if loss == null:
+			continue
+		store.record_loss(band_id, loss)
+		if loss.kind == LossReason.Kind.OUT_OF_STOCK:
+			customer_lost.emit(store.index, loss.category_id)
 	var first_product := &""
 	if chosen >= 0:
 		stores[chosen].record_visit(customer_type.id, &"" if is_event else band_id)

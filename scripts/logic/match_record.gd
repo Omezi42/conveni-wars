@@ -3,7 +3,7 @@ extends RefCounted
 ## 試合の再生に要るもの(GameDesign.md 10章、Architecture.md 3.5節)。種・店長・CPUの強さ・1tickの秒数・
 ## 1店ぶんのコマンドの列と、時間帯の始まりごとのスナップショットを持つ。
 
-enum Kind { ORDER, ASSIGN, UNASSIGN, PRICE, ACTIVE }
+enum Kind { ORDER, ASSIGN, UNASSIGN, PRICE, ACTIVE, AUTO_ORDER }
 
 const NOT_RECORDING := -1
 
@@ -14,7 +14,7 @@ class Command:
 	var tick: int
 	var kind: Kind
 	var product_id: StringName
-	## マスの番号か値段段階(使わないコマンドは0)
+	## マスの番号・値段段階・自動発注のオン(1)オフ(0)。使わないコマンドは0
 	var value: int
 
 	func _init(at: int, command_kind: Kind, id: StringName, number: int) -> void:
@@ -73,3 +73,5 @@ static func apply(command: Command, match_state: MatchState, store: int) -> void
 			match_state.set_price_step(store, command.product_id, command.value)
 		Kind.ACTIVE:
 			match_state.use_active(store)
+		Kind.AUTO_ORDER:
+			match_state.set_auto_order(store, command.product_id, command.value != 0)

@@ -7,7 +7,7 @@
   `MatchState` の内部(次のイベントの抽選結果など)は読まない
 - 強さの段階(8.3節)は `CpuProfile`(Resource、`data/cpu/{easy,standard,hard}.tres`)で持つ。予告への反応の遅れ・読み違える確率などの数値をここに置く。
   並び順は `order`
-- `tools/simulate.gd` は `CpuPlayer` を継承した戦略(`tools/sim_strategies.gd`:固定の棚・常に強気・常に安売り・買い溜め)を
+- `tools/simulate.gd` は `CpuPlayer` を継承した戦略(`tools/sim_strategies.gd`:固定の棚・常に強気・常に安売り・買い溜め。買い溜めは日持ちしない商品の上限も2倍にする)を
   ふつうのCPUと戦わせ、1.5節の調整の目標を満たすかを出す
 - CPUは `MatchState` の乱数を使う(試合の再現性を保つため)
 - `use_skill` を false にするとアクティブスキルを使わない(結果画面の計算し直しでプレイヤーの代わりに動かすとき。3.5節)。

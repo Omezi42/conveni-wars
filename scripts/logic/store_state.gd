@@ -51,11 +51,17 @@ var lost_by_band: Dictionary = {}
 var lost_categories_by_band: Dictionary = {}
 ## 時間帯id → { 商品id → 在庫ありで棚に並んでいた秒数 }
 var shelf_seconds_by_band: Dictionary = {}
+## 負けた理由(GameDesign.md 2.7節)の試合全体の集計
+var losses := LossReason.Tally.new()
+## 時間帯id → LossReason.Tally
+var losses_by_band: Dictionary = {}
 var wasted_count := 0
 var order_count := 0
 ## マスごとの商品id。空は EMPTY
 var shelf: Array[StringName] = []
 var pending: Array[PendingOrder] = []
+## 自動発注がオンの商品(GameDesign.md 6.5節)
+var auto_orders: Array[StringName] = []
 var active_used := false
 ## アクティブスキルの効果の残り秒数
 var active_remaining := 0.0
@@ -187,14 +193,10 @@ func lost_in_band(band_id: StringName) -> int:
 	return int(lost_by_band.get(band_id, 0))
 
 
-## その時間帯にいちばん多く取り逃したカテゴリ。取り逃していなければ &""
-func most_lost_category(band_id: StringName) -> StringName:
-	var counts: Dictionary = lost_categories_by_band.get(band_id, {})
-	var best: StringName = &""
-	for category_id: StringName in counts:
-		if best == &"" or counts[category_id] > counts[best]:
-			best = category_id
-	return best
+## その時間帯の負けた理由の集計(1件も無ければ空の集計)
+func losses_in_band(band_id: StringName) -> LossReason.Tally:
+	var tally: LossReason.Tally = losses_by_band.get(band_id)
+	return tally if tally != null else LossReason.Tally.new()
 
 
 ## 時間帯の客(突発イベントの客を除く)のうち、両店に入った客に占めるこの店の割合。どちらにも入っていなければ -1
@@ -303,11 +305,17 @@ func _visitors_in_band(band_id: StringName) -> int:
 	return int(visitors_by_band.get(band_id, 0))
 
 
-func record_lost(band_id: StringName, category_id: StringName) -> void:
-	lost_by_band[band_id] = lost_in_band(band_id) + 1
-	var counts: Dictionary = lost_categories_by_band.get_or_add(band_id, {})
-	counts[category_id] = int(counts.get(category_id, 0)) + 1
-	lost_total += 1
+## 負けた理由を数える。品切れは取り逃した客(GameDesign.md 2.6節)としても数える
+func record_loss(band_id: StringName, loss: LossReason.Loss) -> void:
+	if loss.kind == LossReason.Kind.OUT_OF_STOCK:
+		lost_by_band[band_id] = lost_in_band(band_id) + 1
+		lost_total += 1
+	losses.add(loss)
+	var tally: LossReason.Tally = losses_by_band.get(band_id)
+	if tally == null:
+		tally = LossReason.Tally.new()
+		losses_by_band[band_id] = tally
+	tally.add(loss)
 
 
 ## 同じ状態の別の店(スナップショット用。rival は MatchState がつなぎ直す)
@@ -324,6 +332,12 @@ func duplicate_state() -> StoreState:
 	copy.lost_by_band = lost_by_band.duplicate()
 	copy.lost_categories_by_band = lost_categories_by_band.duplicate(true)
 	copy.shelf_seconds_by_band = shelf_seconds_by_band.duplicate(true)
+	copy.losses = losses.duplicate_tally()
+	for band_id: StringName in losses_by_band:
+		copy.losses_by_band[band_id] = (
+			(losses_by_band[band_id] as LossReason.Tally).duplicate_tally()
+		)
+	copy.auto_orders = auto_orders.duplicate()
 	copy.wasted_count = wasted_count
 	copy.order_count = order_count
 	copy.shelf = shelf.duplicate()

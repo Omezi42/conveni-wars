@@ -87,6 +87,8 @@ func _start_next() -> void:
 	if only_missed_bands and share >= _db.balance.read_hit_share:
 		return
 	var state := snapshot.match_state.duplicate_state()
+	# 自動発注もプレイヤーの発注の判断なので、CPUに任せる間は外す
+	state.stores[_player].auto_orders.clear()
 	var cpus: Array[CpuPlayer] = []
 	for cpu in snapshot.cpus:
 		if cpu.store_index() != _player:

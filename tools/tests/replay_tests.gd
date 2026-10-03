@@ -5,6 +5,7 @@ const T = preload("res://tools/tests/test_util.gd")
 const STEP := 1.0 / 60.0
 const SEED := 11
 const SKILL_AT := 150.0
+const AUTO_ORDER_AT := 30.0
 
 
 ## 乱数を使わずにプレイヤーの代わりをするCPU(乱数を使うと、記録したコマンドだけの再生と乱数がずれるため)
@@ -19,6 +20,9 @@ class ScriptedPlayer:
 		super(delta)
 		if _match.elapsed >= SKILL_AT:
 			_match.use_active(_index)
+		var store := _match.stores[_index]
+		if _match.elapsed >= AUTO_ORDER_AT and store.auto_orders.is_empty():
+			_match.set_auto_order(_index, store.shelf_product_ids()[0], true)
 
 	func _watch_announcement() -> void:
 		pass
@@ -53,8 +57,15 @@ func _test_replay_matches(original: MatchState) -> MatchState:
 	var kinds := {}
 	for command in record.commands:
 		kinds[command.kind] = true
-	var expected := [MatchRecord.Kind.ORDER, MatchRecord.Kind.ASSIGN, MatchRecord.Kind.ACTIVE]
-	_assert.call(kinds.has_all(expected), "the player's orders, shelf and skill are recorded")
+	var expected := [
+		MatchRecord.Kind.ORDER,
+		MatchRecord.Kind.ASSIGN,
+		MatchRecord.Kind.ACTIVE,
+		MatchRecord.Kind.AUTO_ORDER,
+	]
+	_assert.call(
+		kinds.has_all(expected), "the player's orders, shelf, skill and auto order are recorded"
+	)
 	_assert.call(T.near(record.step, STEP), "the tick length is recorded")
 	var m := MatchState.new(original.db, record.manager_ids, record.seed_value)
 	var cpus: Array[CpuPlayer] = [CpuPlayer.new(m, 1, m.db.cpu_profile(record.cpu_profile_id))]

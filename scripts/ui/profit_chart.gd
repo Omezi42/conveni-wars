@@ -1,7 +1,7 @@
 class_name ProfitChart
 extends Control
 ## 結果のふりかえり(GameDesign.md 9.4節)。両店の利益の折れ線に、時間帯の境目・時間帯ごとに自店へ入った客の割合・
-## 突発イベントの印(自店が大口獲得したものは★)を重ねる。下段に「CPUならどうしたか」(CpuReview)の文を出す。
+## いちばん多い負けた理由・突発イベントの印(自店が大口獲得したものは★)を重ねる。下段に「CPUならどうしたか」(CpuReview)の文を出す。
 
 const PAD := 18.0
 const TITLE_Y := 36.0
@@ -10,7 +10,7 @@ const LEGEND_GAP := 6.0
 const LEGEND_SPACING := 16.0
 const PLOT_TOP := 78.0
 const PLOT_LEFT := 74.0
-const PLOT_BOTTOM_SPACE := 118.0
+const PLOT_BOTTOM_SPACE := 142.0
 ## 下段の「CPUならどうしたか」の高さ・見出しと1行目の位置・時間帯ごとの間隔・2行目までの間隔
 const REVIEW_SPACE := 128.0
 const REVIEW_HEAD_Y := 22.0
@@ -28,7 +28,9 @@ const MARK_LINE := Color(1.0, 0.69, 0.13, 0.4)
 const STRIP_GAP := 8.0
 const STRIP_HEIGHT := 28.0
 const SHARE_Y := 30.0
-const NOTE_Y := 56.0
+## 割合の下の、その時間帯でいちばん多い負けた理由(GameDesign.md 9.4節)
+const REASON_Y := 54.0
+const NOTE_Y := 80.0
 ## ベースラインから文字の見た目の中央までの高さ(文字の大きさに対する割合)
 const TEXT_MID := 0.35
 ## 下向きの三角の上辺の高さ(半径に対する割合)
@@ -207,6 +209,16 @@ func _draw_bands(plot: Rect2) -> void:
 			HORIZONTAL_ALIGNMENT_CENTER,
 			strip.size.x
 		)
+		var store := _result.stores[MatchController.PLAYER]
+		UiDraw.text(
+			self,
+			Vector2(x, strip.end.y + REASON_Y),
+			LossText.short_label(store.losses_in_band(bands[i].id)),
+			UiPalette.FONT_BODY,
+			UiPalette.INK_SOFT,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			strip.size.x
+		)
 	var outline := Rect2(plot.position.x, strip_y, plot.size.x, STRIP_HEIGHT)
 	draw_rect(outline, UiPalette.INK, false, UiPalette.OUTLINE_THIN)
 	UiDraw.text(
@@ -225,11 +237,11 @@ func _share(band_id: StringName) -> float:
 
 
 func _share_color(share: float) -> Color:
-	var balance := GameDatabase.get_default().balance
-	if share >= balance.read_hit_share:
-		return UiPalette.GOOD
-	if share >= 0.0 and share <= balance.read_miss_share:
-		return UiPalette.BAD
+	match GameDatabase.get_default().balance.share_grade(share):
+		1:
+			return UiPalette.GOOD
+		-1:
+			return UiPalette.BAD
 	return UiPalette.INK
 
 

@@ -13,6 +13,7 @@ func run(assert_true: Callable) -> void:
 	_test_combo_counts_once_per_slot_and_not_diagonally()
 	_test_attraction_sums_products_and_counts_duplicates_once()
 	_test_unassigned_stock_does_not_count()
+	_test_missing_top_category_zeroes_attraction()
 	_test_price_modifier_examples()
 	_test_price_rounding()
 	_test_saver_passive_boosts_only_sales()
@@ -91,6 +92,25 @@ func _test_unassigned_stock_does_not_count() -> void:
 	)
 
 
+func _test_missing_top_category_zeroes_attraction() -> void:
+	var m := T.new_match()
+	var senior := T.customer(&"senior")
+	T.stock_slot(m, 0, &"green_tea", 0)
+	_assert.call(
+		T.near(m.stores[0].evaluation(senior).score, 0.0),
+		"no onigiri (the senior's top category): attraction 0"
+	)
+	T.stock_slot(m, 0, &"salmon_onigiri", 8)
+	_assert.call(T.near(m.stores[0].evaluation(senior).score, 4.0), "onigiri 3 + tea 1")
+
+	var office := T.customer(&"office")
+	T.stock_slot(m, 1, &"hot_coffee", 0)
+	_assert.call(
+		T.near(m.stores[1].evaluation(office).score, 3.0),
+		"coffee shares the top weight with bento, so one of them is enough"
+	)
+
+
 func _test_price_modifier_examples() -> void:
 	var factor := T.db().balance.price_effect_factor
 	_assert.call(T.near(Attraction.price_modifier(0.9, -0.2, factor), 1.45), "student sale x1.45")
@@ -148,15 +168,16 @@ func _test_saver_passive_boosts_only_sales() -> void:
 
 func _test_idol_passive_targets_students_and_youth() -> void:
 	var m := T.new_match(&"idol", &"veteran")
-	T.stock_slot(m, 0, &"ice_bar", 0)
+	T.stock_slot(m, 0, &"karaage_stick", 0)
 	T.stock_slot(m, 0, &"green_tea", 8)
+	T.stock_slot(m, 0, &"salmon_onigiri", 6)
 	_assert.call(
-		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 2.0 * 1.15), "student x1.15"
+		T.near(m.stores[0].evaluation(T.customer(&"student")).score, 3.0 * 1.15), "student x1.15"
 	)
 	_assert.call(
 		T.near(m.stores[0].evaluation(T.customer(&"youth")).score, 3.0 * 1.15), "youth x1.15"
 	)
-	_assert.call(T.near(m.stores[0].evaluation(T.customer(&"senior")).score, 1.0), "senior x1")
+	_assert.call(T.near(m.stores[0].evaluation(T.customer(&"senior")).score, 4.0), "senior x1")
 
 
 func _test_choose_store_follows_the_square_of_attraction() -> void:
