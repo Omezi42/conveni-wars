@@ -59,17 +59,20 @@ class FixedPrice:
 				_match.set_price_step(_index, id, step)
 
 
-## ふつうのCPUの見込みを何倍かにして発注し、在庫を買い溜める(日持ちしない商品の上限はふつうのまま)
+## ふつうのCPUの見込みと日持ちしない商品の上限を何倍かにして発注し、在庫を買い溜める
 class Hoarder:
 	extends CpuPlayer
 
 	const FACTOR := 2.0
 
 	func _order(demand: Dictionary, keep_limit: Dictionary) -> void:
-		var scaled := {}
-		for category_id: StringName in demand:
-			scaled[category_id] = float(demand[category_id]) * FACTOR
-		super(scaled, keep_limit)
+		super(_scaled(demand), _scaled(keep_limit))
+
+	func _scaled(amounts: Dictionary) -> Dictionary:
+		var result := {}
+		for category_id: StringName in amounts:
+			result[category_id] = float(amounts[category_id]) * FACTOR
+		return result
 
 
 const NAMES: Array[String] = ["fixed shelf", "always bold", "always cheap", "hoarder"]
