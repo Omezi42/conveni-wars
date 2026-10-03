@@ -3,6 +3,8 @@
 - `bash tools/check.sh` で gdformat → gdlint → フォントの字の確認 → ヘッドレステスト → 起動スモーク を順に回す
 - ヘッドレステストは `tools/tests/run_tests.gd`。ロジック層(3章)を種固定の乱数で動かし、魅力度・ボーナス・
   買い物・発注・スキルの結果を確かめる
+- `tools/tests/replay_tests.gd` は、プレイヤーの店をCPUに動かさせた試合の `MatchRecord` を再生して両店の成績が完全に一致するか、
+  途中のスナップショットから進めた試合が元と一致するか、`CpuReview` が文を作れるかを確かめる
 - `tools/simulate.gd` で CPU 対 CPU を多数回まわし、店長ごとの勝率・利益の分布・イベントの売上の割合・戦略ごとの勝率を出し、
   GameDesign.md 1.5節の調整の目標を満たすかを OK / NG で出す(バランス調整用)
 - UI(`scripts/ui/`)は `tools/tests/screen_flow_smoke.gd` が実際のシーンを起こし、タイトル →(戦績なしは店長選択を飛ばす)店長選択 → ヒント →

@@ -5,7 +5,7 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
-| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く |
+| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。`_process` で `CpuReview` を1フレームの予算ぶん進め、できた文を `ProfitChart` の下段に出す |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
