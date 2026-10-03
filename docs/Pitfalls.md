@@ -35,3 +35,11 @@
 
 - **テストやスクリーンショットで試合を最後まで回すと、`GameSession.finish_match()` が戦績を保存する。**
   本物の `user://save.cfg` を書き換えないよう、`GameSession.save` をテスト用のファイルの `SaveData` に差し替えてから回す
+
+## 検証
+
+- **`--import` は登録をしないまま終わることがある。**新しい class_name を足したあと check.sh が `--import` を回したのに、
+  ログがバナー1行だけでキャッシュに載らず、テストが `Identifier "…" not declared` で止まった(手で `--import` を回し直すと通った)。
+  check.sh は import のあとに登録を確かめ直し、載っていなければ Godot を回さず NG にする。そうなったら手で `--import` を回す
+- **`--script` で動かすスクリプトはコンパイルに失敗すると `quit()` に届かず、終わらない。**check.sh はログに
+  `Parse Error` などが出た時点で止めるので、時間切れまで待たない
