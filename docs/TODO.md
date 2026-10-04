@@ -8,5 +8,7 @@
 
 ## いま
 
-- 天気(GameDesign.md 12章):`WeatherData` と4つの天気・客層2つ → `MatchState.band_mix` と天気の抽選 → CPU・予報・戦略を切り替え →
-  上端・空・カットイン・結果の表示 → 天気ごとの simulate → 絵6枚(客層2・天気4)
+- 天気(GameDesign.md 12章)の絵6枚(客層2・天気4)
+- 寒い日の客層の微調整(reverent-noether のワークツリー)
+- 店長スキルのバランスを測り直す
+- 結果の共有(GameDesign.md 9.4節)

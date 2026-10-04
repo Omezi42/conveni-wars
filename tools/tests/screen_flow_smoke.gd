@@ -78,10 +78,12 @@ func _check_first_start(title: Control) -> void:
 	await process_frame
 
 
-## ヒントは試合を止めずに出て、端末に1回だけ記録される(GameDesign.md 9.7節)
+## ヒントは試合を止めずに出て、端末に1回だけ記録される(GameDesign.md 9.7節)。
+## 雨の日は開店直後に客を逃し、そのヒントが先に出るため、初回の試合と同じ天気に固定する
 func _check_hints() -> void:
 	_session.save.clear_hints()
 	_session.prepare_match(&"veteran")
+	_session.weather_id = _session.FIRST_WEATHER_ID
 	var controller: Control = await _show("res://scenes/match.tscn")
 	var state: MatchState = controller.match_state
 	var hints: HintLayer = controller._hints
