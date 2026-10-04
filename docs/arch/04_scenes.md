@@ -5,7 +5,7 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
-| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。時間帯ごとの割合の下に、`StoreState` が数えた負けた理由のうち最多のものを出す。`_process` で `CpuReview` を1フレームの予算ぶん進め、できた文を `ProfitChart` の下段に出す |
+| `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。時間帯ごとの割合の下に、`StoreState` が数えた負けた理由のうち最多のものを出す。`_process` で `CpuReview` を1フレームの予算ぶん進め、できた文を `ProfitChart` の下段に出す。共有ボタンの処理は `ResultShare`(`scripts/ui/result_share.gd`)へ分ける(4.4節) |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
@@ -63,3 +63,15 @@ UIクロームはすべてコードで描く。色・文字の大きさ・線の
   データの `icon` / `portrait` に入れる。空なら仮アイコンを描く
 - 絵は256pxを小さく描くため、取り込みで mipmap を作り、画面の既定のフィルタを「Linear Mipmap」にしている(Pitfalls.md)
 - フォントに無い記号(✓ ⚠ など)は文字で書かず `UiDraw` で形を描く(Pitfalls.md)
+
+## 4.4 結果の共有(GameDesign.md 9.4節)
+
+`ResultShare`(RefCounted)が、撮影・ファイル名・共有する文・保存先の振り分けを持つ。`ResultScreen` はボタンを押されたら
+`_sharing` を立てて1フレーム描き直し(ボタンを隠し、下の帯に題字とCPUの強さを描く)、`RenderingServer.frame_post_draw` を待ってから
+`ResultShare.capture()` を呼ぶ。共有ボタンは `CpuReview` が終わるまで `disabled` にする。
+
+- 撮影:ルートのビューポートの画像から、`get_final_transform()` で求めた1280×720の範囲(黒帯を除く)を切り抜き、1280×720へ拡縮する
+- 振り分け:`OS.has_feature("web")` なら `JavaScriptBridge.eval` で `pointer: coarse` と `navigator.canShare({files})` を確かめ、
+  両方満たせば `navigator.share` に画像(base64から作った `File`)・文・`location.href` を渡す。それ以外は `JavaScriptBridge.download_buffer`。
+  デスクトップは `OS.get_system_dir(SYSTEM_DIR_PICTURES)` の下の「コンビニウォーズ」へ `Image.save_png`
+- `navigator.share` は押した操作の直後(数秒以内)でないと断られるため、撮影は押した次のフレームで済ませる

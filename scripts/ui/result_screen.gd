@@ -48,9 +48,20 @@ const BUTTON_Y := 622.0
 const BUTTON_GAP := 28.0
 ## 「CPUならどうしたか」の計算に1フレームで使う時間(マイクロ秒)
 const REVIEW_BUDGET_USEC := 25000
+## 共有する画像で、ボタンの代わりに下の帯へ描く題字とCPUの強さ
+const SHARE_TITLE_Y := 684.0
+const SHARE_GAP := 24.0
+const SAVED_SECONDS := 2.0
+const SAVED_HEIGHT := 40.0
+const SAVED_RISE := 30.0
 
 var _result: MatchResult
 var _chart: ProfitChart
+var _buttons: Array[PopButton] = []
+var _share: PopButton
+## 共有する画像を撮る間だけ立てる
+var _sharing := false
+var _saved_until := 0
 
 
 func _ready() -> void:
@@ -63,7 +74,11 @@ func _ready() -> void:
 	var again := PopButton.create("もう一度", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
 	var select := PopButton.create("店長を選ぶ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
 	var title := PopButton.create("タイトルへ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
-	var buttons: Array[PopButton] = [again, select, title]
+	_share = PopButton.create(
+		ResultShare.button_label(), UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD
+	)
+	var buttons: Array[PopButton] = [again, select, title, _share]
+	_buttons = buttons
 	var total := BUTTON_SIZE.x * buttons.size() + BUTTON_GAP * (buttons.size() - 1)
 	for i in buttons.size():
 		add_child(buttons[i])
@@ -82,6 +97,8 @@ func _ready() -> void:
 	again.pressed.connect(_on_again)
 	select.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
 	title.pressed.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
+	_share.pressed.connect(_on_share)
+	_share.disabled = not _review_done()
 
 
 func _process(_delta: float) -> void:
@@ -89,6 +106,7 @@ func _process(_delta: float) -> void:
 	if _chart != null and _chart.review != null and not _chart.review.is_done():
 		if _chart.review.process(REVIEW_BUDGET_USEC):
 			_chart.queue_redraw()
+	_share.disabled = not _review_done()
 
 
 func _draw() -> void:
@@ -115,6 +133,19 @@ func _draw() -> void:
 			_draw_stamp(Vector2(rect.end.x, rect.position.y) + STAMP_OFFSET)
 		if i == MatchController.PLAYER:
 			_draw_badges(rect.position + BEST_OFFSET)
+	if _sharing:
+		_draw_share_footer()
+	elif Time.get_ticks_msec() < _saved_until:
+		var center := _share.position + Vector2(_share.size.x * 0.5, -SAVED_RISE)
+		UiDraw.pill(
+			self,
+			center,
+			"画像を保存しました",
+			UiPalette.FONT_BODY,
+			UiPalette.MONEY,
+			UiPalette.INK,
+			SAVED_HEIGHT
+		)
 
 
 func _draw_verdict(label: String, color: Color, burst: bool) -> void:
@@ -264,3 +295,57 @@ func _draw_stamp(center: Vector2) -> void:
 func _on_again() -> void:
 	GameSession.prepare_match(GameSession.player_manager_id)
 	get_tree().change_scene_to_file(MATCH_SCENE)
+
+
+## 撮るのは「CPUならどうしたか」まで出そろってから(9.4節)
+func _review_done() -> bool:
+	if _result == null:
+		return false
+	return _chart.review == null or _chart.review.is_done()
+
+
+## 共有する画像の下の帯:ボタンの代わりに題字とCPUの強さ
+func _draw_share_footer() -> void:
+	var title := "コンビニウォーズ"
+	var cpu := "CPU " + _cpu_name()
+	var title_width := UiDraw.text_width(title, UiPalette.FONT_HEAD)
+	var total := title_width + SHARE_GAP + UiDraw.text_width(cpu, UiPalette.FONT_LARGE)
+	var x := (size.x - total) / 2.0
+	UiDraw.text_outlined(
+		self, Vector2(x, SHARE_TITLE_Y), title, UiPalette.FONT_HEAD, UiPalette.MONEY
+	)
+	UiDraw.text(
+		self,
+		Vector2(x + title_width + SHARE_GAP, SHARE_TITLE_Y),
+		cpu,
+		UiPalette.FONT_LARGE,
+		UiPalette.INK_ON_DARK
+	)
+
+
+func _cpu_name() -> String:
+	return GameDatabase.get_default().cpu_profile(GameSession.cpu_profile_id()).display_name
+
+
+func _on_share() -> void:
+	if _sharing or not _review_done():
+		return
+	var image: Image = await share_image()
+	var profit := _result.stores[MatchController.PLAYER].profit()
+	var text := ResultShare.share_text(_result.winner, _cpu_name(), profit)
+	if ResultShare.deliver(image, text) == ResultShare.Delivery.SAVED:
+		_saved_until = Time.get_ticks_msec() + int(SAVED_SECONDS * 1000.0)
+
+
+## ボタンを隠し下の帯に題字を描いた1フレームを撮る
+func share_image() -> Image:
+	_sharing = true
+	for button in _buttons:
+		button.visible = false
+	queue_redraw()
+	await RenderingServer.frame_post_draw
+	var image := ResultShare.capture(get_viewport())
+	_sharing = false
+	for button in _buttons:
+		button.visible = true
+	return image

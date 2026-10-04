@@ -143,7 +143,8 @@ func _order(demand: Dictionary, keep_limit: Dictionary) -> void:
 			if have >= float(demand[category_id]):
 				continue
 			if _db.category(category_id).perishable:
-				if have + lot > float(keep_limit.get(category_id, 0.0)):
+				var limit := float(keep_limit.get(category_id, 0.0))
+				if have + lot > limit and (have > 0 or limit < lot * 0.5):
 					continue
 			if _match.order(_index, product_id):
 				ordered = true
