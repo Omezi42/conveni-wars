@@ -24,8 +24,9 @@
 - Web版は `bash tools/export_web.sh` で `build/web/` へ書き出し、書き出したpckでヘッドレステストを回してから、
   ファイルごとの大きさ(そのまま / gzip)を出す。`build/` と `logs/` には `.gdignore` を置き、書き出しやスクリーンショットの絵がpckへ入らないようにする
 - unityroom へ上げる物(pck・サムネイルのGIF・スクリーンショット・投稿文)は `tools/unityroom/README.md` にまとめる。
-  サムネイルは `tools/unityroom/record_thumbnail.gd` が両店をCPUに遊ばせた試合を `--fixed-fps` でコマに書き出し、
-  `tools/unityroom/make_thumbnails.sh` が ImageMagick でGIFにする
+  サムネイルは `tools/unityroom/thumbnail_art.gd` が描くループの絵を `record_icon.gd` が2倍の大きさでコマに書き出す。
+  紹介用の動きとスクリーンショットは `record_thumbnail.gd` が両店をCPUに遊ばせた試合を `--fixed-fps` で書き出す。
+  どちらも `tools/unityroom/make_thumbnails.sh` が ImageMagick でGIFにする
 - フォント(GameDesign.md 10章)は、元の `tools/font_src/ZenKakuGothicNew-Bold.ttf`(`.gdignore` で書き出しから外す)を
   `python tools/subset_font.py` で絞り、`assets/fonts/` の同じ名前へ書く。残す字は ASCII・かな・全角英数・記号の一揃いと、
   `scripts/` `data/` `scenes/` の文字列に出てくる字。check.sh はその字がフォントにあるかを確かめ、足りなければ NG にする

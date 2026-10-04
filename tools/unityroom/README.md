@@ -11,7 +11,7 @@
 | 上げるもの | ファイル |
 |---|---|
 | ゲーム本体 | `build/web/index.pck`(unityroom へ上げるのは pck だけ。エンジンは unityroom 側が持つ) |
-| サムネイル | `build/unityroom/icon_512.gif`(512x512・512KB以下) |
+| サムネイル | `build/unityroom/icon_512.gif`(512x512・512KB以下。静止画は `icon_512.png`) |
 | スクリーンショット | `build/unityroom/screen_*.png` |
 | 紹介文や告知に貼る動き | `build/unityroom/play_640.gif` |
 
