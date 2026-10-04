@@ -100,6 +100,8 @@ func _run() -> void:
 		await process_frame
 	print("review took %d ms" % (Time.get_ticks_msec() - started))
 	await _shot("99_result")
+	var shared: Image = await result.share_image()
+	shared.save_png(_out_dir.path_join("99_result_share.png"))
 	print("captured to ", _out_dir)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(TEST_SAVE_PATH))
 	quit()
