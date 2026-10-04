@@ -9,7 +9,7 @@ display_name = "寒い日"
 order = 3
 chance = 2
 mix_bonus = {
-&"cold_customer": 3
+&"cold_customer": 2
 }
 event_weights = {}
 sky_tint = Color(0.8, 0.9, 1, 0.4)
