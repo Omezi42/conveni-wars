@@ -1,9 +1,9 @@
 class_name OnlineLobbyScreen
 extends Control
-## オンライン対戦の部屋(GameDesign.md 13.2節、Architecture.md 7.3節)。部屋を作って合言葉を出すか、合言葉を入れて入る。
+## オンライン対戦の部屋(GameDesign.md 13.2節、Architecture.md 7.3節)。部屋を作って合言葉を出すか、合言葉を入れて入るか、ランダムマッチで待つ。
 ## 合言葉は画面の数字のボタン(とキーボードの数字)で入れる。2人がそろったら版を確かめ合い、店長選択へ進む。
 
-enum Mode { MENU, HOSTING, ENTRY, JOINING }
+enum Mode { MENU, HOSTING, ENTRY, JOINING, SEARCHING }
 
 const SELECT_SCENE := "res://scenes/manager_select.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -11,16 +11,16 @@ const HEADER_RECT := Rect2(440, 22, 400, 52)
 const RECORD_Y := 112.0
 const PANEL_RECT := Rect2(340, 136, 600, 440)
 const MENU_BUTTON_SIZE := Vector2(400, 84)
-const MENU_FIRST_Y := 200.0
-const MENU_GAP := 28.0
+const MENU_FIRST_Y := 168.0
+const MENU_GAP := 22.0
 const BACK_RECT := Rect2(540, 610, 200, 60)
-const CODE_LABEL_Y := 200.0
+const CODE_LABEL_Y := 196.0
 const CODE_BOX := Vector2(64, 84)
 const CODE_BOX_GAP := 14.0
-const CODE_BOX_Y := 222.0
-const KEY_SIZE := Vector2(110, 58)
-const KEY_GAP := Vector2(12, 10)
-const KEY_TOP := 324.0
+const CODE_BOX_Y := 200.0
+const KEY_SIZE := Vector2(110, 50)
+const KEY_GAP := Vector2(12, 8)
+const KEY_TOP := 298.0
 const KEY_COLUMNS := 3
 const LABEL_DELETE := "消す"
 const LABEL_ENTER := "入る"
@@ -52,7 +52,9 @@ func _ready() -> void:
 	create.pressed.connect(_on_create)
 	var join := _add_button("合言葉で入る", UiPalette.PAPER, _menu_rect(1), UiPalette.FONT_HEAD)
 	join.pressed.connect(_on_join_pressed)
-	_menu_buttons = [create, join]
+	var random := _add_button("ランダムマッチ", UiPalette.PAPER, _menu_rect(2), UiPalette.FONT_HEAD)
+	random.pressed.connect(_on_random)
+	_menu_buttons = [create, join, random]
 	var labels: Array[String] = []
 	for digit in range(1, 10):
 		labels.append(str(digit))
@@ -111,7 +113,7 @@ func _set_mode(mode: Mode) -> void:
 
 func _process(_delta: float) -> void:
 	queue_redraw()
-	if _mode != Mode.HOSTING and _mode != Mode.JOINING:
+	if _mode == Mode.MENU or _mode == Mode.ENTRY:
 		return
 	while true:
 		var message := NetSession.next_message()
@@ -200,6 +202,16 @@ func _open_new_room() -> void:
 	_set_mode(Mode.HOSTING)
 
 
+func _on_random() -> void:
+	_error = ""
+	_code = ""
+	_status = "相手を探しています"
+	if not NetSession.open_random():
+		_fail("サーバーにつながりませんでした")
+		return
+	_set_mode(Mode.SEARCHING)
+
+
 func _on_join_pressed() -> void:
 	_error = ""
 	_code = ""
@@ -281,6 +293,9 @@ func _draw() -> void:
 			_draw_code("合言葉を入れる", "")
 		Mode.JOINING:
 			_draw_code("合言葉", "")
+			_draw_status(_status + _dots())
+		Mode.SEARCHING:
+			_draw_line_at(CODE_BOX_Y + CODE_BOX.y * 0.5, "ランダムマッチ", UiPalette.INK_SOFT)
 			_draw_status(_status + _dots())
 	if _error != "":
 		_draw_line_at(STATUS_Y, _error, UiPalette.BAD)

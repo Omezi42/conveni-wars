@@ -6,7 +6,7 @@ GameDesign.md 13章の実装。両方の端末で同じ `MatchState` を回し�
 
 | 部品 | 内容 |
 |---|---|
-| `server/`(Cloudflare Worker + Durable Object) | `wss://<host>/room/<合言葉>?op=create\|join`。合言葉ごとの `Room` が2本の WebSocket を持ち、文を相手へそのまま流す。2人目が入ったら両方へ `paired`(役割つき)、片方が閉じたら残りへ `peer_left`。入れないときは `error`(`taken` / `missing` / `full`)を1つ送って閉じる(ブラウザは101以外の応答を読めないため) |
+| `server/`(Cloudflare Worker + Durable Object) | `wss://<host>/room/<合言葉>?op=create\|join`。ランダムマッチは `wss://<host>/match` で、1つの `Matchmaker` が待っている1人と次に来た1人を組み、組んだ2人の文を流す(組の番号と役割は接続の attachment に持つ)。合言葉ごとの `Room` が2本の WebSocket を持ち、文を相手へそのまま流す。2人目が入ったら両方へ `paired`(役割つき)、片方が閉じたら残りへ `peer_left`。入れないときは `error`(`taken` / `missing` / `full`)を1つ送って閉じる(ブラウザは101以外の応答を読めないため) |
 | `NetSession`(autoload、`scripts/net/net_session.gd`) | WebSocket を1本持ち、`_process` で受けた文(JSON の辞書)を溜める。画面は `next_message()` で1つずつ取り出し、次の画面へ移る文を受けたらそこでやめる(残りは次の画面が読む)。閉じたら `closed` を溜める。自分の店は部屋を作った側が0 |
 | `NetProtocol`(`scripts/net/net_protocol.gd`) | 文の種類とキーの名前 |
 | `NetConfig`(`data/net.tres`) | サーバーのURL・操作の遅れ(tick)・送る間隔・待つ表示と切断の秒数・合言葉の桁数・引き継ぐCPUの強さ |
@@ -31,5 +31,5 @@ GameDesign.md 13章の実装。両方の端末で同じ `MatchState` を回し�
 
 | シーン | スクリプト | 責務 |
 |---|---|---|
-| `scenes/online_lobby.tscn` | `scripts/ui/online_lobby_screen.gd` | 部屋を作る(合言葉を乱数で作り、使われていたら作り直す)/ 数字のボタンで合言葉を入れて入る。`hello` を確かめ合ったら `GameSession.online` を立てて店長選択へ |
+| `scenes/online_lobby.tscn` | `scripts/ui/online_lobby_screen.gd` | 部屋を作る(合言葉を乱数で作り、使われていたら作り直す)/ 数字のボタンで合言葉を入れて入る / ランダムマッチで待つ。`hello` を確かめ合ったら `GameSession.online` を立てて店長選択へ |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | オンラインではCPUの強さを隠し、選んだら `pick` を送って待つ。部屋を作った側が両方の選択をそろえて `start` を送る |

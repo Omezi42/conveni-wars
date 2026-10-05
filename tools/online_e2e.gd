@@ -1,7 +1,7 @@
 extends SceneTree
 ## オンライン対戦の通し(Architecture.md 6章・7章)。中継サーバーを通して2つの Godot で1試合を最後まで回し、
 ## 終わりの状態のハッシュを出す。tools/online_e2e.sh が host と guest を同時に起こして比べる。
-## 引数: -- host|guest <合言葉>(サーバーは環境変数 CONVENI_SERVER)
+## 引数: -- host|guest <合言葉 または random>(サーバーは環境変数 CONVENI_SERVER)
 
 const STEP := 1.0 / 60.0
 const STEPS_PER_FRAME := 8
@@ -9,6 +9,7 @@ const ACT_EVERY := 30
 const TIMEOUT_MSEC := 240000
 const MANAGERS: Array[StringName] = [&"veteran", &"analyst"]
 const SEED := 77
+const RANDOM := "random"
 
 var _net: Node
 var _host := false
@@ -30,7 +31,10 @@ func _run(code: String) -> void:
 	_net = root.get_node("NetSession")
 	if not _host:
 		await create_timer(1.0).timeout
-	_net.open_room(code, _host)
+	if code == RANDOM:
+		_net.open_random()
+	else:
+		_net.open_room(code, _host)
 	while true:
 		await process_frame
 		if Time.get_ticks_msec() - _started_at > TIMEOUT_MSEC:
@@ -59,7 +63,7 @@ func _run(code: String) -> void:
 func _handle(message: Dictionary) -> void:
 	match message.get(NetProtocol.KIND, ""):
 		NetProtocol.PAIRED:
-			if _host:
+			if _net.is_host():
 				_net.send({NetProtocol.KIND: NetProtocol.START, NetProtocol.SEED: SEED})
 				_begin()
 		NetProtocol.START:

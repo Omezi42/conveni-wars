@@ -6,6 +6,7 @@ extends Node
 enum State { IDLE, CONNECTING, WAITING, PAIRED, CLOSED }
 
 const ROOM_PATH := "/room/"
+const MATCH_PATH := "/match"
 const OP_CREATE := "create"
 const OP_JOIN := "join"
 ## 試合の計算の作りを変えて、古い版と対戦すると食い違うようになったら上げる
@@ -53,11 +54,23 @@ func version() -> String:
 
 
 func open_room(room_code: String, create: bool) -> bool:
-	close()
 	code = room_code
-	_peer = WebSocketPeer.new()
 	var op := OP_CREATE if create else OP_JOIN
-	if _peer.connect_to_url("%s%s%s?op=%s" % [server_url(), ROOM_PATH, code, op]) != OK:
+	return _open("%s%s%s?op=%s" % [server_url(), ROOM_PATH, code, op])
+
+
+## ランダムマッチで待っている人と組む(いなければ来るまで待つ。GameDesign.md 13.2節)
+func open_random() -> bool:
+	code = ""
+	return _open(server_url() + MATCH_PATH)
+
+
+func _open(url: String) -> bool:
+	var keep_code := code
+	close()
+	code = keep_code
+	_peer = WebSocketPeer.new()
+	if _peer.connect_to_url(url) != OK:
 		_peer = null
 		state = State.CLOSED
 		return false

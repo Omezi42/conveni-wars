@@ -3,7 +3,8 @@ const base = process.argv[2] ?? "ws://127.0.0.1:8787";
 const code = String(1000 + Math.floor(Math.random() * 9000));
 
 function open(op, roomCode = code) {
-  const ws = new WebSocket(`${base}/room/${roomCode}?op=${op}`);
+  const path = op === "match" ? "/match" : `/room/${roomCode}?op=${op}`;
+  const ws = new WebSocket(`${base}${path}`);
   const inbox = [];
   const waiters = [];
   ws.onmessage = (e) => {
@@ -56,5 +57,23 @@ await new Promise((r) => setTimeout(r, 300));
 again.send(JSON.stringify({ k: "ping" }));
 check(true, "room can be created again after both left");
 again.close();
+
+const first = open("match");
+await first.ready;
+await new Promise((r) => setTimeout(r, 300));
+const second = open("match");
+check((await first.next()).role === "host", "random match: the waiting player becomes host");
+check((await second.next()).role === "guest", "random match: the newcomer becomes guest");
+first.send(JSON.stringify({ k: "pick", m: "idol" }));
+check((await second.next()).m === "idol", "random match: messages reach the partner");
+const third2 = open("match");
+await third2.ready;
+second.close();
+check((await first.next()).k === "peer_left", "random match: the partner is told the other left");
+const fourth = open("match");
+check((await third2.next()).role === "host", "random match: a later pair forms separately");
+check((await fourth.next()).role === "guest", "random match: the fourth player joins the third");
+third2.close();
+fourth.close();
 console.log("relay tests passed");
 process.exit(0);

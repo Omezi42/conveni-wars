@@ -45,8 +45,9 @@ const LEVEL_GAP := 12.0
 ## CPUの強さのボタンの上の見出し(ボタンの上端からベースラインまで)
 const LEVEL_HEADING_GAP := 10.0
 const LEVEL_HEADING := "CPUの強さ"
-const WAIT_TEXT := "相手が選ぶのを待っています…"
-const WAIT_Y := 626.0
+## オンライン対戦で選んだあと、開店のボタンの文字をこれに替えて待つ(ボタンの裏に文字を重ねないため)
+const WAIT_TEXT := "相手を待っています…"
+const LEFT_TEXT := "相手が部屋を出ました"
 ## 相手が部屋を出たと出してから、部屋の画面へ戻るまでの秒数
 const LEFT_SECONDS := 2.5
 
@@ -58,7 +59,6 @@ var _levels: Array[PopButton] = []
 var _own_pick: StringName = &""
 var _peer_pick: StringName = &""
 var _left_timer := -1.0
-var _notice := ""
 
 
 func _ready() -> void:
@@ -152,17 +152,6 @@ func _draw() -> void:
 			UiPalette.FONT_LARGE,
 			UiPalette.INK_ON_DARK,
 			UiPalette.INK
-		)
-	elif _notice != "":
-		UiDraw.text_outlined(
-			self,
-			Vector2(0, WAIT_Y),
-			_notice,
-			UiPalette.FONT_HEAD,
-			UiPalette.INK_ON_DARK,
-			UiPalette.INK,
-			HORIZONTAL_ALIGNMENT_CENTER,
-			size.x
 		)
 	var managers := _managers()
 	for i in managers.size():
@@ -336,10 +325,9 @@ func _handle(message: Dictionary) -> bool:
 			return true
 		NetProtocol.PEER_LEFT, NetProtocol.CLOSED:
 			NetSession.close()
-			_notice = "相手が部屋を出ました"
+			_start.text = LEFT_TEXT
 			_start.disabled = true
 			_left_timer = LEFT_SECONDS
-			queue_redraw()
 			return true
 	return false
 
@@ -349,8 +337,7 @@ func _pick_online(manager_id: StringName) -> void:
 	_start.disabled = true
 	NetSession.send({NetProtocol.KIND: NetProtocol.PICK, NetProtocol.MANAGER: String(manager_id)})
 	if not _start_if_ready():
-		_notice = WAIT_TEXT
-		queue_redraw()
+		_start.text = WAIT_TEXT
 
 
 ## 部屋を作った側は、両方が選んだら種を決めて試合を始める(GameDesign.md 13.2節)
