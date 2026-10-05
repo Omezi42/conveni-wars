@@ -1,12 +1,13 @@
 class_name TitleScreen
 extends Control
 ## タイトル(GameDesign.md 9.1節・9.5節)。夕暮れの通りに、看板を掲げた2軒のコンビニが向かい合う。
-## 「はじめる」「遊び方」(ヒントを全部出し直して始める。9.7節)「設定」を置く。
+## 「はじめる」「遊び方」(ヒントを全部出し直して始める。9.7節)「設定」「オンライン対戦」(13章)を置く。
 ## 戦績が無いときの「はじめる」は店長選択を飛ばして試合を始める(9.1節)。文字のルール説明は置かない(9.5節)。
 ## 背景では TitleStreet がCPUどうしの試合を回し、見える客を2軒の店へ歩かせる。
 
 const NEXT_SCENE := "res://scenes/manager_select.tscn"
 const MATCH_SCENE := "res://scenes/match.tscn"
+const LOBBY_SCENE := "res://scenes/online_lobby.tscn"
 const LOGO_Y := 150.0
 const LOGO_SHADOW := Vector2(0, 7)
 const LOGO_OUTLINE := 16
@@ -19,6 +20,7 @@ const TAGLINE_PAD := 22.0
 const BUTTON_RECT := Rect2(490, 290, 300, 76)
 const HOW_TO_RECT := Rect2(490, 386, 146, 50)
 const SETTINGS_RECT := Rect2(644, 386, 146, 50)
+const ONLINE_RECT := Rect2(490, 450, 300, 56)
 const GROUND_Y := 560.0
 const CURB_HEIGHT := 40.0
 const ROAD_LINE_Y := 650.0
@@ -41,6 +43,8 @@ const HANDLE := Vector2(4, 22)
 
 
 func _ready() -> void:
+	GameSession.online = false
+	NetSession.close()
 	var street := TitleStreet.new()
 	add_child(street)
 	street.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -56,6 +60,11 @@ func _ready() -> void:
 	how_to.pressed.connect(_on_how_to)
 	var settings := _add_small_button("設定", SETTINGS_RECT)
 	settings.pressed.connect(_on_settings)
+	if NetSession.is_available():
+		var online := _add_small_button("オンライン対戦", ONLINE_RECT)
+		online.fill = UiPalette.STORE_COLORS[ViewSide.RIVAL_SIDE]
+		online.ink = UiPalette.INK_ON_DARK
+		online.pressed.connect(func() -> void: get_tree().change_scene_to_file(LOBBY_SCENE))
 	AudioDirector.play_bgm(&"menu")
 
 

@@ -4,6 +4,7 @@ extends RefCounted
 
 const DEFAULT_PATH := "user://save.cfg"
 const RECORD := "record"
+const ONLINE := "online"
 const SETTINGS := "settings"
 const DEFAULT_VOLUME := 0.8
 
@@ -18,6 +19,10 @@ var stars: Dictionary = {}
 var cpu_profile_id: StringName = &""
 ## 出したヒントのid(GameDesign.md 9.7節)
 var shown_hints: Array = []
+## オンライン対戦の戦績(CPU戦とは分けて数える。GameDesign.md 13.4節)
+var online_wins := 0
+var online_losses := 0
+var online_draws := 0
 var bgm_volume := DEFAULT_VOLUME
 var se_volume := DEFAULT_VOLUME
 
@@ -39,6 +44,9 @@ func load_file() -> void:
 	stars = file.get_value(RECORD, "stars", {})
 	cpu_profile_id = StringName(file.get_value(RECORD, "cpu_profile_id", ""))
 	shown_hints = file.get_value(RECORD, "shown_hints", [])
+	online_wins = file.get_value(ONLINE, "wins", 0)
+	online_losses = file.get_value(ONLINE, "losses", 0)
+	online_draws = file.get_value(ONLINE, "draws", 0)
 	bgm_volume = file.get_value(SETTINGS, "bgm_volume", DEFAULT_VOLUME)
 	se_volume = file.get_value(SETTINGS, "se_volume", DEFAULT_VOLUME)
 
@@ -52,6 +60,9 @@ func save_file() -> void:
 	file.set_value(RECORD, "stars", stars)
 	file.set_value(RECORD, "cpu_profile_id", String(cpu_profile_id))
 	file.set_value(RECORD, "shown_hints", shown_hints)
+	file.set_value(ONLINE, "wins", online_wins)
+	file.set_value(ONLINE, "losses", online_losses)
+	file.set_value(ONLINE, "draws", online_draws)
 	file.set_value(SETTINGS, "bgm_volume", bgm_volume)
 	file.set_value(SETTINGS, "se_volume", se_volume)
 	file.save(_path)
@@ -93,6 +104,16 @@ func mark_hint(id: StringName) -> void:
 ## タイトルの「遊び方」から始めたとき、ヒントを全部出し直す
 func clear_hints() -> void:
 	shown_hints.clear()
+
+
+## オンライン対戦の結果を、オンラインの戦績に足す
+func record_online(winner: int, own_index: int) -> void:
+	if winner == MatchResult.DRAW:
+		online_draws += 1
+	elif winner == own_index:
+		online_wins += 1
+	else:
+		online_losses += 1
 
 
 ## 試合の結果を戦績に足す。自己ベストを更新したら true

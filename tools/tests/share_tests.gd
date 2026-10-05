@@ -12,11 +12,11 @@ func run(assert_true: Callable) -> void:
 
 
 func _test_share_text() -> void:
-	var win := ResultShare.share_text(ResultShare.PLAYER, "つよい", 12345)
+	var win := ResultShare.share_text(0, 0, "CPU(つよい)", 12345)
 	_assert.call(win == "コンビニウォーズでCPU(つよい)に勝ち! 利益 ¥12,345 #コンビニウォーズ", "win text")
-	var lose := ResultShare.share_text(ResultShare.CPU, "ふつう", 100)
+	var lose := ResultShare.share_text(0, 1, "オンライン対戦の相手", 100)
 	_assert.call(lose.contains("に負け…"), "lose text")
-	var draw := ResultShare.share_text(MatchResult.DRAW, "やさしい", 0)
+	var draw := ResultShare.share_text(MatchResult.DRAW, 0, "CPU(やさしい)", 0)
 	_assert.call(draw.contains("と引き分け"), "draw text")
 
 

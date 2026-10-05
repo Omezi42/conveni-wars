@@ -8,11 +8,14 @@ const BLINK_HZ := 2.5
 
 var match_state: MatchState
 var store_index := 0
+## 操作の窓口。オンライン対戦では MatchController が共有のものに差し替える
+var commands: PlayerCommands
 
 
 func setup(state: MatchState, index: int) -> void:
 	match_state = state
 	store_index = index
+	commands = PlayerCommands.new(state)
 
 
 func _process(_delta: float) -> void:

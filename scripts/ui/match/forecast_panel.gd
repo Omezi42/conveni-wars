@@ -249,6 +249,6 @@ func _draw_event_counts(pos: Vector2) -> void:
 	var counts := match_state.events.active_counts
 	var x := pos.x
 	for i in counts.size():
-		var label := "%s %d人" % [UiPalette.STORE_NAMES[i], counts[i]]
-		UiDraw.text(self, Vector2(x, pos.y), label, UiPalette.FONT_LARGE, UiPalette.STORE_COLORS[i])
+		var label := "%s %d人" % [ViewSide.name(i), counts[i]]
+		UiDraw.text(self, Vector2(x, pos.y), label, UiPalette.FONT_LARGE, ViewSide.color(i))
 		x += UiDraw.text_width(label, UiPalette.FONT_LARGE) + PAD * 2.0

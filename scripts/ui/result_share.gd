@@ -5,9 +5,6 @@ extends RefCounted
 
 enum Delivery { SHARED, SAVED, FAILED }
 
-const PLAYER := 0
-const CPU := 1
-
 const IMAGE_SIZE := Vector2i(1280, 720)
 const FILE_PREFIX := "conveni-wars_"
 const FOLDER := "コンビニウォーズ"
@@ -39,13 +36,14 @@ static func button_label() -> String:
 	return "結果を共有" if is_web() else "画像を保存"
 
 
-static func share_text(winner: int, cpu_name: String, profit: int) -> String:
+## opponent は相手の呼び名(「CPU(つよい)」「オンライン対戦の相手」)
+static func share_text(winner: int, own: int, opponent: String, profit: int) -> String:
 	var verdict := DRAW_TEXT
-	if winner == PLAYER:
+	if winner == own:
 		verdict = WIN_TEXT
-	elif winner == CPU:
+	elif winner != MatchResult.DRAW:
 		verdict = LOSE_TEXT
-	return "コンビニウォーズでCPU(%s)%s 利益 %s %s" % [cpu_name, verdict, UiDraw.yen(profit), HASHTAG]
+	return "コンビニウォーズで%s%s 利益 %s %s" % [opponent, verdict, UiDraw.yen(profit), HASHTAG]
 
 
 static func file_name(now: Dictionary) -> String:

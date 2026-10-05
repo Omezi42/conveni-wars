@@ -3,6 +3,7 @@ extends Control
 ## 結果(GameDesign.md 9.4節・9.5節)。閉店後の夜空の下に、両店の成績をレシートの形で並べ、勝った店に「勝」の判を押す。
 ## 利益・売上・仕入れ・来店した客の数・取られた客(負けた理由が付いた客)・廃棄した個数を出す。
 ## 2枚のレシートのあいだに、ふりかえりの利益の折れ線(ProfitChart)を置く。
+## オンライン対戦(GameDesign.md 13.4節)のボタンは「タイトルへ」と共有だけにし、「CPUならどうしたか」は出さない。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -67,9 +68,9 @@ var _saved_until := 0
 func _ready() -> void:
 	_result = GameSession.last_result
 	AudioDirector.play_bgm(&"menu")
-	if _result != null and _result.winner == MatchController.PLAYER:
+	if _result != null and _result.winner == ViewSide.own:
 		AudioDirector.play_se(&"win")
-	elif _result != null and _result.winner == MatchController.CPU:
+	elif _result != null and _result.winner == ViewSide.rival():
 		AudioDirector.play_se(&"lose")
 	var again := PopButton.create("もう一度", UiPalette.MONEY, UiPalette.INK, UiPalette.FONT_HEAD)
 	var select := PopButton.create("店長を選ぶ", UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD)
@@ -78,6 +79,11 @@ func _ready() -> void:
 		ResultShare.button_label(), UiPalette.PAPER, UiPalette.INK, UiPalette.FONT_HEAD
 	)
 	var buttons: Array[PopButton] = [again, select, title, _share]
+	if GameSession.online:
+		NetSession.close()
+		again.queue_free()
+		select.queue_free()
+		buttons = [title, _share]
 	_buttons = buttons
 	var total := BUTTON_SIZE.x * buttons.size() + BUTTON_GAP * (buttons.size() - 1)
 	for i in buttons.size():
@@ -93,10 +99,10 @@ func _ready() -> void:
 		_chart.setup(_result)
 		if _result.record != null and not _result.record.snapshots.is_empty():
 			var db := GameDatabase.get_default()
-			_chart.review = CpuReview.new(_result, db, MatchController.PLAYER)
+			_chart.review = CpuReview.new(_result, db, ViewSide.own)
 	again.pressed.connect(_on_again)
 	select.pressed.connect(func() -> void: get_tree().change_scene_to_file(SELECT_SCENE))
-	title.pressed.connect(func() -> void: get_tree().change_scene_to_file(TITLE_SCENE))
+	title.pressed.connect(_on_title)
 	_share.pressed.connect(_on_share)
 	_share.disabled = not _review_done()
 
@@ -117,21 +123,21 @@ func _draw() -> void:
 		return
 	var verdict := "引き分け"
 	var color := UiPalette.INK_ON_DARK
-	if _result.winner == MatchController.PLAYER:
+	if _result.winner == ViewSide.own:
 		verdict = "勝ち!"
 		color = UiPalette.MONEY
-	elif _result.winner == MatchController.CPU:
+	elif _result.winner == ViewSide.rival():
 		verdict = "負け…"
-		color = UiPalette.STORE_COLORS[MatchController.CPU].lightened(LOSE_LIGHTEN)
-	_draw_verdict(verdict, color, _result.winner == MatchController.PLAYER)
+		color = ViewSide.color(ViewSide.rival()).lightened(LOSE_LIGHTEN)
+	_draw_verdict(verdict, color, _result.winner == ViewSide.own)
 	var total := RECEIPT_SIZE.x * 2.0 + CHART_SIZE.x + RECEIPT_GAP * 2.0
 	for i in _result.stores.size():
-		var x := (size.x - total) / 2.0 + i * (total - RECEIPT_SIZE.x)
+		var x := (size.x - total) / 2.0 + ViewSide.side(i) * (total - RECEIPT_SIZE.x)
 		var rect := Rect2(Vector2(x, RECEIPT_Y), RECEIPT_SIZE)
 		_draw_receipt(rect, _result.stores[i])
 		if _result.winner == i:
 			_draw_stamp(Vector2(rect.end.x, rect.position.y) + STAMP_OFFSET)
-		if i == MatchController.PLAYER:
+		if i == ViewSide.own:
 			_draw_badges(rect.position + BEST_OFFSET)
 	if _sharing:
 		_draw_share_footer()
@@ -182,12 +188,12 @@ func _draw_receipt(rect: Rect2, store: StoreState) -> void:
 	var inner_x := rect.position.x + PAD
 	var width := rect.size.x - PAD * 2.0
 	var center := HORIZONTAL_ALIGNMENT_CENTER
-	var store_color := UiPalette.STORE_COLORS[store.index]
+	var store_color := ViewSide.color(store.index)
 	var store_pos := Vector2(rect.position.x, rect.position.y + STORE_Y)
 	UiDraw.text(
 		self,
 		store_pos,
-		UiPalette.STORE_NAMES[store.index],
+		ViewSide.name(store.index),
 		UiPalette.FONT_HEAD,
 		store_color,
 		center,
@@ -297,6 +303,11 @@ func _on_again() -> void:
 	get_tree().change_scene_to_file(MATCH_SCENE)
 
 
+func _on_title() -> void:
+	GameSession.online = false
+	get_tree().change_scene_to_file(TITLE_SCENE)
+
+
 ## 撮るのは「CPUならどうしたか」まで出そろってから(9.4節)
 func _review_done() -> bool:
 	if _result == null:
@@ -307,7 +318,7 @@ func _review_done() -> bool:
 ## 共有する画像の下の帯:ボタンの代わりに題字とCPUの強さ
 func _draw_share_footer() -> void:
 	var title := "コンビニウォーズ"
-	var cpu := "CPU " + _cpu_name()
+	var cpu := "オンライン対戦" if GameSession.online else "CPU " + _cpu_name()
 	var title_width := UiDraw.text_width(title, UiPalette.FONT_HEAD)
 	var total := title_width + SHARE_GAP + UiDraw.text_width(cpu, UiPalette.FONT_LARGE)
 	var x := (size.x - total) / 2.0
@@ -331,8 +342,9 @@ func _on_share() -> void:
 	if _sharing or not _review_done():
 		return
 	var image: Image = await share_image()
-	var profit := _result.stores[MatchController.PLAYER].profit()
-	var text := ResultShare.share_text(_result.winner, _cpu_name(), profit)
+	var profit := _result.stores[ViewSide.own].profit()
+	var opponent := "オンライン対戦の相手" if GameSession.online else "CPU(%s)" % _cpu_name()
+	var text := ResultShare.share_text(_result.winner, ViewSide.own, opponent, profit)
 	if ResultShare.deliver(image, text) == ResultShare.Delivery.SAVED:
 		_saved_until = Time.get_ticks_msec() + int(SAVED_SECONDS * 1000.0)
 

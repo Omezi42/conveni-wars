@@ -5,12 +5,14 @@
 | `scenes/title.tscn` | `scripts/ui/title_screen.gd` | タイトル。背景で `TitleStreet` が CPU どうしの `MatchState` を回し、見える客を2軒の店へ歩かせる |
 | `scenes/manager_select.tscn` | `scripts/ui/manager_select_screen.gd` | 店長の選択(GameDesign.md 7章) |
 | `scenes/match.tscn` | `scripts/ui/match/match_controller.gd` | `MatchState` を持ち、進行させ、子の表示へ渡す |
+| `scenes/online_lobby.tscn` | `scripts/ui/online_lobby_screen.gd` | オンライン対戦の部屋(7.3節) |
 | `scenes/result.tscn` | `scripts/ui/result_screen.gd` | 結果(9.4節)。2枚のレシートのあいだに `ProfitChart`(`scripts/ui/profit_chart.gd`)を置く。時間帯ごとの割合の下に、`StoreState` が数えた負けた理由のうち最多のものを出す。`_process` で `CpuReview` を1フレームの予算ぶん進め、できた文を `ProfitChart` の下段に出す。共有ボタンの処理は `ResultShare`(`scripts/ui/result_share.gd`)へ分ける(4.4節) |
 
 ## 4.1 試合画面の部品(GameDesign.md 9.2節・9.3節)
 
 各部品は `MatchPart`(`setup(match_state, store_index)` と毎フレームの描き直しを持つ Control)を継承し、
-`MatchState` を受け取って表示し、操作はコマンドとして呼ぶだけにする。
+`MatchState` を受け取って表示し、操作は `commands`(`PlayerCommands`。7.2節)のコマンドとして呼ぶだけにする。
+自店の番号と店の色・呼び名は `ViewSide` で引く(オンライン対戦で部屋に入った側は自店が店1のため。7.2節)。
 品ぞろえでタップして選んだ商品は `UiSelection`(RefCounted)に持ち、`CatalogView` と `ShelfView` で共有する。
 
 | 部品 | 内容 |

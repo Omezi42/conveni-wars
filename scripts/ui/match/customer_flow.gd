@@ -47,7 +47,7 @@ var _rng := RandomNumberGenerator.new()
 
 
 func _init() -> void:
-	_visible.priority_store = MatchController.PLAYER
+	_visible.priority_store = ViewSide.own
 	_visible.entered.connect(_on_visible_entered)
 
 
@@ -102,7 +102,7 @@ func _push_visible(
 
 
 func _on_visible_entered(entered_store: int, product_id: StringName) -> void:
-	if entered_store == MatchController.PLAYER:
+	if entered_store == ViewSide.own:
 		visible_entered.emit(product_id)
 
 
@@ -155,14 +155,14 @@ func _draw_street() -> void:
 	for i in door_points.size():
 		var door := door_points[i]
 		if night > 0.0:
-			var facing := 1.0 if i == 0 else -1.0
+			var facing := 1.0 if ViewSide.side(i) == ViewSide.OWN_SIDE else -1.0
 			for ring in LIGHT_RINGS:
 				var light := UiPalette.DOOR_LIGHT
 				light.a *= night / LIGHT_RINGS
 				_half_disc(door, LIGHT_RADIUS * (ring + 1) / LIGHT_RINGS, facing, light)
-		var mat_x := door.x if i == 0 else door.x - DOOR_MAT.x
+		var mat_x := door.x if ViewSide.side(i) == ViewSide.OWN_SIDE else door.x - DOOR_MAT.x
 		var mat := Rect2(mat_x, door.y - DOOR_MAT.y * HALF, DOOR_MAT.x, DOOR_MAT.y)
-		draw_rect(mat, UiPalette.STORE_ACCENTS[i])
+		draw_rect(mat, ViewSide.accent(i))
 
 
 ## 通りの側(facing が正なら右)だけの半円。店の壁へ明かりがはみ出さないようにする
@@ -178,7 +178,7 @@ func _draw_stream(index: int) -> void:
 	var width := clampf(_rates[index] / RATE_FOR_FULL_STREAM, 0.0, 1.0) * STREAM_MAX_WIDTH
 	if width < 1.0:
 		return
-	var color := UiPalette.STORE_COLORS[index]
+	var color := ViewSide.color(index)
 	color.a = STREAM_ALPHA
 	var door := door_points[index]
 	draw_line(Vector2(size.x * HALF, door.y), door, color, width)

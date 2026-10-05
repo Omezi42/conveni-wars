@@ -19,6 +19,7 @@
 | 10章 | 技術方針 | [`design/10_tech_policy.md`](design/10_tech_policy.md) |
 | 11章 | 突発イベント | [`design/11_events.md`](design/11_events.md) |
 | 12章 | 天気 | [`design/12_weather.md`](design/12_weather.md) |
+| 13章 | オンライン対戦 | [`design/13_online.md`](design/13_online.md) |
 | 99章 | 未決事項 | [`design/99_open_issues.md`](design/99_open_issues.md) |
 
 数値はすべて仮の値。CPU戦を動かしながら調整し、確定した値をここへ反映する。

@@ -165,15 +165,15 @@ func _status_text() -> String:
 
 
 func _on_step_pressed(step: int) -> void:
-	match_state.set_price_step(store_index, _product_id, step)
+	commands.set_price_step(store_index, _product_id, step)
 	close()
 
 
 func _on_remove_pressed() -> void:
-	match_state.unassign(store_index, _slot)
+	commands.unassign(store_index, _slot)
 	close()
 
 
 func _on_auto_pressed() -> void:
-	match_state.set_auto_order(store_index, _product_id, not store().auto_orders.has(_product_id))
+	commands.set_auto_order(store_index, _product_id, not store().auto_orders.has(_product_id))
 	close()

@@ -4,8 +4,10 @@ extends Control
 ## カードをタップして選び(浮き上がって黄色い枠が付く)、開店する。CPUは残りから選ばれる(8.1節)。
 ## 店長の色の地の右下に、CPUの強さごとの勝ち星(9.7節)を並べる。
 ## 左下でCPUの強さ(8.3節)を選ぶ。スキルは短い言葉で出し、カーソルを乗せた(タッチでは押した)カードだけ正確な効果を出す(7.1節)。
+## オンライン対戦(13.2節)ではCPUの強さを出さず、両方が選んだら部屋を作った側が種を決めて試合を始める。
 
 const MATCH_SCENE := "res://scenes/match.tscn"
+const LOBBY_SCENE := "res://scenes/online_lobby.tscn"
 const HEADER_RECT := Rect2(490, 22, 300, 52)
 const CARD_SIZE := Vector2(272, 448)
 const CARD_GAP := 18.0
@@ -43,11 +45,20 @@ const LEVEL_GAP := 12.0
 ## CPUの強さのボタンの上の見出し(ボタンの上端からベースラインまで)
 const LEVEL_HEADING_GAP := 10.0
 const LEVEL_HEADING := "CPUの強さ"
+const WAIT_TEXT := "相手が選ぶのを待っています…"
+const WAIT_Y := 626.0
+## 相手が部屋を出たと出してから、部屋の画面へ戻るまでの秒数
+const LEFT_SECONDS := 2.5
 
 var _selected := -1
 var _hover := -1
 var _start: PopButton
 var _levels: Array[PopButton] = []
+## オンライン対戦で、自分と相手が選んだ店長(まだなら空)
+var _own_pick: StringName = &""
+var _peer_pick: StringName = &""
+var _left_timer := -1.0
+var _notice := ""
 
 
 func _ready() -> void:
@@ -70,6 +81,7 @@ func _ready() -> void:
 		)
 		button.pressed.connect(_on_level_pressed.bind(profiles[i].id))
 		_levels.append(button)
+		button.visible = not GameSession.online
 	_show_level()
 
 
@@ -116,7 +128,7 @@ func _gui_input(event: InputEvent) -> void:
 	if press == null or not press.pressed or press.button_index != MOUSE_BUTTON_LEFT:
 		return
 	var index := _card_at(press.position)
-	if index >= 0:
+	if index >= 0 and _own_pick == &"":
 		_selected = index
 		_start.disabled = false
 		queue_redraw()
@@ -131,15 +143,27 @@ func _draw() -> void:
 		self, HEADER_RECT, UiPalette.INK, Color.TRANSPARENT, 0, int(HEADER_RECT.size.y * 0.5)
 	)
 	UiDraw.text_centered(self, HEADER_RECT, "店長を選ぶ", UiPalette.FONT_HEAD, UiPalette.INK_ON_DARK)
-	var heading_y := BUTTON_RECT.end.y - LEVEL_SIZE.y - LEVEL_HEADING_GAP
-	UiDraw.text_outlined(
-		self,
-		Vector2(LEVEL_LEFT, heading_y),
-		LEVEL_HEADING,
-		UiPalette.FONT_LARGE,
-		UiPalette.INK_ON_DARK,
-		UiPalette.INK
-	)
+	if not GameSession.online:
+		var heading_y := BUTTON_RECT.end.y - LEVEL_SIZE.y - LEVEL_HEADING_GAP
+		UiDraw.text_outlined(
+			self,
+			Vector2(LEVEL_LEFT, heading_y),
+			LEVEL_HEADING,
+			UiPalette.FONT_LARGE,
+			UiPalette.INK_ON_DARK,
+			UiPalette.INK
+		)
+	elif _notice != "":
+		UiDraw.text_outlined(
+			self,
+			Vector2(0, WAIT_Y),
+			_notice,
+			UiPalette.FONT_HEAD,
+			UiPalette.INK_ON_DARK,
+			UiPalette.INK,
+			HORIZONTAL_ALIGNMENT_CENTER,
+			size.x
+		)
 	var managers := _managers()
 	for i in managers.size():
 		var rect := _card_rect(i)
@@ -276,5 +300,75 @@ func _draw_section(
 func _on_start() -> void:
 	if _selected < 0:
 		return
+	if GameSession.online:
+		_pick_online(_managers()[_selected].id)
+		return
 	GameSession.prepare_match(_managers()[_selected].id)
 	get_tree().change_scene_to_file(MATCH_SCENE)
+
+
+func _process(delta: float) -> void:
+	if not GameSession.online:
+		return
+	if _left_timer >= 0.0:
+		_left_timer -= delta
+		if _left_timer < 0.0:
+			get_tree().change_scene_to_file(LOBBY_SCENE)
+		return
+	while true:
+		var message := NetSession.next_message()
+		if message.is_empty() or _handle(message):
+			return
+
+
+## 試合へ進んだら true(残りの文は試合の画面が読む)
+func _handle(message: Dictionary) -> bool:
+	match message.get(NetProtocol.KIND, ""):
+		NetProtocol.PICK:
+			_peer_pick = StringName(message.get(NetProtocol.MANAGER, ""))
+			return _start_if_ready()
+		NetProtocol.START:
+			var ids: Array[StringName] = []
+			for id: String in message.get(NetProtocol.MANAGERS, []):
+				ids.append(StringName(id))
+			GameSession.prepare_online_match(int(message.get(NetProtocol.SEED, 0)), ids)
+			get_tree().change_scene_to_file(MATCH_SCENE)
+			return true
+		NetProtocol.PEER_LEFT, NetProtocol.CLOSED:
+			NetSession.close()
+			_notice = "相手が部屋を出ました"
+			_start.disabled = true
+			_left_timer = LEFT_SECONDS
+			queue_redraw()
+			return true
+	return false
+
+
+func _pick_online(manager_id: StringName) -> void:
+	_own_pick = manager_id
+	_start.disabled = true
+	NetSession.send({NetProtocol.KIND: NetProtocol.PICK, NetProtocol.MANAGER: String(manager_id)})
+	if not _start_if_ready():
+		_notice = WAIT_TEXT
+		queue_redraw()
+
+
+## 部屋を作った側は、両方が選んだら種を決めて試合を始める(GameDesign.md 13.2節)
+func _start_if_ready() -> bool:
+	if not NetSession.is_host() or _own_pick == &"" or _peer_pick == &"":
+		return false
+	var ids: Array[StringName] = [_own_pick, _peer_pick]
+	var seed_value := randi()
+	(
+		NetSession
+		. send(
+			{
+				NetProtocol.KIND: NetProtocol.START,
+				NetProtocol.SEED: seed_value,
+				NetProtocol.MANAGERS: [String(ids[0]), String(ids[1])],
+			}
+		)
+	)
+	GameSession.prepare_online_match(seed_value, ids)
+	get_tree().change_scene_to_file(MATCH_SCENE)
+	return true

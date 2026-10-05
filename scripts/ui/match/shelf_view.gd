@@ -186,7 +186,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	var order_slot := order_slot_at(press.position)
 	if order_slot >= 0:
-		_gauge.press(store().shelf[order_slot])
+		_gauge.press(store().shelf[order_slot], commands)
 		accept_event()
 		return
 	_press_slot = slot_at(press.position)
@@ -284,7 +284,7 @@ func _draw_space(slot: int, bonus: ShelfBonus.Result) -> void:
 		_draw_product(slot, space, product_id, bonus)
 	if slot == _drop_slot:
 		UiDraw.panel(self, space, DROP_HIGHLIGHT, Color.TRANSPARENT, 0, radius)
-	var team := UiPalette.STORE_COLORS[store_index]
+	var team := ViewSide.color(store_index)
 	if interactive and selection != null and selection.has_selection():
 		var hint := team
 		hint.a = lerpf(SELECT_MIN_ALPHA, 1.0, blink())

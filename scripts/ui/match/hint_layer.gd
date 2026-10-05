@@ -3,8 +3,6 @@ extends Control
 ## ヒント(GameDesign.md 9.7節)。初めてその出来事が起きたとき、その場所を指す1行の吹き出しを出す。
 ## 試合も入力も止めない。出すのは1つずつで、指した操作をしたか6秒(試合の時計で)たつと消える。
 
-const PLAYER := 0
-const CPU := 1
 const SHOW_SECONDS := 6.0
 const OPENING_DELAY := 3.0
 const SKILL_REMAINING := 150.0
@@ -127,7 +125,7 @@ func _check_low_stock() -> void:
 
 
 func _on_ordered(store_index: int, product_id: StringName) -> void:
-	if store_index != PLAYER or store().auto_orders.has(product_id):
+	if store_index != ViewSide.own or store().auto_orders.has(product_id):
 		return
 	var count: int = _manual_orders.get(product_id, 0) + 1
 	_manual_orders[product_id] = count
@@ -143,7 +141,7 @@ func _on_ordered(store_index: int, product_id: StringName) -> void:
 
 
 func _on_customer_lost(store_index: int, category_id: StringName) -> void:
-	if store_index != PLAYER or catalog.first_tile_in(category_id) < 0:
+	if store_index != ViewSide.own or catalog.first_tile_in(category_id) < 0:
 		return
 	var category := match_state.db.category(category_id)
 	_push(
@@ -157,7 +155,7 @@ func _on_customer_lost(store_index: int, category_id: StringName) -> void:
 
 
 func _on_event_announced(_event_id: StringName, store_index: int) -> void:
-	if store_index != PLAYER:
+	if store_index != ViewSide.own:
 		return
 	var text := "%d人がまとめ買いに来る。先に並べよう" % match_state.balance.event_customer_count
 	_push(
@@ -167,9 +165,9 @@ func _on_event_announced(_event_id: StringName, store_index: int) -> void:
 
 ## 相手が値段を変え、自店の棚の同じカテゴリの商品より安くなったら、自店のその商品の値札を指す
 func _on_price_changed(store_index: int, product_id: StringName, _step: int) -> void:
-	if store_index != CPU:
+	if store_index != ViewSide.rival():
 		return
-	var rival := match_state.stores[CPU]
+	var rival := match_state.stores[ViewSide.rival()]
 	var category_id := match_state.db.product(product_id).category_id
 	for own_id in store().shelf_product_ids():
 		if match_state.db.product(own_id).category_id != category_id:
@@ -217,7 +215,7 @@ func _target() -> Rect2:
 
 
 func store() -> StoreState:
-	return match_state.stores[PLAYER]
+	return match_state.stores[ViewSide.own]
 
 
 func _ordered_any(count_at_trigger: int) -> bool:

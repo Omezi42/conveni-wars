@@ -3,7 +3,6 @@ extends Node
 ## 試合のシグナルを受けて効果音とBGMの速さを決める(GameDesign.md 9.8節、Architecture.md 4.3節)。
 ## 大口獲得・逆転は演出を出す MatchController が直接鳴らす。
 
-const PLAYER := 0
 ## 続けて売れるたびに上げる音程と、その上限
 const SALE_PITCH_STEP := 0.03
 const SALE_PITCH_MAX := 1.5
@@ -45,17 +44,17 @@ func _process(delta: float) -> void:
 
 
 func _only_player(store: int, _id: StringName, se: StringName) -> void:
-	if store == PLAYER:
+	if store == ViewSide.own:
 		AudioDirector.play_se(se)
 
 
 func _on_purchased(store: int, product_id: StringName, _count: int, _amount: int) -> void:
-	if store != PLAYER:
+	if store != ViewSide.own:
 		return
 	AudioDirector.play_se(&"sale", _sale_pitch)
 	_sale_pitch = minf(_sale_pitch + SALE_PITCH_STEP, SALE_PITCH_MAX)
 	_since_sale = 0.0
-	var own := _match.stores[PLAYER]
+	var own := _match.stores[ViewSide.own]
 	if own.stock(product_id) <= 0 and own.is_on_shelf(product_id):
 		AudioDirector.play_se(&"stockout")
 

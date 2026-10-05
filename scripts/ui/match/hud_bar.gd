@@ -132,9 +132,9 @@ func _draw_day_bar() -> void:
 func _draw_scoreboard() -> void:
 	var half := (SCORE_RECT.size.x - VS_RADIUS * 2.0) / 2.0
 	for i in MatchState.STORE_COUNT:
-		var x := SCORE_RECT.position.x + (half + VS_RADIUS * 2.0) * i
+		var x := SCORE_RECT.position.x + (half + VS_RADIUS * 2.0) * ViewSide.side(i)
 		var plate := Rect2(x, SCORE_RECT.position.y, half, SCORE_RECT.size.y)
-		UiDraw.card(self, plate, UiPalette.STORE_COLORS[i])
+		UiDraw.card(self, plate, ViewSide.color(i))
 		_draw_profit(plate, i)
 	var center := Vector2(
 		SCORE_RECT.position.x + SCORE_RECT.size.x / 2.0,
@@ -154,10 +154,11 @@ func _draw_scoreboard() -> void:
 ## 店名は札の外側の端に、利益は大きく縁取りして出す(自店は右寄せ・相手は左寄せで中央の VS に寄せる)
 func _draw_profit(plate: Rect2, index: int) -> void:
 	var white := UiPalette.INK_ON_DARK
-	var name := UiPalette.STORE_NAMES[index] + PROFIT_LABEL
+	var name := ViewSide.name(index) + PROFIT_LABEL
 	var name_base := UiDraw.baseline_in(plate, UiPalette.FONT_SMALL)
 	var inner := plate.grow(-PAD)
-	var name_align := HORIZONTAL_ALIGNMENT_LEFT if index == 0 else HORIZONTAL_ALIGNMENT_RIGHT
+	var own_side := ViewSide.side(index) == ViewSide.OWN_SIDE
+	var name_align := HORIZONTAL_ALIGNMENT_LEFT if own_side else HORIZONTAL_ALIGNMENT_RIGHT
 	UiDraw.text(
 		self,
 		Vector2(inner.position.x, name_base),
@@ -171,7 +172,7 @@ func _draw_profit(plate: Rect2, index: int) -> void:
 	if _bump[index] > 0.0:
 		font_size = int(font_size * lerpf(1.0, BUMP_SCALE, _bump[index] / BUMP_SECONDS))
 	var sales := UiDraw.yen(int(round(_shown_profit[index])))
-	var sales_align := HORIZONTAL_ALIGNMENT_RIGHT if index == 0 else HORIZONTAL_ALIGNMENT_LEFT
+	var sales_align := HORIZONTAL_ALIGNMENT_RIGHT if own_side else HORIZONTAL_ALIGNMENT_LEFT
 	var sales_base := UiDraw.baseline_in(plate, SALES_FONT)
 	UiDraw.text_outlined(
 		self,
@@ -188,14 +189,18 @@ func _draw_profit(plate: Rect2, index: int) -> void:
 ## 利益の綱引き(自店の割合ぶん青、残りを赤)。利益は負にもなるため、差を両店の絶対値の和で割って寄せる
 func _draw_tug() -> void:
 	var tug := Rect2(SCORE_RECT.position.x, TUG_Y, SCORE_RECT.size.x, TUG_HEIGHT)
-	var scale := absf(_shown_profit[0]) + absf(_shown_profit[1])
+	var own_profit := _shown_profit[ViewSide.own]
+	var rival_profit := _shown_profit[ViewSide.rival()]
+	var scale := absf(own_profit) + absf(rival_profit)
 	var share := 0.5
 	if scale > 0.0:
-		share = clampf(0.5 + (_shown_profit[0] - _shown_profit[1]) / (2.0 * scale), 0.0, 1.0)
+		share = clampf(0.5 + (own_profit - rival_profit) / (2.0 * scale), 0.0, 1.0)
 	var radius := int(TUG_HEIGHT / 2.0)
-	UiDraw.panel(self, tug, UiPalette.STORE_COLORS[1], Color.TRANSPARENT, 0, radius)
+	UiDraw.panel(
+		self, tug, UiPalette.STORE_COLORS[ViewSide.RIVAL_SIDE], Color.TRANSPARENT, 0, radius
+	)
 	var own := Rect2(tug.position, Vector2(tug.size.x * share, tug.size.y))
-	UiDraw.panel(self, own, UiPalette.STORE_COLORS[0], Color.TRANSPARENT, 0, radius)
+	UiDraw.panel(self, own, UiPalette.STORE_COLORS[ViewSide.OWN_SIDE], Color.TRANSPARENT, 0, radius)
 	UiDraw.panel(self, tug, Color.TRANSPARENT, UiPalette.INK, UiPalette.OUTLINE_THIN, radius)
 	var split := own.end.x
 	draw_line(
@@ -232,7 +237,7 @@ func _draw_remaining() -> void:
 ## 時間帯の始めの少ない人数では割合が大きく揺れるため、両店に入った客が基準の人数に届くまで出さない
 func _draw_live_share(center_x: float) -> void:
 	var band_id := match_state.current_band().id
-	var own := match_state.stores[MatchController.PLAYER]
+	var own := match_state.stores[ViewSide.own]
 	var visitors := 0
 	for store: StoreState in [own, own.rival]:
 		visitors += int(store.visitors_by_band.get(band_id, 0))

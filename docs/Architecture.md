@@ -12,3 +12,4 @@
 | 4章 | シーン構成 | [`arch/04_scenes.md`](arch/04_scenes.md) |
 | 5章 | CPUの実装 | [`arch/05_cpu.md`](arch/05_cpu.md) |
 | 6章 | テストと検証 | [`arch/06_testing.md`](arch/06_testing.md) |
+| 7章 | オンライン対戦(中継サーバー・ロックステップ) | [`arch/07_net.md`](arch/07_net.md) |

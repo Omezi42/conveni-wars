@@ -162,7 +162,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	var order := _order_at(press.position)
 	if order >= 0:
-		_gauge.press(products[order].id)
+		_gauge.press(products[order].id, commands)
 		accept_event()
 		return
 	var index := _tile_at(press.position)
@@ -205,7 +205,7 @@ func _draw() -> void:
 func _draw_tile(index: int, product: ProductData, selected: bool, lift: Vector2) -> void:
 	var rect := _tiles[index]
 	rect.position += lift
-	var team := UiPalette.STORE_COLORS[store_index]
+	var team := ViewSide.color(store_index)
 	var radius := UiPalette.RADIUS_SMALL
 	if selected:
 		var glow := team

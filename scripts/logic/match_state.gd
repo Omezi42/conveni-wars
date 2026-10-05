@@ -294,6 +294,27 @@ func duplicate_state() -> MatchState:
 	return copy
 
 
+## 時刻・乱数の状態・両店の要の値のハッシュ(オンライン対戦で両方の試合が一致しているかを照らし合わせる。Architecture.md 7章)
+func checksum() -> int:
+	var values: Array = [tick, rng.state]
+	for store in stores:
+		(
+			values
+			. append_array(
+				[
+					store.funds,
+					store.sales,
+					store.spent,
+					store.visitor_total,
+					store.lost_total,
+					store.wasted_count,
+					store.shelf,
+				]
+			)
+		)
+	return values.hash()
+
+
 # --- 内部 ---
 
 

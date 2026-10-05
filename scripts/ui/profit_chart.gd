@@ -64,7 +64,7 @@ func _draw() -> void:
 	_draw_grid(plot, span)
 	_draw_band_lines(plot)
 	_draw_event_marks(plot)
-	for i in range(MatchState.STORE_COUNT - 1, -1, -1):
+	for i in [ViewSide.rival(), ViewSide.own]:
 		_draw_line(plot, span, i)
 	_draw_bands(plot)
 	_draw_review()
@@ -73,15 +73,13 @@ func _draw() -> void:
 ## 右上の「― 自店 ― 相手」
 func _draw_legend() -> void:
 	var x := size.x - PAD
-	for i in range(MatchState.STORE_COUNT - 1, -1, -1):
-		var name := UiPalette.STORE_NAMES[i]
+	for i in [ViewSide.rival(), ViewSide.own]:
+		var name := ViewSide.name(i)
 		x -= UiDraw.text_width(name, UiPalette.FONT_BODY)
 		UiDraw.text(self, Vector2(x, TITLE_Y), name, UiPalette.FONT_BODY, UiPalette.INK)
 		x -= LEGEND_GAP + LEGEND_LINE
 		var y := TITLE_Y - UiPalette.FONT_BODY * TEXT_MID
-		draw_line(
-			Vector2(x, y), Vector2(x + LEGEND_LINE, y), UiPalette.STORE_COLORS[i], LINE_WIDTH, true
-		)
+		draw_line(Vector2(x, y), Vector2(x + LEGEND_LINE, y), ViewSide.color(i), LINE_WIDTH, true)
 		x -= LEGEND_SPACING
 
 
@@ -156,9 +154,7 @@ func _draw_event_marks(plot: Rect2) -> void:
 		var x := _x_of(plot, mark.time)
 		draw_line(Vector2(x, plot.position.y), Vector2(x, plot.end.y), MARK_LINE, GRID_WIDTH)
 		var center := Vector2(x, plot.position.y - MARK_Y)
-		var own := (
-			mark.store_counts[MatchController.PLAYER] if not mark.store_counts.is_empty() else 0
-		)
+		var own := mark.store_counts[ViewSide.own] if not mark.store_counts.is_empty() else 0
 		if own >= big_catch:
 			UiDraw.star(self, center, STAR_RADIUS, UiPalette.MONEY, UiPalette.INK)
 			continue
@@ -180,7 +176,7 @@ func _draw_line(plot: Rect2, span: Vector2, store_index: int) -> void:
 	var profits := history.profits[store_index]
 	for i in history.times.size():
 		points.append(Vector2(_x_of(plot, history.times[i]), _y_of(plot, span, profits[i])))
-	draw_polyline(points, UiPalette.STORE_COLORS[store_index], LINE_WIDTH, true)
+	draw_polyline(points, ViewSide.color(store_index), LINE_WIDTH, true)
 
 
 ## 横軸の下の時間帯の帯(名前)と、時間帯ごとに自店へ入った客の割合
@@ -212,7 +208,7 @@ func _draw_bands(plot: Rect2) -> void:
 			HORIZONTAL_ALIGNMENT_CENTER,
 			strip.size.x
 		)
-		var store := _result.stores[MatchController.PLAYER]
+		var store := _result.stores[ViewSide.own]
 		UiDraw.text(
 			self,
 			Vector2(x, strip.end.y + REASON_Y),
@@ -236,7 +232,7 @@ func _draw_bands(plot: Rect2) -> void:
 
 
 func _share(band_id: StringName) -> float:
-	return _result.stores[MatchController.PLAYER].band_share(band_id)
+	return _result.stores[ViewSide.own].band_share(band_id)
 
 
 func _share_color(share: float) -> Color:

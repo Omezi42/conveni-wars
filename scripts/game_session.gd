@@ -21,6 +21,12 @@ var last_new_best := false
 ## 直前の試合で増えた勝ち星のCPUの強さ。増えていなければ空
 var last_new_star: StringName = &""
 var save := SaveData.new()
+## オンライン対戦の試合か(GameDesign.md 13章)。部屋で2人がそろったら立て、タイトルへ戻ったら下ろす
+var online := false
+## オンライン対戦の自分の店の番号(部屋を作った側が0)
+var online_own := 0
+## オンライン対戦の両店の店長(店0・店1の順)
+var online_manager_ids: Array[StringName] = []
 
 var _rng := RandomNumberGenerator.new()
 
@@ -43,7 +49,23 @@ func prepare_match(manager_id: StringName) -> void:
 	last_result = null
 
 
+## 部屋を作った側が決めた種と両店の店長で、オンライン対戦の試合を用意する(天気は種から引く)
+func prepare_online_match(seed_value: int, ids: Array[StringName]) -> void:
+	online_manager_ids = ids.duplicate()
+	player_manager_id = ids[online_own]
+	match_seed = seed_value
+	weather_id = &""
+	last_result = null
+
+
+## 自分の店の番号(CPU戦は0)
+func own_store() -> int:
+	return online_own if online else PLAYER
+
+
 func manager_ids() -> Array[StringName]:
+	if online:
+		return online_manager_ids.duplicate()
 	if player_manager_id == &"":
 		prepare_match(GameDatabase.get_default().sorted_managers()[0].id)
 	var ids: Array[StringName] = [player_manager_id, cpu_manager_id]
@@ -64,6 +86,23 @@ func set_cpu_profile_id(id: StringName) -> void:
 ## 戦績が1試合も無いか(タイトルの「はじめる」で店長選択を飛ばす。GameDesign.md 9.1節)
 func is_first_match() -> bool:
 	return save.games_played() == 0
+
+
+## オンライン対戦の結果を残す。peer_left なら相手が抜けたので利益にかかわらず自分の勝ちにする(GameDesign.md 13.3節)
+func finish_online_match(result: MatchResult, peer_left: bool) -> void:
+	if peer_left:
+		result.winner = online_own
+	last_result = result
+	last_new_best = false
+	last_new_star = &""
+	save.record_online(result.winner, online_own)
+	save.save_file()
+
+
+## 降参したオンライン対戦を負けとして残す
+func resign_online_match() -> void:
+	save.record_online(1 - online_own, online_own)
+	save.save_file()
 
 
 func finish_match(result: MatchResult) -> void:

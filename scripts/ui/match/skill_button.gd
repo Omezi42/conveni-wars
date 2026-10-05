@@ -51,7 +51,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	_pressing = press.pressed and button_rect().has_point(press.position)
 	if _pressing:
-		match_state.use_active(store_index)
+		commands.use_active(store_index)
 		accept_event()
 
 

@@ -15,6 +15,7 @@ const LossReasonTests = preload("res://tools/tests/loss_reason_tests.gd")
 const WeatherTests = preload("res://tools/tests/weather_tests.gd")
 const ReplayTests = preload("res://tools/tests/replay_tests.gd")
 const ShareTests = preload("res://tools/tests/share_tests.gd")
+const LockstepTests = preload("res://tools/tests/lockstep_tests.gd")
 
 var _failures := 0
 var _checks := 0
@@ -39,6 +40,7 @@ func _run() -> void:
 	WeatherTests.new().run(_assert_true)
 	ReplayTests.new().run(_assert_true)
 	ShareTests.new().run(_assert_true)
+	LockstepTests.new().run(_assert_true)
 	if _failures == 0:
 		print("tests passed (%d checks)" % _checks)
 		quit(0)

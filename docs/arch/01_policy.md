@@ -22,6 +22,8 @@ scripts/data/  Resourceクラス
 scripts/logic/ 試合ロジック
 scripts/cpu/   CPU
 scripts/ui/    画面のスクリプト
+scripts/net/   オンライン対戦の接続と進め方(7章)
+server/        オンライン対戦の中継サーバー(Cloudflare Worker。.gdignore で書き出しから外す)
 assets/        イラスト・背景・フォント
 tools/         check.sh・テスト・シミュレーション
 ```

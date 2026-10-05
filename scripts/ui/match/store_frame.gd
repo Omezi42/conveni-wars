@@ -36,7 +36,7 @@ func _draw() -> void:
 		return
 	var rect := Rect2(Vector2.ZERO, size)
 	UiDraw.card(self, rect, UiPalette.FLOOR)
-	var color := UiPalette.STORE_COLORS[store_index]
+	var color := ViewSide.color(store_index)
 	var sign_height := COMPACT_SIGN_HEIGHT if compact else SIGN_HEIGHT
 	var accent := COMPACT_STRIPE_ACCENT if compact else STRIPE_ACCENT
 	var white := COMPACT_STRIPE_WHITE if compact else STRIPE_WHITE
@@ -46,7 +46,7 @@ func _draw() -> void:
 	_sign_style(color).draw(get_canvas_item(), sign_rect)
 	var y := sign_rect.end.y
 	draw_rect(Rect2(border, y, inner, white), UiPalette.INK_ON_DARK)
-	draw_rect(Rect2(border, y + white, inner, accent), UiPalette.STORE_ACCENTS[store_index])
+	draw_rect(Rect2(border, y + white, inner, accent), ViewSide.accent(store_index))
 	draw_rect(Rect2(border, y + white + accent, inner, white), UiPalette.INK_ON_DARK)
 	draw_line(
 		Vector2(border, y + white * 2.0 + accent),
@@ -73,7 +73,7 @@ func _sign_style(color: Color) -> StyleBoxFlat:
 
 
 func _draw_sign_text(sign_rect: Rect2) -> void:
-	var name := UiPalette.STORE_NAMES[store_index]
+	var name := ViewSide.name(store_index)
 	var name_size := UiPalette.FONT_LARGE if compact else UiPalette.FONT_HEAD
 	var baseline := UiDraw.baseline_in(sign_rect, name_size)
 	var white := UiPalette.INK_ON_DARK

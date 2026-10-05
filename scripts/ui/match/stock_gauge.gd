@@ -52,9 +52,9 @@ static func hit_rect(rect: Rect2) -> Rect2:
 	return rect.grow_individual(0, 0, 0, ORDER_DROP)
 
 
-func press(product_id: StringName) -> bool:
+func press(product_id: StringName, commands: PlayerCommands) -> bool:
 	_pressed_id = product_id
-	var ok := match_state.order(store_index, product_id)
+	var ok := commands.order(store_index, product_id)
 	_flashes[product_id] = [FLASH_SECONDS, ok]
 	return ok
 

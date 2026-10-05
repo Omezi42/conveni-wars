@@ -47,6 +47,10 @@ func _run() -> void:
 	_check(_session.save.games_played() == 2, "the result is added to the record")
 	var result_screen := _find_result()
 	_check(result_screen != null, "the result scene opens after the match")
+	result_screen.queue_free()
+	await process_frame
+
+	await _check_online()
 
 	if _failures.is_empty():
 		print("screen flow passed")
@@ -101,6 +105,63 @@ func _check_hints() -> void:
 	_check(hints._current == null, "the hint closes when the player orders")
 	controller.queue_free()
 	await process_frame
+
+
+## オンライン対戦の画面(GameDesign.md 13章)。相手がつながらないまま試合を始め、待ったあと相手の店をCPUに任せて
+## 最後まで進み、自分の勝ちとしてオンラインの戦績に入るまでを通す
+func _check_online() -> void:
+	var lobby: Control = await _show("res://scenes/online_lobby.tscn")
+	_check(_class_of(lobby) == &"OnlineLobbyScreen", "online lobby scene")
+	lobby._on_join_pressed()
+	for i in 4:
+		lobby._on_key("7")
+	lobby._on_key("7")
+	_check(lobby._code == "7777", "the keypad enters a four digit code")
+	lobby._on_key(lobby.LABEL_DELETE)
+	_check(lobby._code == "777", "the keypad deletes a digit")
+	lobby.queue_free()
+
+	_session.online = true
+	_session.online_own = 1
+	var select: Control = await _show("res://scenes/manager_select.tscn")
+	_check(not select._levels[0].visible, "online manager select hides the cpu levels")
+	select._selected = 0
+	select._on_start()
+	_check(select._own_pick != &"", "picking a manager waits for the other player")
+	select.queue_free()
+
+	var ids: Array[StringName] = [&"veteran", &"idol"]
+	_session.prepare_online_match(5, ids)
+	var controller: Control = await _show("res://scenes/match.tscn")
+	var state: MatchState = controller.match_state
+	_check(controller._link != null, "an online match has a link instead of a cpu")
+	_check(controller._own_shelf.store_index == 1, "the guest plays store 1 on the left")
+	var product := state.db.sorted_products()[0].id
+	var before := state.stores[1].pending_count(product)
+	controller._commands.order(1, product)
+	_check(state.stores[1].pending_count(product) == before, "an online order waits for its tick")
+	controller._link.open_menu()
+	_check(controller._link._resign.visible, "the pause button opens the resign menu")
+	controller._link.close_menu()
+	var config := NetConfig.load_default()
+	var waited := 0.0
+	while not controller._link.peer_left() and waited < config.drop_seconds * 2.0:
+		controller._physics_process(STEP)
+		waited += STEP
+	_check(controller._link.peer_left(), "a silent peer is handed to the cpu")
+	for i in config.input_delay_ticks * 2:
+		controller._physics_process(STEP)
+	_check(state.stores[1].pending_count(product) > before, "the delayed order runs")
+	var player_cpu := CpuPlayer.new(state, 1, state.db.cpu_profile(CPU_PROFILE_ID))
+	await _run_until_result(controller, player_cpu)
+	_check(_session.last_result.winner == 1, "the player wins when the peer leaves")
+	_check(_session.save.online_wins == 1, "the online result goes to the online record")
+	var result_screen := _find_result()
+	_check(
+		result_screen != null and result_screen._buttons.size() == 2,
+		"online result has two buttons"
+	)
+	_session.online = false
 
 
 func _show(path: String) -> Control:
@@ -194,7 +255,12 @@ func _left_press(pos: Vector2) -> InputEventMouseButton:
 func _play_to_the_end(controller: Control) -> void:
 	var state: MatchState = controller.match_state
 	var profile := state.db.cpu_profile(CPU_PROFILE_ID)
-	var player_cpu := CpuPlayer.new(state, PLAYER, profile)
+	await _run_until_result(controller, CpuPlayer.new(state, PLAYER, profile))
+	_check(state.stores[0].sales > 0 and state.stores[1].sales > 0, "both stores sell")
+
+
+func _run_until_result(controller: Control, player_cpu: CpuPlayer) -> void:
+	var state: MatchState = controller.match_state
 	var frames := 0
 	while _find_result() == null and frames < MAX_FRAMES:
 		for i in STEPS_PER_FRAME:
@@ -208,7 +274,6 @@ func _play_to_the_end(controller: Control) -> void:
 		await process_frame
 		frames += 1
 	_check(state.finished, "the match reaches the end")
-	_check(state.stores[0].sales > 0 and state.stores[1].sales > 0, "both stores sell")
 
 
 func _find_result() -> Node:

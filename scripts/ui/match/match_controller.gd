@@ -1,9 +1,8 @@
 class_name MatchController
 extends Control
 ## 試合画面(Architecture.md 4章)。MatchState と CPU を持って進め、部品へ渡し、シグナルを演出へつなぐ。
+## オンライン対戦(GameDesign.md 13章)では CPU の代わりに OnlineMatchLink が相手の操作を流す。
 
-const PLAYER := 0
-const CPU := 1
 const RESULT_SCENE := "res://scenes/result.tscn"
 const MATCH_SCENE := "res://scenes/match.tscn"
 const TITLE_SCENE := "res://scenes/title.tscn"
@@ -40,8 +39,12 @@ const BAND_CUTIN_DARKEN := 0.25
 
 var match_state: MatchState
 
-var _cpu: CpuPlayer
+var _own := 0
+var _rival := 1
 var _runner: MatchRunner
+var _commands: PlayerCommands
+## オンライン対戦のときだけ
+var _link: OnlineMatchLink
 var _sky: SkyBackdrop
 var _selection := UiSelection.new()
 var _own_shelf: ShelfView
@@ -67,18 +70,32 @@ var _leaving := false
 func _ready() -> void:
 	var db := GameDatabase.get_default()
 	var ids := GameSession.manager_ids()
+	_own = GameSession.own_store()
+	_rival = 1 - _own
+	ViewSide.own = _own
 	match_state = MatchState.new(db, ids, GameSession.match_seed, GameSession.weather_id)
-	_cpu = CpuPlayer.new(match_state, CPU, db.cpu_profile(GameSession.cpu_profile_id()))
-	match_state.record.cpu_profile_id = GameSession.cpu_profile_id()
-	_runner = MatchRunner.new(match_state, [_cpu])
-	_runner.take_snapshots = true
+	match_state.record.store_index = _own
+	if GameSession.online:
+		var no_cpus: Array[CpuPlayer] = []
+		_runner = MatchRunner.new(match_state, no_cpus)
+		_link = OnlineMatchLink.new()
+		_link.setup(_runner, _own)
+		_commands = PlayerCommands.new(match_state, _link.lockstep)
+	else:
+		var cpu := CpuPlayer.new(match_state, _rival, db.cpu_profile(GameSession.cpu_profile_id()))
+		match_state.record.cpu_profile_id = GameSession.cpu_profile_id()
+		var cpus: Array[CpuPlayer] = [cpu]
+		_runner = MatchRunner.new(match_state, cpus)
+		_runner.take_snapshots = true
+		_commands = PlayerCommands.new(match_state)
 	_build()
 	_connect_signals()
-	_build_hints()
+	if _link == null:
+		_build_hints()
 	_build_pause()
 	var weather := match_state.weather
 	var opening := "開店! 今日は%s" % weather.display_name
-	_fx.cutin(opening, UiPalette.STORE_COLORS[PLAYER], false, weather.cutin_text)
+	_fx.cutin(opening, ViewSide.color(_own), false, weather.cutin_text)
 
 
 func _physics_process(delta: float) -> void:
@@ -88,10 +105,16 @@ func _physics_process(delta: float) -> void:
 		_end_timer -= delta
 		if _end_timer <= 0.0 and not _leaving:
 			_leaving = true
-			GameSession.finish_match(match_state.result)
+			if _link != null:
+				GameSession.finish_online_match(match_state.result, _link.peer_left())
+			else:
+				GameSession.finish_match(match_state.result)
 			get_tree().change_scene_to_file(RESULT_SCENE)
 		return
-	_runner.step(delta)
+	if _link != null:
+		_link.step(delta)
+	else:
+		_runner.step(delta)
 
 
 func _process(delta: float) -> void:
@@ -111,13 +134,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_pause.close()
 		elif _selection.has_selection():
 			_selection.clear()
+		elif _link != null:
+			_link.open_menu()
 		else:
 			_open_pause()
 
 
 ## ブラウザのタブや窓から離れたら一時停止する(GameDesign.md 9.9節)
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and _pause != null:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and _pause != null and _link == null:
 		_open_pause()
 
 
@@ -126,54 +151,55 @@ func _build() -> void:
 	_place(_sky, Rect2(Vector2.ZERO, SCREEN_SIZE))
 	_sky.set_band(match_state.current_band(), true, match_state.weather)
 
-	_place(_part(HudBar.new(), PLAYER), HUD_RECT)
+	_place(_part(HudBar.new(), _own), HUD_RECT)
 
-	_own_frame = _part(StoreFrame.new(), PLAYER)
+	_own_frame = _part(StoreFrame.new(), _own)
 	_own_frame.door_on_right = true
 	_own_frame.door_y = OWN_SHELF_POS.y + OWN_CELL.y * 1.5 + OWN_GAP.y
 	_place(_own_frame, OWN_FRAME_RECT)
-	_own_shelf = _part(ShelfView.new(), PLAYER)
+	_own_shelf = _part(ShelfView.new(), _own)
 	_own_shelf.configure(OWN_CELL, OWN_GAP, true)
 	_own_shelf.selection = _selection
 	_own_frame.add_child(_own_shelf)
 	_own_shelf.position = OWN_SHELF_POS
 	_own_shelf.size = _own_shelf.grid_size()
-	var help: BonusHelp = _part(BonusHelp.new(), PLAYER)
+	var help: BonusHelp = _part(BonusHelp.new(), _own)
 	_own_frame.add_child(help)
 	help.position = HELP_RECT.position
 	help.size = HELP_RECT.size
 	help.legend_rect = Rect2(HELP_LEGEND_RECT.position - HELP_RECT.position, HELP_LEGEND_RECT.size)
 	_own_frame.sign_reserved = OWN_FRAME_RECT.size.x - HELP_RECT.position.x - StoreFrame.PAD
 
-	_rival_frame = _part(StoreFrame.new(), CPU)
+	_rival_frame = _part(StoreFrame.new(), _rival)
 	_rival_frame.door_on_right = false
 	_rival_frame.compact = true
 	_rival_frame.door_y = RIVAL_SHELF_POS.y + RIVAL_CELL.y * 1.5 + RIVAL_GAP.y
 	_place(_rival_frame, RIVAL_FRAME_RECT)
-	_rival_shelf = _part(ShelfView.new(), CPU)
+	_rival_shelf = _part(ShelfView.new(), _rival)
 	_rival_shelf.configure(RIVAL_CELL, RIVAL_GAP, false)
 	_rival_frame.add_child(_rival_shelf)
 	_rival_shelf.position = RIVAL_SHELF_POS
 	_rival_shelf.size = _rival_shelf.grid_size()
 
-	_flow = _part(CustomerFlow.new(), PLAYER)
+	_flow = _part(CustomerFlow.new(), _own)
 	_place(_flow, STREET_RECT)
 	var street_top := STREET_RECT.position.y
 	var own_door := OWN_FRAME_RECT.position.y + _own_frame.door_y - street_top
 	var rival_door := RIVAL_FRAME_RECT.position.y + _rival_frame.door_y - street_top
-	_flow.door_points[PLAYER] = Vector2(0.0, own_door)
-	_flow.door_points[CPU] = Vector2(STREET_RECT.size.x, rival_door)
+	_flow.door_points[_own] = Vector2(0.0, own_door)
+	_flow.door_points[_rival] = Vector2(STREET_RECT.size.x, rival_door)
 
-	_place(_part(ForecastPanel.new(), PLAYER), FORECAST_RECT)
-	_catalog = _part(CatalogView.new(), PLAYER)
+	_place(_part(ForecastPanel.new(), _own), FORECAST_RECT)
+	_catalog = _part(CatalogView.new(), _own)
 	_catalog.selection = _selection
 	_place(_catalog, CATALOG_RECT)
-	_skill = _part(SkillButton.new(), PLAYER)
+	_skill = _part(SkillButton.new(), _own)
 	_place(_skill, SKILL_RECT)
 
 	_price_menu = PriceMenu.new()
 	_place(_price_menu, Rect2(Vector2.ZERO, SCREEN_SIZE))
-	_price_menu.setup(match_state, PLAYER)
+	_price_menu.setup(match_state, _own)
+	_price_menu.commands = _commands
 	_price_menu.closed.connect(func() -> void: _own_shelf.open_slot = -1)
 
 	_fx = FxLayer.new()
@@ -195,11 +221,15 @@ func _build_hints() -> void:
 	_hints.setup(match_state, GameSession.save)
 
 
-## 幕はヒントより上に重ねるため、最後に置く
+## 幕はヒントより上に重ねるため、最後に置く。オンライン対戦では同じボタンで降参のメニューを開く(GameDesign.md 9.9節)
 func _build_pause() -> void:
 	var button := PauseMenu.create_button()
 	_place(button, PAUSE_BUTTON_RECT)
-	button.pressed.connect(_open_pause)
+	if _link != null:
+		_place(_link, Rect2(Vector2.ZERO, SCREEN_SIZE))
+		button.pressed.connect(_link.open_menu)
+	else:
+		button.pressed.connect(_open_pause)
 	_pause = PauseMenu.new()
 	_place(_pause, Rect2(Vector2.ZERO, SCREEN_SIZE))
 	_pause.restart_requested.connect(_on_restart)
@@ -222,6 +252,7 @@ func _on_restart() -> void:
 
 func _part(part: MatchPart, index: int) -> MatchPart:
 	part.setup(match_state, index)
+	part.commands = _commands
 	return part
 
 
@@ -247,10 +278,10 @@ func _connect_signals() -> void:
 
 func _on_own_slot_pressed(slot: int) -> void:
 	if _selection.has_selection():
-		match_state.assign(PLAYER, _selection.product_id, slot)
+		_commands.assign(_own, _selection.product_id, slot)
 		_selection.clear()
 		return
-	if match_state.stores[PLAYER].shelf[slot] == StoreState.EMPTY:
+	if match_state.stores[_own].shelf[slot] == StoreState.EMPTY:
 		return
 	var rect := _own_shelf.slot_rect(slot)
 	_price_menu.open_for(slot, Rect2(_own_shelf.global_position + rect.position, rect.size))
@@ -258,7 +289,7 @@ func _on_own_slot_pressed(slot: int) -> void:
 
 
 func _on_product_dropped(product_id: StringName, slot: int) -> void:
-	match_state.assign(PLAYER, product_id, slot)
+	_commands.assign(_own, product_id, slot)
 	_selection.clear()
 
 
@@ -273,7 +304,7 @@ func _on_band_changed(band_id: StringName) -> void:
 
 ## 終わった時間帯の成績の1行(GameDesign.md 9.3節)。読みが当たれば、カットインのあとに「読み的中!」を出す
 func _band_report(band_id: StringName) -> String:
-	var store := match_state.stores[PLAYER]
+	var store := match_state.stores[_own]
 	var share := store.band_share(band_id)
 	if share < 0.0:
 		return ""
@@ -290,7 +321,7 @@ func _band_report(band_id: StringName) -> String:
 
 ## 「+¥」は自店の棚からだけ出す(相手の売上は上端のバーで分かる。9.2節)
 func _on_purchased(store_index: int, product_id: StringName, _count: int, amount: int) -> void:
-	if store_index != PLAYER:
+	if store_index != _own:
 		return
 	var key := "%d:%s" % [store_index, product_id]
 	if not _pending_pops.has(key):
@@ -312,14 +343,14 @@ func _on_event_started(event_id: StringName) -> void:
 
 func _on_event_ended(_event_id: StringName, store_counts: Array[int]) -> void:
 	var balance := match_state.balance
-	if store_counts[PLAYER] >= ceili(balance.event_customer_count * balance.big_catch_ratio):
+	if store_counts[_own] >= ceili(balance.event_customer_count * balance.big_catch_ratio):
 		_fx.big("大口獲得!", UiPalette.MONEY, true)
 		AudioDirector.play_se(&"big_catch")
 
 
 func _on_skill_used(store_index: int) -> void:
 	var manager := match_state.stores[store_index].manager
-	var label := "%s:%s!" % [UiPalette.STORE_NAMES[store_index], manager.active_name]
+	var label := "%s:%s!" % [ViewSide.name(store_index), manager.active_name]
 	_fx.cutin(label, manager.color)
 
 
@@ -330,12 +361,12 @@ func _on_match_ended(_result: MatchResult) -> void:
 
 func _check_reversal(delta: float) -> void:
 	_reversal_cooldown = maxf(_reversal_cooldown - delta, 0.0)
-	var own := match_state.stores[PLAYER].profit()
-	var rival := match_state.stores[CPU].profit()
+	var own := match_state.stores[_own].profit()
+	var rival := match_state.stores[_rival].profit()
 	var leading := own > rival
 	if leading and not _player_leading and match_state.elapsed > REVERSAL_GRACE:
 		if _reversal_cooldown <= 0.0:
-			_fx.big("利益で逆転!", UiPalette.STORE_COLORS[PLAYER], true)
+			_fx.big("利益で逆転!", ViewSide.color(_own), true)
 			AudioDirector.play_se(&"reversal")
 			_reversal_cooldown = REVERSAL_COOLDOWN
 	_player_leading = leading
